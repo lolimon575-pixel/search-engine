@@ -1,1 +1,8 @@
-services:\n  - type: web\n    name: nova-search\n    runtime: python\n    plan: free\n    buildCommand: pip install -r requirements.txt\n    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT\n    healthCheckPath: /health\n
+services:
+  - type: web
+    name: nova-search
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
