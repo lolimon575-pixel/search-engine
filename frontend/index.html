@@ -6,7 +6,7 @@
 <title>NOVA Search</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f6f7fb;color:#172033}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f8fb;color:#172033}
 button,input{font:inherit}
 .wrap{width:min(920px,100%);margin:auto;padding:46px 18px 70px}
 .logo{font-size:42px;font-weight:800;letter-spacing:-2px;margin-bottom:22px}
@@ -159,10 +159,11 @@ async function run(){
 function card(x,i){
   const v=x.verification||{};
   const o=v.officiality||{};
-  const cls=o.status==="CONFIRMED"?"official":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";
-  const label=o.status==="CONFIRMED"?"✓ Официальный сайт подтверждён NOVA":
-    v.status==="VERIFIED"?"Техническая проверка пройдена":
-    v.status==="WARNING"?"Есть технические замечания":"Официальность не подтверждена";
+  const cls=o.status==="CONFIRMED"?"official":o.status==="SIGNALS"?"verify":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";
+  const label=o.status==="CONFIRMED"?"✓ Официальность подтверждена":
+    o.status==="SIGNALS"?"◌ Есть признаки, но подтверждения нет":
+    v.status==="VERIFIED"?"✓ Техническая проверка пройдена":
+    v.status==="WARNING"?"⚠ Есть технические замечания":"? Проверка не завершена";
   let host="";
   try{host=new URL(x.url).hostname}catch{}
   const icon=host?"https://www.google.com/s2/favicons?domain="+encodeURIComponent(host)+"&sz=64":"";
@@ -201,8 +202,11 @@ function details(i){
       '<div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div>'+
       '<div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div>'+
       '<div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div>'+
-      '<div class="kv wide"><b>Официальность</b>'+esc(v.officiality?.status||"UNKNOWN")+'</div>'+
-      '<div class="kv wide"><b>Что проверено</b>HTTPS/TLS, HTTP-ответ, DNS и перенаправление домена</div>'+
+      '<div class="kv wide"><b>Официальность</b>'+esc(v.officiality?.status||"UNKNOWN")+
+        (v.officiality?.organization?'<br><span class="muted">'+esc(v.officiality.organization)+'</span>':"")+
+        (Array.isArray(v.officiality?.evidence)?'<br><br>'+v.officiality.evidence.map(esc).join("<br>"):"")+
+      '</div>'+
+      '<div class="kv wide"><b>Что проверено</b>DNS-резолвинг, HTTPS/TLS, HTTP-ответ, перенаправление и сопоставление домена с реестром NOVA</div>'+
       '<div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div>'+
     '</div>';
   modal.style.display="flex";
