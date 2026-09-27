@@ -5,6 +5,7 @@ from urllib.error import HTTPError
 import hashlib, ipaddress, json, re, socket, time
 from html import unescape
 from .officiality import verify_officiality
+from .external import verify_wikidata
 
 
 class _RedirectRecorder(HTTPRedirectHandler):
@@ -103,7 +104,8 @@ class VerificationEngine:
         )
 
         signals = self._extract_signals(body, content_type)
-        officiality = verify_officiality(final, signals)
+        external = None if self._is_registry_domain(final_host) else verify_wikidata(final_host)
+        officiality = verify_officiality(final, signals, external)
 
         if technical_ok:
             status = "VERIFIED"
@@ -138,6 +140,13 @@ class VerificationEngine:
         self.cache[url] = {"ts": time.time(), "data": data}
         return data
 
+    @staticmethod
+    def _is_registry_domain(host):
+        from .officiality import REGISTRY
+        normalized = (host or "").lower().rstrip(".")
+        if normalized.startswith("www."):
+            normalized = normalized[4:]
+        return normalized in REGISTRY
     def _resolve_public_host(self, host):
         if not host:
             raise ValueError("домен не определён")
