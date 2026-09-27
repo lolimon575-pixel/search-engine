@@ -9,7 +9,7 @@ from app.verification.officiality import get_organization_profile
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "frontend" / "index.html"
-app = FastAPI(title="NOVA Search", version="1.3.0")
+app = FastAPI(title="NOVA Search", version="1.4.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 web_search = WebSearchService()
 ledger = VerificationLedger()
