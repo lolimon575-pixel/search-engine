@@ -159,8 +159,9 @@ async function run(){
 function card(x,i){
   const v=x.verification||{};
   const o=v.officiality||{};
-  const cls=o.status==="CONFIRMED"?"official":o.status==="SIGNALS"?"verify":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";
+  const cls=o.status==="CONFIRMED"?"official":o.status==="EXTERNAL_CONFIRMED"?"official":o.status==="SIGNALS"?"verify":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";
   const label=o.status==="CONFIRMED"?"✓ Официальный сайт подтверждён NOVA":
+    o.status==="EXTERNAL_CONFIRMED"?"✓ Официальный домен подтверждён внешним источником":
     v.status==="VERIFIED"?"Техническая проверка пройдена":
     o.status==="SIGNALS"?"Есть признаки официальности":
     v.status==="WARNING"?"Есть технические замечания":"Официальность не подтверждена";
