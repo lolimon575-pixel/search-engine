@@ -1,0 +1,1 @@
+fastapi==0.115.6\nuvicorn==0.34.0\npydantic==2.10.5\nhttpx==0.28.1\npytest==8.3.4\nbeautifulsoup4==4.13.3\n
