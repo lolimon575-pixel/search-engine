@@ -53,6 +53,7 @@ class WebSearchService:
                     item = futures[future]
                     try:
                         item.verification = future.result()
+                        self._record_verification(item.url, item.verification)
                     except Exception as e:
                         item.verification = {
                             "status": "WARNING",
@@ -78,6 +79,21 @@ class WebSearchService:
             self._schedule(query, item.url)
 
         return results, []
+
+    def _record_verification(self, url, data):
+        try:
+            self.ledger.append({
+                "verification_id": hashlib.sha256(
+                    f"{url}|{data.get('checked_at', '')}".encode()
+                ).hexdigest()[:20],
+                "domain": data.get("technical", {}).get("final_host", ""),
+                "timestamp": data.get("checked_at"),
+                "result": data.get("status"),
+                "officiality": data.get("officiality", {}).get("status"),
+                "verification_version": data.get("verification_version"),
+            })
+        except Exception:
+            pass
 
     def _schedule(self, query, url):
         key = canonical(url)
