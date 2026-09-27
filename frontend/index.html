@@ -43,8 +43,10 @@ button,input{font:inherit}
 .title a:hover{text-decoration:underline}
 .url{font-size:13px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .desc{line-height:1.45;color:var(--muted);margin:13px 0 0}
-.status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
-.status{display:inline-flex;align-items:center;padding:6px 10px;border-radius:9px;font-size:12px;font-weight:650}
+.status-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.status-box{display:flex;align-items:center;gap:8px;min-width:0}
+.status-caption{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
+.status{display:inline-flex;align-items:center;padding:6px 10px;border-radius:9px;font-size:12px;font-weight:650;min-width:0}
 .official{background:#e7f7ec;color:#19733a}.verify{background:#e7f1ff;color:#205ea8}.warning{background:#fff3d9;color:#8a5a00}.unknown{background:var(--soft);color:var(--muted)}
 .details{border:0;background:transparent;padding:5px 2px;color:var(--muted);cursor:pointer;font-size:12px}
 .details:hover{text-decoration:underline}
@@ -60,7 +62,7 @@ button,input{font:inherit}
  .hero{padding:112px 0 70px}.hero h1{font-size:clamp(55px,15vw,78px);letter-spacing:-4px}.hero p{font-size:27px;margin-top:34px}
  .search input{height:130px;padding-left:34px;padding-right:190px;border-radius:34px;font-size:31px}.clear{height:130px;right:176px}.go{height:98px;right:16px;top:16px;border-radius:30px;padding:0 30px;font-size:30px}
  .dropdown{right:175px;top:138px}.helper{font-size:25px;margin-top:40px}.disclaimer{font-size:18px;margin-top:86px}
- .card{padding:15px}.title{font-size:17px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}
+ .card{padding:15px}.title{font-size:17px}.status-row{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.wide{grid-column:auto}
 }
 @media(min-width:651px){.hero{padding-top:115px}}
 </style>
@@ -118,20 +120,24 @@ async function run(){
  catch(e){meta.textContent="Ошибка поиска";out.innerHTML='<div class="card">Не удалось получить результаты. Проверь сервер.</div>';}
 }
 function card(x,i){
- const v=x.verification||{},o=v.officiality||{};let cls="unknown",label="Официальность не подтверждена";
- if(o.status==="CONFIRMED"){cls="official";label="✓ Официальный сайт подтверждён NOVA";}
- else if(o.status==="EXTERNAL_CONFIRMED"){cls="official";label="✓ Официальный домен подтверждён внешним источником";}
- else if(o.status==="SIGNALS"){cls="verify";label="Есть признаки официальности";}
- else if(v.status==="WARNING"){cls="warning";label="Есть технические замечания";}
- else if(v.status==="VERIFIED"){cls="verify";label="Техническая проверка пройдена";}
+ const v=x.verification||{},o=v.officiality||{};
+ let oCls="unknown",oLabel="Официальность не подтверждена";
+ if(o.status==="CONFIRMED"){oCls="official";oLabel="✓ Подтверждена NOVA";}
+ else if(o.status==="EXTERNAL_CONFIRMED"){oCls="official";oLabel="✓ Подтверждена внешним источником";}
+ else if(o.status==="SIGNALS"){oCls="verify";oLabel="Есть признаки";}
+ let tCls="unknown",tLabel="Техническая проверка не завершена";
+ if(v.status==="VERIFIED"){tCls="verify";tLabel="✓ Пройдена";}
+ else if(v.status==="WARNING"){tCls="warning";tLabel="⚠ Есть замечания";}
  let host="";try{host=new URL(x.url).hostname}catch{}
  const icon=host?"https://www.google.com/s2/favicons?domain="+encodeURIComponent(host)+"&sz=64":"";
- return '<article class="card"><div class="site"><div class="icon-wrap">'+(icon?'<img class="icon" src="'+icon+'" alt="" onerror="this.style.display=\'none\'">':"")+'</div><div class="site-info"><div class="title"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a></div><div class="url">'+esc(x.url)+'</div></div></div><div class="desc">'+esc(x.description||"")+'</div><div class="status-row"><span class="status '+cls+'">'+label+'</span><button class="details" type="button" data-result="'+i+'">Подробнее о проверке</button></div></article>';
+ return '<article class="card"><div class="site"><div class="icon-wrap">'+(icon?'<img class="icon" src="'+icon+'" alt="" onerror="this.style.display=\'none\'">':"")+'</div><div class="site-info"><div class="title"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a></div><div class="url">'+esc(x.url)+'</div></div></div><div class="desc">'+esc(x.description||"")+'</div><div class="status-row"><div class="status-box"><span class="status-caption">Официальность</span><span class="status '+oCls+'">'+oLabel+'</span></div><div class="status-box"><span class="status-caption">Техническая проверка</span><span class="status '+tCls+'">'+tLabel+'</span></div><button class="details" type="button" data-result="'+i+'">Подробнее</button></div></article>';
 }
 out.addEventListener("click",e=>{const b=e.target.closest("[data-result]");if(b)details(Number(b.dataset.result));});
 function details(i){
  const d=lastResults[i];if(!d)return;const v=d.verification||{},t=v.technical||{},o=v.officiality||{};
- mb.innerHTML='<div class="grid"><div class="kv"><b>Время проверки</b>'+esc(v.checked_at||"—")+'</div><div class="kv"><b>Длительность</b>'+esc((v.duration_ms??"—")+" мс")+'</div><div class="kv"><b>DNS</b>'+esc(t.dns_resolved?"Пройден":"Нет данных")+'</div><div class="kv"><b>HTTPS/TLS</b>'+esc(t.final_https?"Пройден":"Не подтверждено")+'</div><div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div><div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div><div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div><div class="kv wide"><b>Итог NOVA</b>'+esc(o.status==="CONFIRMED"?"Официальный сайт подтверждён NOVA":o.status==="EXTERNAL_CONFIRMED"?"Официальный домен подтверждён внешним источником":o.status==="SIGNALS"?"Есть признаки официальности":v.status==="VERIFIED"?"Техническая проверка пройдена":"Официальность не подтверждена")+'</div><div class="kv wide"><b>Что проверено</b>DNS, HTTPS/TLS, HTTP-ответ, перенаправления и конечный домен.</div><div class="kv wide"><b>Основание</b>'+esc((o.evidence||[]).join(" ")||"Независимое подтверждение отсутствует.")+'</div><div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div></div>';
+ const officialLabel=o.status==="CONFIRMED"?"Подтверждена NOVA":o.status==="EXTERNAL_CONFIRMED"?"Подтверждена внешним источником":o.status==="SIGNALS"?"Есть признаки официальности":"Официальность не подтверждена";
+ const technicalLabel=v.status==="VERIFIED"?"Техническая проверка пройдена":v.status==="WARNING"?"Есть технические замечания":"Техническая проверка не завершена";
+ mb.innerHTML='<div class="grid"><div class="kv wide"><b>Официальность</b>'+esc(officialLabel)+'</div><div class="kv wide"><b>Техническая проверка</b>'+esc(technicalLabel)+'</div><div class="kv"><b>Время проверки</b>'+esc(v.checked_at||"—")+'</div><div class="kv"><b>Длительность</b>'+esc((v.duration_ms??"—")+" мс")+'</div><div class="kv"><b>DNS</b>'+esc(t.dns_resolved?"Пройден":"Нет данных")+'</div><div class="kv"><b>HTTPS/TLS</b>'+esc(t.final_https?"Пройден":"Не подтверждено")+'</div><div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div><div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div><div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div><div class="kv wide"><b>Основание проверки официальности</b>'+esc((o.evidence||[]).join(" ")||"Независимое подтверждение отсутствует.")+'</div><div class="kv wide"><b>Что проверено технически</b>DNS, HTTPS/TLS, HTTP-ответ, перенаправления и конечный домен.</div><div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div></div>';
  modal.style.display="flex";
 }
 function setTheme(dark){document.documentElement.classList.toggle("dark",dark);localStorage.setItem("novaTheme",dark?"dark":"light");theme.textContent=dark?"☀":"◐";}
