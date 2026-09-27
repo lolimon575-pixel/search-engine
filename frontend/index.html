@@ -6,223 +6,138 @@
 <title>NOVA Search</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f6f7fb;color:#172033}
+:root{--bg:#f6f7fb;--text:#172033;--muted:#738096;--border:#d6dce8;--card:#fff;--soft:#eef2f7;--shadow:#17203312}
+html.dark{--bg:#111522;--text:#f4f6fb;--muted:#aab3c3;--border:#30394b;--card:#191f2d;--soft:#232b3b;--shadow:#0008}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);transition:background .2s,color .2s}
 button,input{font:inherit}
-.wrap{width:min(920px,100%);margin:auto;padding:46px 18px 70px}
-.logo{font-size:42px;font-weight:800;letter-spacing:-2px;margin-bottom:22px}
-.logo small{font-size:11px;letter-spacing:0;color:#738096;font-weight:600;margin-left:5px}
-.search{position:relative;display:flex;gap:8px}
-.search input{width:100%;min-width:0;height:54px;padding:0 84px 0 17px;border:1px solid #d6dce8;border-radius:15px;background:#fff;font-size:17px;outline:0;box-shadow:0 3px 12px #1720330a}
-.search input:focus{border-color:#9aa9c0;box-shadow:0 4px 18px #17203312}
-.clear{position:absolute;right:104px;top:0;width:42px;height:54px;border:0;background:transparent;font-size:24px;line-height:1;color:#7b8799;cursor:pointer}
-.go{height:54px;border:0;border-radius:15px;padding:0 22px;font-size:16px;cursor:pointer;background:#172033;color:#fff;white-space:nowrap}
-.dropdown{display:none;position:absolute;z-index:30;left:0;right:116px;top:61px;background:#fff;border:1px solid #dfe4ed;border-radius:14px;box-shadow:0 14px 35px #17203318;padding:6px}
-.dropitem{display:flex;align-items:center;gap:10px;min-height:42px;padding:8px 10px;border-radius:9px;cursor:pointer}
-.dropitem:hover{background:#f2f5f9}
+.wrap{width:min(920px,100%);margin:auto;padding:42px 28px 80px}
+.top{display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:56px;font-weight:800;letter-spacing:-3px;line-height:1}
+.logo small{display:inline-flex;vertical-align:middle;margin-left:12px;padding:8px 13px;border:1px solid var(--border);border-radius:24px;font-size:16px;letter-spacing:0;color:var(--muted);font-weight:500}
+.theme{width:74px;height:74px;border:1px solid var(--border);border-radius:24px;background:var(--card);color:var(--text);font-size:23px;cursor:pointer;box-shadow:0 2px 7px var(--shadow)}
+.hero{text-align:center;padding:120px 0 70px}
+.hero h1{margin:0;font-size:clamp(58px,9vw,94px);line-height:.98;letter-spacing:-5px;font-weight:800}
+.hero p{margin:34px auto 0;max-width:760px;color:var(--muted);font-size:clamp(22px,3vw,31px);line-height:1.25}
+.search{position:relative;display:flex;gap:0}
+.searchbox{position:relative;flex:1;min-width:0}
+.search input{width:100%;height:130px;padding:0 205px 0 34px;border:2px solid var(--border);border-radius:34px;background:var(--card);color:var(--text);font-size:32px;outline:0;box-shadow:0 8px 28px var(--shadow)}
+.search input::placeholder{color:#777}
+.search input:focus{border-color:#9aa9c0}
+.clear{position:absolute;right:184px;top:0;width:60px;height:130px;border:0;background:transparent;font-size:42px;line-height:1;color:#7b8799;cursor:pointer}
+.go{position:absolute;right:16px;top:16px;height:98px;border:0;border-radius:30px;padding:0 38px;font-size:30px;font-weight:650;cursor:pointer;background:var(--text);color:var(--bg);white-space:nowrap}
+.dropdown{display:none;position:absolute;z-index:30;left:0;right:185px;top:138px;background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 14px 35px var(--shadow);padding:7px}
+.dropitem{display:flex;align-items:center;gap:10px;min-height:48px;padding:9px 12px;border-radius:11px;cursor:pointer}
+.dropitem:hover{background:var(--soft)}
 .dropquery{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dropx{border:0;background:transparent;color:#8993a2;cursor:pointer;font-size:18px}
-.meta{min-height:20px;margin-top:14px;color:#738096;font-size:13px}
-.results{margin-top:18px}
-.card{position:relative;background:#fff;border:1px solid #e0e5ee;border-radius:18px;padding:18px 18px 16px;margin:12px 0;box-shadow:0 4px 16px #1720330d}
+.dropx{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:20px}
+.helper{margin:42px 0 0;color:var(--muted);font-size:25px;line-height:1.25}
+.meta{min-height:20px;margin-top:18px;color:var(--muted);font-size:14px}
+.results{margin-top:24px}
+.card{position:relative;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px 18px 16px;margin:12px 0;box-shadow:0 4px 16px var(--shadow)}
 .site{display:flex;align-items:flex-start;gap:12px;min-width:0}
-.icon-wrap{flex:0 0 38px;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#f2f4f8;overflow:hidden}
+.icon-wrap{flex:0 0 38px;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--soft);overflow:hidden}
 .icon{width:28px;height:28px;object-fit:contain}
 .site-info{min-width:0;flex:1}
 .title{font-size:19px;font-weight:700;line-height:1.25}
-.title a{color:#172033;text-decoration:none}
+.title a{color:var(--text);text-decoration:none}
 .title a:hover{text-decoration:underline}
-.url{font-size:13px;color:#5d6b82;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.desc{line-height:1.45;color:#455268;margin:13px 0 0}
+.url{font-size:13px;color:var(--muted);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.desc{line-height:1.45;color:var(--muted);margin:13px 0 0}
 .status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
-.status{display:inline-flex;align-items:center;padding:6px 10px;border-radius:9px;font-size:12px;font-weight:600}
-.official{background:#e7f7ec;color:#19733a}
-.verify{background:#e7f1ff;color:#205ea8}
-.warning{background:#fff3d9;color:#8a5a00}
-.unknown{background:#eef2f7;color:#536174}
-.details{border:0;background:transparent;padding:5px 2px;color:#536174;cursor:pointer;font-size:12px}
+.status{display:inline-flex;align-items:center;padding:6px 10px;border-radius:9px;font-size:12px;font-weight:650}
+.official{background:#e7f7ec;color:#19733a}.verify{background:#e7f1ff;color:#205ea8}.warning{background:#fff3d9;color:#8a5a00}.unknown{background:var(--soft);color:var(--muted)}
+.details{border:0;background:transparent;padding:5px 2px;color:var(--muted);cursor:pointer;font-size:12px}
 .details:hover{text-decoration:underline}
-.muted{color:#738096}
-.modal{display:none;position:fixed;inset:0;background:#17203355;z-index:50;align-items:center;justify-content:center;padding:18px}
-.modalbox{width:min(620px,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px #17203330}
-.modalhead{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.modalhead h2{margin:0;font-size:21px}
-.modalclose{border:0;background:transparent;font-size:27px;line-height:1;cursor:pointer;color:#536174}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
-.kv{padding:10px;border-radius:10px;background:#f5f7fa;font-size:13px;overflow-wrap:anywhere}
-.kv b{display:block;margin-bottom:3px}
-.wide{grid-column:1/-1}
+.disclaimer{text-align:center;margin:86px auto 0;max-width:850px;color:var(--muted);font-size:18px;line-height:1.35}
+.muted{color:var(--muted)}
+.modal{display:none;position:fixed;inset:0;background:#17203388;z-index:50;align-items:center;justify-content:center;padding:18px}
+.modalbox{width:min(620px,100%);max-height:85vh;overflow:auto;background:var(--card);border-radius:20px;padding:22px;box-shadow:0 20px 60px #17203330}
+.modalhead{display:flex;justify-content:space-between;align-items:center;gap:12px}.modalhead h2{margin:0;font-size:21px}
+.modalclose{border:0;background:transparent;font-size:27px;line-height:1;cursor:pointer;color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}.kv{padding:10px;border-radius:10px;background:var(--soft);font-size:13px;overflow-wrap:anywhere}.kv b{display:block;margin-bottom:3px}.wide{grid-column:1/-1}
 @media(max-width:650px){
- .wrap{padding:30px 12px 55px}
- .logo{font-size:36px;margin-bottom:18px}
- .search{gap:6px}
- .search input{height:50px;padding-left:14px}
- .clear{right:79px;height:50px}
- .go{height:50px;padding:0 15px}
- .dropdown{right:82px;top:56px}
- .card{padding:15px}
- .title{font-size:17px}
- .grid{grid-template-columns:1fr}
- .wide{grid-column:auto}
+ .wrap{padding:28px 28px 55px}.logo{font-size:56px}.logo small{font-size:16px;padding:7px 11px;margin-left:8px}.theme{width:74px;height:74px;border-radius:24px}
+ .hero{padding:112px 0 70px}.hero h1{font-size:clamp(55px,15vw,78px);letter-spacing:-4px}.hero p{font-size:27px;margin-top:34px}
+ .search input{height:130px;padding-left:34px;padding-right:190px;border-radius:34px;font-size:31px}.clear{height:130px;right:176px}.go{height:98px;right:16px;top:16px;border-radius:30px;padding:0 30px;font-size:30px}
+ .dropdown{right:175px;top:138px}.helper{font-size:25px;margin-top:40px}.disclaimer{font-size:18px;margin-top:86px}
+ .card{padding:15px}.title{font-size:17px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}
 }
+@media(min-width:651px){.hero{padding-top:115px}}
 </style>
 </head>
 <body>
 <main class="wrap">
-  <div class="logo">NOVA <small>LOCAL BETA</small></div>
+  <header class="top">
+    <div class="logo">NOVA <small>LOCAL BETA</small></div>
+    <button class="theme" id="theme" type="button" aria-label="Сменить тему">◐</button>
+  </header>
+
+  <section class="hero">
+    <h1>Поиск без<br>лишнего.</h1>
+    <p>Реальные веб-результаты + собственная<br>обработка NOVA.</p>
+  </section>
+
   <div class="search">
-    <input id="q" autocomplete="off" placeholder="Поиск в интернете" aria-label="Поисковый запрос">
-    <button class="clear" id="clear" aria-label="Очистить">×</button>
+    <div class="searchbox">
+      <input id="q" autocomplete="off" placeholder="Что ищем?" aria-label="Поисковый запрос">
+      <button class="clear" id="clear" aria-label="Очистить">×</button>
+      <div id="drop" class="dropdown"></div>
+    </div>
     <button class="go" id="go">Найти</button>
-    <div id="drop" class="dropdown"></div>
   </div>
+
+  <div id="helper" class="helper">Нажмите на поиск, чтобы увидеть популярные<br>запросы или историю.</div>
   <div id="meta" class="meta"></div>
   <section id="results" class="results"></section>
+  <div class="disclaimer">NOVA показывает результаты технических проверок на момент проверки и не гарантирует будущую безопасность сайтов.</div>
 </main>
 
 <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modalbox">
-    <div class="modalhead">
-      <h2 id="modal-title">Подробнее о проверке</h2>
-      <button class="modalclose" id="close" aria-label="Закрыть">×</button>
-    </div>
+    <div class="modalhead"><h2 id="modal-title">Подробнее о проверке</h2><button class="modalclose" id="close" aria-label="Закрыть">×</button></div>
     <div id="modalbody"></div>
   </div>
 </div>
 
 <script>
-const q=document.getElementById("q");
-const go=document.getElementById("go");
-const clear=document.getElementById("clear");
-const drop=document.getElementById("drop");
-const out=document.getElementById("results");
-const meta=document.getElementById("meta");
-const modal=document.getElementById("modal");
-const mb=document.getElementById("modalbody");
-
-let history=JSON.parse(localStorage.getItem("novaHistory")||"[]");
-let lastResults=[];
-
-function esc(s){
-  return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
-
+const q=document.getElementById("q"),go=document.getElementById("go"),clear=document.getElementById("clear"),drop=document.getElementById("drop"),out=document.getElementById("results"),meta=document.getElementById("meta"),helper=document.getElementById("helper"),modal=document.getElementById("modal"),mb=document.getElementById("modalbody"),theme=document.getElementById("theme");
+let history=JSON.parse(localStorage.getItem("novaHistory")||"[]"),lastResults=[];
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function showDrop(){
-  const items=history.length?history:["Riot Games","Google","GitHub","Microsoft"];
-  drop.innerHTML=items.map((x,i)=>
-    '<div class="dropitem" data-index="'+i+'"><span class="dropquery">'+esc(x)+'</span>'+
-    (history.length?'<button class="dropx" type="button" aria-label="Удалить">×</button>':"")+
-    '</div>'
-  ).join("");
-  drop.style.display="block";
+ const items=history.length?history:["Riot Games","Google","GitHub","Microsoft"];
+ drop.innerHTML=items.map((x,i)=>'<div class="dropitem" data-index="'+i+'"><span class="dropquery">'+esc(x)+'</span>'+(history.length?'<button class="dropx" type="button" aria-label="Удалить">×</button>':"")+'</div>').join("");
+ drop.style.display="block";
 }
-
 function hideDrop(){drop.style.display="none"}
-
-drop.addEventListener("click",e=>{
-  const item=e.target.closest(".dropitem");
-  if(!item)return;
-  const i=Number(item.dataset.index);
-  if(e.target.closest(".dropx")){
-    history.splice(i,1);
-    localStorage.setItem("novaHistory",JSON.stringify(history));
-    showDrop();
-    return;
-  }
-  q.value=history.length?history[i]:item.querySelector(".dropquery").textContent;
-  run();
-});
-
+drop.addEventListener("click",e=>{const item=e.target.closest(".dropitem");if(!item)return;const i=Number(item.dataset.index);if(e.target.closest(".dropx")){history.splice(i,1);localStorage.setItem("novaHistory",JSON.stringify(history));showDrop();return}q.value=history.length?history[i]:item.querySelector(".dropquery").textContent;run();});
 async function run(){
-  const query=q.value.trim();
-  hideDrop();
-  if(!query)return;
-  history=[query,...history.filter(x=>x!==query)].slice(0,8);
-  localStorage.setItem("novaHistory",JSON.stringify(history));
-  meta.textContent="Ищем…";
-  out.innerHTML="";
-  lastResults=[];
-  const started=performance.now();
-  try{
-    const r=await fetch("/api/search?q="+encodeURIComponent(query));
-    if(!r.ok)throw new Error("HTTP "+r.status);
-    const d=await r.json();
-    lastResults=Array.isArray(d.results)?d.results:[];
-    meta.textContent="Найдено: "+(d.count??lastResults.length)+" · "+Math.round(performance.now()-started)+" мс";
-    out.innerHTML=lastResults.map((x,i)=>card(x,i)).join("") ||
-      '<div class="card muted">Результатов не найдено.</div>';
-  }catch(e){
-    meta.textContent="Ошибка поиска";
-    out.innerHTML='<div class="card">Не удалось получить результаты. Проверь сервер.</div>';
-  }
+ const query=q.value.trim();hideDrop();if(!query)return;
+ history=[query,...history.filter(x=>x!==query)].slice(0,8);localStorage.setItem("novaHistory",JSON.stringify(history));
+ helper.style.display="none";meta.textContent="Ищем…";out.innerHTML="";lastResults=[];
+ try{const r=await fetch("/api/search?q="+encodeURIComponent(query));if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();lastResults=Array.isArray(d.results)?d.results:[];meta.textContent="Найдено: "+(d.count??lastResults.length);out.innerHTML=lastResults.map((x,i)=>card(x,i)).join("")||'<div class="card muted">Результатов не найдено.</div>';}
+ catch(e){meta.textContent="Ошибка поиска";out.innerHTML='<div class="card">Не удалось получить результаты. Проверь сервер.</div>';}
 }
-
 function card(x,i){
-  const v=x.verification||{};
-  const o=v.officiality||{};
-  const cls=o.status==="CONFIRMED"?"official":o.status==="EXTERNAL_CONFIRMED"?"official":o.status==="SIGNALS"?"verify":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";
-  const label=o.status==="CONFIRMED"?"✓ Официальный сайт подтверждён NOVA":
-    o.status==="EXTERNAL_CONFIRMED"?"✓ Официальный домен подтверждён внешним источником":
-    v.status==="VERIFIED"?"Техническая проверка пройдена":
-    o.status==="SIGNALS"?"Есть признаки официальности":
-    v.status==="WARNING"?"Есть технические замечания":"Официальность не подтверждена";
-  let host="";
-  try{host=new URL(x.url).hostname}catch{}
-  const icon=host?"https://www.google.com/s2/favicons?domain="+encodeURIComponent(host)+"&sz=64":"";
-  return '<article class="card">'+
-    '<div class="site">'+
-      '<div class="icon-wrap">'+(icon?'<img class="icon" src="'+icon+'" alt="" onerror="this.style.display=\'none\'">':'')+'</div>'+
-      '<div class="site-info">'+
-        '<div class="title"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a></div>'+
-        '<div class="url">'+esc(x.url)+'</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="desc">'+esc(x.description||"")+'</div>'+
-    '<div class="status-row"><span class="status '+cls+'">'+label+'</span>'+
-      '<button class="details" type="button" data-result="'+i+'">Подробнее о проверке</button>'+
-    '</div>'+
-  '</article>';
+ const v=x.verification||{},o=v.officiality||{};let cls="unknown",label="Официальность не подтверждена";
+ if(o.status==="CONFIRMED"){cls="official";label="✓ Официальный сайт подтверждён NOVA";}
+ else if(o.status==="EXTERNAL_CONFIRMED"){cls="official";label="✓ Официальный домен подтверждён внешним источником";}
+ else if(o.status==="SIGNALS"){cls="verify";label="Есть признаки официальности";}
+ else if(v.status==="WARNING"){cls="warning";label="Есть технические замечания";}
+ else if(v.status==="VERIFIED"){cls="verify";label="Техническая проверка пройдена";}
+ let host="";try{host=new URL(x.url).hostname}catch{}
+ const icon=host?"https://www.google.com/s2/favicons?domain="+encodeURIComponent(host)+"&sz=64":"";
+ return '<article class="card"><div class="site"><div class="icon-wrap">'+(icon?'<img class="icon" src="'+icon+'" alt="" onerror="this.style.display=\'none\'">':"")+'</div><div class="site-info"><div class="title"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a></div><div class="url">'+esc(x.url)+'</div></div></div><div class="desc">'+esc(x.description||"")+'</div><div class="status-row"><span class="status '+cls+'">'+label+'</span><button class="details" type="button" data-result="'+i+'">Подробнее о проверке</button></div></article>';
 }
-
-out.addEventListener("click",e=>{
-  const b=e.target.closest("[data-result]");
-  if(!b)return;
-  details(Number(b.dataset.result));
-});
-
+out.addEventListener("click",e=>{const b=e.target.closest("[data-result]");if(b)details(Number(b.dataset.result));});
 function details(i){
-  const d=lastResults[i];
-  if(!d)return;
-  const v=d.verification||{};
-  const t=v.technical||{};
-  mb.innerHTML=
-    '<div class="grid">'+
-      '<div class="kv"><b>Время проверки</b>'+esc(v.checked_at||"—")+'</div>'+
-      '<div class="kv"><b>Длительность</b>'+esc((v.duration_ms??"—")+" мс")+'</div>'+
-      '<div class="kv"><b>DNS</b>'+esc(t.dns_resolved?"Пройден":"Нет данных")+'</div>'+
-      '<div class="kv"><b>HTTPS/TLS</b>'+esc(t.https?"HTTPS":"Не подтверждено")+'</div>'+
-      '<div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div>'+
-      '<div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div>'+
-      '<div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div>'+
-      '<div class="kv wide"><b>Официальность</b>'+esc(v.officiality?.status||"UNKNOWN")+'</div>'+
-      '<div class="kv wide"><b>Организация</b>'+esc(v.officiality?.organization||"—")+'</div>'+
-      '<div class="kv wide"><b>Метод подтверждения</b>'+esc(v.officiality?.method||"—")+'</div>'+
-      '<div class="kv wide"><b>Что проверено</b>DNS, HTTPS/TLS, HTTP-ответ, перенаправления и конечный домен</div>'+
-      '<div class="kv wide"><b>Доказательства</b>'+esc((v.officiality?.evidence||[]).join(" ")||"—")+'</div>'+
-      '<div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div>'+
-    '</div>';
-  modal.style.display="flex";
+ const d=lastResults[i];if(!d)return;const v=d.verification||{},t=v.technical||{},o=v.officiality||{};
+ mb.innerHTML='<div class="grid"><div class="kv"><b>Время проверки</b>'+esc(v.checked_at||"—")+'</div><div class="kv"><b>Длительность</b>'+esc((v.duration_ms??"—")+" мс")+'</div><div class="kv"><b>DNS</b>'+esc(t.dns_resolved?"Пройден":"Нет данных")+'</div><div class="kv"><b>HTTPS/TLS</b>'+esc(t.final_https?"Пройден":"Не подтверждено")+'</div><div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div><div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div><div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div><div class="kv wide"><b>Итог NOVA</b>'+esc(o.status==="CONFIRMED"?"Официальный сайт подтверждён NOVA":o.status==="EXTERNAL_CONFIRMED"?"Официальный домен подтверждён внешним источником":o.status==="SIGNALS"?"Есть признаки официальности":v.status==="VERIFIED"?"Техническая проверка пройдена":"Официальность не подтверждена")+'</div><div class="kv wide"><b>Что проверено</b>DNS, HTTPS/TLS, HTTP-ответ, перенаправления и конечный домен.</div><div class="kv wide"><b>Основание</b>'+esc((o.evidence||[]).join(" ")||"Независимое подтверждение отсутствует.")+'</div><div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div></div>';
+ modal.style.display="flex";
 }
-
-go.addEventListener("click",run);
-q.addEventListener("focus",showDrop);
-q.addEventListener("keydown",e=>{if(e.key==="Enter")run()});
-clear.addEventListener("click",()=>{q.value="";q.focus();showDrop()});
-document.getElementById("close").addEventListener("click",()=>modal.style.display="none");
-modal.addEventListener("click",e=>{if(e.target===modal)modal.style.display="none"});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.style.display="none"});
-document.addEventListener("click",e=>{
-  if(!e.target.closest(".search"))hideDrop();
-});
+function setTheme(dark){document.documentElement.classList.toggle("dark",dark);localStorage.setItem("novaTheme",dark?"dark":"light");theme.textContent=dark?"☀":"◐";}
+setTheme(localStorage.getItem("novaTheme")==="dark");
+go.addEventListener("click",run);q.addEventListener("focus",showDrop);q.addEventListener("keydown",e=>{if(e.key==="Enter")run()});clear.addEventListener("click",()=>{q.value="";q.focus();showDrop()});theme.addEventListener("click",()=>setTheme(!document.documentElement.classList.contains("dark")));
+document.getElementById("close").addEventListener("click",()=>modal.style.display="none");modal.addEventListener("click",e=>{if(e.target===modal)modal.style.display="none"});document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.style.display="none"});document.addEventListener("click",e=>{if(!e.target.closest(".search"))hideDrop();});
 </script>
 </body>
 </html>
