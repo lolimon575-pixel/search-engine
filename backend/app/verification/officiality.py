@@ -27,9 +27,20 @@ def base_domain(host):
     return host[4:] if host.startswith("www.") else host
 
 
-def verify_officiality(url, site_signals=None):
+def verify_officiality(url, site_signals=None, external=None):
     host = base_domain(urlsplit(url).hostname or "")
     item = REGISTRY.get(host)
+
+    if external:
+        return {
+            "status": "EXTERNAL_CONFIRMED",
+            "organization": external.get("organization", ""),
+            "domain": host,
+            "method": "wikidata-p856",
+            "evidence": [external.get("evidence", "Домен указан как official website во внешнем источнике.")],
+            "source": external.get("source", "Wikidata"),
+            "source_url": external.get("item", ""),
+        }
 
     if item:
         return {
