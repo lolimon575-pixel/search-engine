@@ -1,23 +1,223 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOVA Search</title>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOVA Search</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f6f7fb;color:#172033}.wrap{max-width:920px;margin:auto;padding:48px 18px}.logo{font-size:42px;font-weight:800;letter-spacing:-2px;margin-bottom:22px}.search{position:relative;display:flex;gap:8px}.search input{flex:1;min-width:0;padding:15px 82px 15px 17px;border:1px solid #d6dce8;border-radius:15px;font-size:17px;outline:0}.search input:focus{border-color:#9aa9c0}.clear{position:absolute;right:98px;top:0;width:44px;height:100%;border:0;background:transparent;font-size:24px;color:#7b8799;cursor:pointer}.go{border:0;border-radius:15px;padding:0 22px;font-size:16px;cursor:pointer;background:#172033;color:#fff}.dropdown{display:none;position:absolute;z-index:20;left:0;right:112px;top:60px;background:#fff;border:1px solid #dfe4ed;border-radius:14px;box-shadow:0 12px 35px #17203318;padding:6px}.dropitem{display:flex;justify-content:space-between;padding:11px 12px;border-radius:9px;cursor:pointer}.dropitem:hover{background:#f2f5f9}.dropx{border:0;background:transparent;color:#8993a2}.results{margin-top:28px}.card{background:#fff;border:1px solid #e0e5ee;border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 4px 16px #1720330d}.site{display:flex;align-items:center;gap:12px}.icon{width:34px;height:34px;border-radius:9px;object-fit:contain;background:#f2f4f8;padding:5px}.title{font-size:19px;font-weight:700}.url{font-size:13px;color:#5d6b82;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.desc{line-height:1.45;color:#455268;margin-top:12px}.status{display:inline-block;margin-top:12px;padding:6px 10px;border-radius:9px;font-size:12px}.official{background:#e7f7ec;color:#19733a}.verify{background:#e7f1ff;color:#205ea8}.warning{background:#fff3d9;color:#8a5a00}.unknown{background:#eef2f7;color:#536174}.details{margin-top:8px;border:0;background:transparent;padding:0;color:#536174;cursor:pointer;font-size:12px}.muted{color:#738096}
-.modal{display:none;position:fixed;inset:0;background:#17203355;z-index:50;align-items:center;justify-content:center;padding:18px}.modalbox{width:min(620px,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:20px;padding:22px}.modalhead{display:flex;justify-content:space-between;align-items:center}.modalclose{border:0;background:transparent;font-size:25px;cursor:pointer}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}.kv{padding:10px;border-radius:10px;background:#f5f7fa;font-size:13px}.kv b{display:block;margin-bottom:3px}.wide{grid-column:1/-1}@media(max-width:650px){.wrap{padding:32px 12px}.search{gap:6px}.go{padding:0 15px}.clear{right:78px}.dropdown{right:84px}.grid{grid-template-columns:1fr}}
-</style></head>
-<body><main class="wrap"><div class="logo">NOVA <small style="font-size:11px;letter-spacing:0;color:#738096">LOCAL BETA</small></div>
-<div class="search"><input id="q" autocomplete="off" placeholder="Поиск в интернете"><button class="clear" id="clear" aria-label="Очистить">×</button><button class="go" id="go">Найти</button><div id="drop" class="dropdown"></div></div>
-<div id="meta" class="muted" style="margin-top:14px"></div><section id="results" class="results"></section></main>
-<div id="modal" class="modal"><div class="modalbox"><div class="modalhead"><h2 style="margin:0">Подробнее о проверке</h2><button class="modalclose" id="close">×</button></div><div id="modalbody"></div></div></div>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f6f7fb;color:#172033}
+button,input{font:inherit}
+.wrap{width:min(920px,100%);margin:auto;padding:46px 18px 70px}
+.logo{font-size:42px;font-weight:800;letter-spacing:-2px;margin-bottom:22px}
+.logo small{font-size:11px;letter-spacing:0;color:#738096;font-weight:600;margin-left:5px}
+.search{position:relative;display:flex;gap:8px}
+.search input{width:100%;min-width:0;height:54px;padding:0 84px 0 17px;border:1px solid #d6dce8;border-radius:15px;background:#fff;font-size:17px;outline:0;box-shadow:0 3px 12px #1720330a}
+.search input:focus{border-color:#9aa9c0;box-shadow:0 4px 18px #17203312}
+.clear{position:absolute;right:104px;top:0;width:42px;height:54px;border:0;background:transparent;font-size:24px;line-height:1;color:#7b8799;cursor:pointer}
+.go{height:54px;border:0;border-radius:15px;padding:0 22px;font-size:16px;cursor:pointer;background:#172033;color:#fff;white-space:nowrap}
+.dropdown{display:none;position:absolute;z-index:30;left:0;right:116px;top:61px;background:#fff;border:1px solid #dfe4ed;border-radius:14px;box-shadow:0 14px 35px #17203318;padding:6px}
+.dropitem{display:flex;align-items:center;gap:10px;min-height:42px;padding:8px 10px;border-radius:9px;cursor:pointer}
+.dropitem:hover{background:#f2f5f9}
+.dropquery{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dropx{border:0;background:transparent;color:#8993a2;cursor:pointer;font-size:18px}
+.meta{min-height:20px;margin-top:14px;color:#738096;font-size:13px}
+.results{margin-top:18px}
+.card{position:relative;background:#fff;border:1px solid #e0e5ee;border-radius:18px;padding:18px 18px 16px;margin:12px 0;box-shadow:0 4px 16px #1720330d}
+.site{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.icon-wrap{flex:0 0 38px;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#f2f4f8;overflow:hidden}
+.icon{width:28px;height:28px;object-fit:contain}
+.site-info{min-width:0;flex:1}
+.title{font-size:19px;font-weight:700;line-height:1.25}
+.title a{color:#172033;text-decoration:none}
+.title a:hover{text-decoration:underline}
+.url{font-size:13px;color:#5d6b82;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.desc{line-height:1.45;color:#455268;margin:13px 0 0}
+.status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.status{display:inline-flex;align-items:center;padding:6px 10px;border-radius:9px;font-size:12px;font-weight:600}
+.official{background:#e7f7ec;color:#19733a}
+.verify{background:#e7f1ff;color:#205ea8}
+.warning{background:#fff3d9;color:#8a5a00}
+.unknown{background:#eef2f7;color:#536174}
+.details{border:0;background:transparent;padding:5px 2px;color:#536174;cursor:pointer;font-size:12px}
+.details:hover{text-decoration:underline}
+.muted{color:#738096}
+.modal{display:none;position:fixed;inset:0;background:#17203355;z-index:50;align-items:center;justify-content:center;padding:18px}
+.modalbox{width:min(620px,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:20px;padding:22px;box-shadow:0 20px 60px #17203330}
+.modalhead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.modalhead h2{margin:0;font-size:21px}
+.modalclose{border:0;background:transparent;font-size:27px;line-height:1;cursor:pointer;color:#536174}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+.kv{padding:10px;border-radius:10px;background:#f5f7fa;font-size:13px;overflow-wrap:anywhere}
+.kv b{display:block;margin-bottom:3px}
+.wide{grid-column:1/-1}
+@media(max-width:650px){
+ .wrap{padding:30px 12px 55px}
+ .logo{font-size:36px;margin-bottom:18px}
+ .search{gap:6px}
+ .search input{height:50px;padding-left:14px}
+ .clear{right:79px;height:50px}
+ .go{height:50px;padding:0 15px}
+ .dropdown{right:82px;top:56px}
+ .card{padding:15px}
+ .title{font-size:17px}
+ .grid{grid-template-columns:1fr}
+ .wide{grid-column:auto}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="logo">NOVA <small>LOCAL BETA</small></div>
+  <div class="search">
+    <input id="q" autocomplete="off" placeholder="Поиск в интернете" aria-label="Поисковый запрос">
+    <button class="clear" id="clear" aria-label="Очистить">×</button>
+    <button class="go" id="go">Найти</button>
+    <div id="drop" class="dropdown"></div>
+  </div>
+  <div id="meta" class="meta"></div>
+  <section id="results" class="results"></section>
+</main>
+
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modalbox">
+    <div class="modalhead">
+      <h2 id="modal-title">Подробнее о проверке</h2>
+      <button class="modalclose" id="close" aria-label="Закрыть">×</button>
+    </div>
+    <div id="modalbody"></div>
+  </div>
+</div>
+
 <script>
-const q=document.getElementById("q"),go=document.getElementById("go"),clear=document.getElementById("clear"),drop=document.getElementById("drop"),out=document.getElementById("results"),meta=document.getElementById("meta"),modal=document.getElementById("modal"),mb=document.getElementById("modalbody");
+const q=document.getElementById("q");
+const go=document.getElementById("go");
+const clear=document.getElementById("clear");
+const drop=document.getElementById("drop");
+const out=document.getElementById("results");
+const meta=document.getElementById("meta");
+const modal=document.getElementById("modal");
+const mb=document.getElementById("modalbody");
+
 let history=JSON.parse(localStorage.getItem("novaHistory")||"[]");
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function showDrop(){let a=history.length?history:["Riot Games","Google","GitHub","Microsoft"];drop.innerHTML=a.map((x,i)=>'<div class="dropitem"><span onclick="useQ('+JSON.stringify(x)+')">'+esc(x)+'</span>'+(history.length?'<button class="dropx" onclick="delQ(event,'+i+')">×</button>':"")+"</div>").join("");drop.style.display="block"}
-function useQ(x){q.value=x;drop.style.display="none";run()}
-function delQ(e,i){e.stopPropagation();history.splice(i,1);localStorage.setItem("novaHistory",JSON.stringify(history));showDrop()}
-async function run(){let query=q.value.trim();drop.style.display="none";if(!query)return;history=[query,...history.filter(x=>x!==query)].slice(0,8);localStorage.setItem("novaHistory",JSON.stringify(history));meta.textContent="Ищем…";out.innerHTML="";let t=performance.now();try{let r=await fetch("/api/search?q="+encodeURIComponent(query));let d=await r.json();meta.textContent="Найдено: "+d.count+" · "+Math.round(performance.now()-t)+" мс";out.innerHTML=d.results.map((x,i)=>card(x,i)).join("")||'<div class="card">Результатов не найдено.</div>'}catch(e){meta.textContent="Ошибка поиска";out.innerHTML='<div class="card">Не удалось получить результаты. Проверь сервер.</div>'}}
-function card(x,i){let v=x.verification||{},o=v.officiality||{},cls=o.status==="CONFIRMED"?"official":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";let label=o.status==="CONFIRMED"?"✓ Официальный сайт подтверждён NOVA":v.status==="VERIFIED"?"Техническая проверка пройдена":v.status==="WARNING"?"Есть технические замечания":"Официальность не подтверждена";let host=(()=>{try{return new URL(x.url).hostname}catch{return""}})();let icon="https://www.google.com/s2/favicons?domain="+encodeURIComponent(host)+"&sz=64";return '<article class="card"><div class="site"><img class="icon" src="'+icon+'" onerror="this.style.visibility=\'hidden\'"><div><div class="title"><a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.title)+'</a></div><div class="url">'+esc(x.url)+'</div></div></div><div class="desc">'+esc(x.description||"")+'</div><span class="status '+cls+'">'+label+'</span><br><button class="details" onclick="details('+i+')">Подробнее о проверке</button></article>'}
-function details(i){let d=window.lastResults?.[i];if(!d)return;let v=d.verification||{},t=v.technical||{};mb.innerHTML='<div class="grid"><div class="kv"><b>Время проверки</b>'+esc(v.checked_at||"—")+'</div><div class="kv"><b>Длительность</b>'+esc((v.duration_ms??"—")+" мс")+'</div><div class="kv"><b>DNS</b>'+esc(t.dns_resolved?"Пройден":"Нет данных")+'</div><div class="kv"><b>HTTPS/TLS</b>'+esc(t.https?"HTTPS":"Не подтверждено")+'</div><div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div><div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div><div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div><div class="kv wide"><b>Официальность</b>'+esc(v.officiality?.status||"UNKNOWN")+'</div><div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div></div>';modal.style.display="flex"}
-go.onclick=run;q.onfocus=showDrop;q.onkeydown=e=>{if(e.key==="Enter")run()};clear.onclick=()=>{q.value="";q.focus();showDrop()};document.getElementById("close").onclick=()=>modal.style.display="none";modal.onclick=e=>{if(e.target===modal)modal.style.display="none"};
-const oldRun=run;run=async()=>{await oldRun();try{let r=await fetch("/api/search?q="+encodeURIComponent(q.value.trim()));let d=await r.json();window.lastResults=d.results}catch{}};
-</script></body></html>
+let lastResults=[];
+
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function showDrop(){
+  const items=history.length?history:["Riot Games","Google","GitHub","Microsoft"];
+  drop.innerHTML=items.map((x,i)=>
+    '<div class="dropitem" data-index="'+i+'"><span class="dropquery">'+esc(x)+'</span>'+
+    (history.length?'<button class="dropx" type="button" aria-label="Удалить">×</button>':"")+
+    '</div>'
+  ).join("");
+  drop.style.display="block";
+}
+
+function hideDrop(){drop.style.display="none"}
+
+drop.addEventListener("click",e=>{
+  const item=e.target.closest(".dropitem");
+  if(!item)return;
+  const i=Number(item.dataset.index);
+  if(e.target.closest(".dropx")){
+    history.splice(i,1);
+    localStorage.setItem("novaHistory",JSON.stringify(history));
+    showDrop();
+    return;
+  }
+  q.value=history.length?history[i]:item.querySelector(".dropquery").textContent;
+  run();
+});
+
+async function run(){
+  const query=q.value.trim();
+  hideDrop();
+  if(!query)return;
+  history=[query,...history.filter(x=>x!==query)].slice(0,8);
+  localStorage.setItem("novaHistory",JSON.stringify(history));
+  meta.textContent="Ищем…";
+  out.innerHTML="";
+  lastResults=[];
+  const started=performance.now();
+  try{
+    const r=await fetch("/api/search?q="+encodeURIComponent(query));
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const d=await r.json();
+    lastResults=Array.isArray(d.results)?d.results:[];
+    meta.textContent="Найдено: "+(d.count??lastResults.length)+" · "+Math.round(performance.now()-started)+" мс";
+    out.innerHTML=lastResults.map((x,i)=>card(x,i)).join("") ||
+      '<div class="card muted">Результатов не найдено.</div>';
+  }catch(e){
+    meta.textContent="Ошибка поиска";
+    out.innerHTML='<div class="card">Не удалось получить результаты. Проверь сервер.</div>';
+  }
+}
+
+function card(x,i){
+  const v=x.verification||{};
+  const o=v.officiality||{};
+  const cls=o.status==="CONFIRMED"?"official":v.status==="VERIFIED"?"verify":v.status==="WARNING"?"warning":"unknown";
+  const label=o.status==="CONFIRMED"?"✓ Официальный сайт подтверждён NOVA":
+    v.status==="VERIFIED"?"Техническая проверка пройдена":
+    v.status==="WARNING"?"Есть технические замечания":"Официальность не подтверждена";
+  let host="";
+  try{host=new URL(x.url).hostname}catch{}
+  const icon=host?"https://www.google.com/s2/favicons?domain="+encodeURIComponent(host)+"&sz=64":"";
+  return '<article class="card">'+
+    '<div class="site">'+
+      '<div class="icon-wrap">'+(icon?'<img class="icon" src="'+icon+'" alt="" onerror="this.style.display=\'none\'">':'')+'</div>'+
+      '<div class="site-info">'+
+        '<div class="title"><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.title)+'</a></div>'+
+        '<div class="url">'+esc(x.url)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="desc">'+esc(x.description||"")+'</div>'+
+    '<div class="status-row"><span class="status '+cls+'">'+label+'</span>'+
+      '<button class="details" type="button" data-result="'+i+'">Подробнее о проверке</button>'+
+    '</div>'+
+  '</article>';
+}
+
+out.addEventListener("click",e=>{
+  const b=e.target.closest("[data-result]");
+  if(!b)return;
+  details(Number(b.dataset.result));
+});
+
+function details(i){
+  const d=lastResults[i];
+  if(!d)return;
+  const v=d.verification||{};
+  const t=v.technical||{};
+  mb.innerHTML=
+    '<div class="grid">'+
+      '<div class="kv"><b>Время проверки</b>'+esc(v.checked_at||"—")+'</div>'+
+      '<div class="kv"><b>Длительность</b>'+esc((v.duration_ms??"—")+" мс")+'</div>'+
+      '<div class="kv"><b>DNS</b>'+esc(t.dns_resolved?"Пройден":"Нет данных")+'</div>'+
+      '<div class="kv"><b>HTTPS/TLS</b>'+esc(t.https?"HTTPS":"Не подтверждено")+'</div>'+
+      '<div class="kv"><b>HTTP</b>'+esc(t.http_status??"—")+'</div>'+
+      '<div class="kv"><b>Домен</b>'+esc(t.final_host||"—")+'</div>'+
+      '<div class="kv wide"><b>Конечный URL</b>'+esc(t.final_url||d.url)+'</div>'+
+      '<div class="kv wide"><b>Официальность</b>'+esc(v.officiality?.status||"UNKNOWN")+'</div>'+
+      '<div class="kv wide"><b>Что проверено</b>HTTPS/TLS, HTTP-ответ, DNS и перенаправление домена</div>'+
+      '<div class="kv wide"><b>Примечания</b>'+esc((v.reasons||[]).join(" ")||"—")+'</div>'+
+    '</div>';
+  modal.style.display="flex";
+}
+
+go.addEventListener("click",run);
+q.addEventListener("focus",showDrop);
+q.addEventListener("keydown",e=>{if(e.key==="Enter")run()});
+clear.addEventListener("click",()=>{q.value="";q.focus();showDrop()});
+document.getElementById("close").addEventListener("click",()=>modal.style.display="none");
+modal.addEventListener("click",e=>{if(e.target===modal)modal.style.display="none"});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")modal.style.display="none"});
+document.addEventListener("click",e=>{
+  if(!e.target.closest(".search"))hideDrop();
+});
+</script>
+</body>
+</html>
