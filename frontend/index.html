@@ -36,10 +36,12 @@
   --radius-md:14px;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
 body{
   margin:0;
   min-width:320px;
+  min-height:100dvh;
+  overflow-x:clip;
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:var(--text);
   background:
@@ -109,7 +111,7 @@ a{color:inherit}
 }
 .search-wrap{position:relative;width:min(820px,100%);margin:0 auto}
 .search-panel{
-  position:relative;z-index:30;display:grid;grid-template-columns:44px minmax(0,1fr) auto 38px auto;
+  position:relative;z-index:30;display:grid;grid-template-columns:44px minmax(0,1fr) auto auto auto;
   align-items:center;gap:4px;padding:7px;border:1px solid var(--line-strong);border-radius:22px;
   background:rgba(255,255,255,.9);box-shadow:var(--shadow);backdrop-filter:blur(20px);
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
@@ -132,7 +134,7 @@ a{color:inherit}
 }
 .clear-search.visible{display:block}
 .search-submit{
-  height:44px;padding:0 20px;border:0;border-radius:14px;background:var(--primary);color:var(--primary-ink);
+  height:44px;min-width:84px;padding:0 20px;border:0;border-radius:14px;background:var(--primary);color:var(--primary-ink);
   font-weight:780;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;
 }
 .search-submit:hover{transform:translateY(-1px);box-shadow:0 9px 20px rgba(17,24,39,.18)}
@@ -152,6 +154,13 @@ a{color:inherit}
   padding:10px 11px;border-radius:11px;text-align:left;cursor:pointer;
 }
 .suggestion:hover{background:var(--surface-soft)}
+
+.suggestion.active{
+  background:var(--surface-soft);
+  box-shadow:inset 0 0 0 1px var(--line)
+}
+.suggestion-query{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 .suggestion-icon{
   width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
   background:var(--surface-soft);color:var(--muted);flex:0 0 30px
@@ -386,7 +395,18 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .org-domain{font-size:11px;color:var(--subtle);word-break:break-all}
 .org-confirmed{display:inline-flex;margin-top:9px;padding:6px 8px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:9px;font-weight:850}
 .org-description{margin:18px 0;color:var(--muted);font-size:12px;line-height:1.65}
-.org-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
+.org-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:20px
+}
+.org-actions #orgOpen{
+  grid-column:1/-1;min-height:48px;border-radius:13px;font-size:12px
+}
+.org-actions #orgCheck,.org-actions #orgClaim{
+  width:100%;min-height:42px;border-radius:12px;background:var(--surface-soft)
+}
+.org-actions #orgCheck:hover,.org-actions #orgClaim:hover{
+  border-color:var(--line-strong);background:var(--surface)
+}
 .footer{padding:0 0 34px;text-align:center;color:var(--subtle);font-size:10px;line-height:1.55}
 
 .search-controls{
@@ -509,7 +529,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   .topbar{min-height:66px}
   .brand-copy{gap:6px}.version{display:none}.live-pill{display:none}
   .hero{padding:52px 0 28px}.hero h1{font-size:46px}.hero-sub{font-size:14px;margin-bottom:22px}
-  .search-panel{grid-template-columns:36px minmax(0,1fr) 36px auto;border-radius:18px;padding:5px}
+  .search-panel{grid-template-columns:36px minmax(0,1fr) auto auto;border-radius:18px;padding:5px}
   .shortcut{display:none}.search-panel input{font-size:16px;padding:10px 2px}.search-submit{height:42px;padding:0 14px;border-radius:12px}
   .suggestions{top:59px;border-radius:16px}
   .pipeline-strip{gap:2px}.pipeline-arrow{display:none}
@@ -521,7 +541,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   .result-actions{align-items:flex-start}.open-action{white-space:nowrap}
   .insights{grid-template-columns:1fr}.insight-card.pipeline-card{display:none}
   .dialog{padding:18px;border-radius:20px}.verify-grid,.org-grid{grid-template-columns:1fr;gap:2px}.verify-grid>span:nth-child(even),.org-grid>span:nth-child(even){margin-bottom:8px}
-  .org-head{align-items:center}.org-logo{width:54px;height:54px;flex-basis:54px}.org-copy h2{font-size:19px}
+  .org-head{align-items:center}.org-logo{width:54px;height:54px;flex-basis:54px}.org-copy h2{font-size:19px}.org-actions{grid-template-columns:1fr}.org-actions #orgOpen{grid-column:auto}
 }
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -601,7 +621,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   <header class="topbar">
     <a class="brand" href="/" aria-label="NOVA Search">
       <div class="brand-mark">N</div>
-      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.7</span></div>
+      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.11</span></div>
     </a>
     <div class="top-actions">
       <span class="live-pill"><span class="live-dot"></span>сервис активен</span>
@@ -800,6 +820,8 @@ let lastElapsed=null;
 let activeMode='web';
 let remoteSuggestions=[];
 let suggestTimer=null;
+let suggestionsArmed=false;
+let activeSuggestionIndex=-1;
 let claimContext={domain:'',token:''};
 
 const THEME_KEY='novaTheme';
@@ -892,6 +914,7 @@ async function fetchRemoteSuggestions(value){
     const d=await r.json();
     if(q.value.trim()!==query)return;
     remoteSuggestions=d.suggestions||[];
+    if(!suggestionsArmed||document.activeElement!==q)return;
     showSuggestions();
   }catch(e){}
 }
@@ -913,9 +936,11 @@ function frequentQueries(){
   return [...tracked,...DEFAULT_FREQUENT].filter((x,i,a)=>x&&a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i&&!seen.has(x.toLowerCase()));
 }
 function suggestionButton(x,i,canDelete=false){
-  return '<button class="suggestion" type="button" data-query="'+escapeHtml(x)+'"><span class="suggestion-icon">⌕</span><span>'+escapeHtml(x)+'</span>'+(canDelete?'<span class="suggestion-delete" data-delete="'+i+'">×</span>':'')+'</button>';
+  return '<button class="suggestion" type="button" data-query="'+escapeHtml(x)+'"><span class="suggestion-icon">⌕</span><span class="suggestion-query">'+escapeHtml(x)+'</span>'+(canDelete?'<span class="suggestion-delete" data-delete="'+i+'">×</span>':'')+'</button>';
 }
-function showSuggestions(){
+function showSuggestions(force=false){
+  if(!force&&!suggestionsArmed)return;
+  activeSuggestionIndex=-1;
   const visibleHistory=showAllHistory?history:history.slice(0,8);
   const frequent=frequentQueries();
   const combined=(!showAllHistory&&history.length>=8)?visibleHistory:[...visibleHistory,...frequent].filter((x,i,a)=>a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).slice(0,8);
@@ -939,7 +964,11 @@ function showSuggestions(){
   suggestions.innerHTML=html;
   suggestions.classList.add('open');
 }
-function hideSuggestions(){suggestions.classList.remove('open')}
+function hideSuggestions(){
+  suggestionsArmed=false;
+  activeSuggestionIndex=-1;
+  suggestions.classList.remove('open');
+}
 suggestions.addEventListener('click',e=>{
   const del=e.target.closest('[data-delete]');
   if(del){
@@ -958,9 +987,9 @@ suggestions.addEventListener('click',e=>{
   const button=e.target.closest('.suggestion');
   if(!button)return;
   q.value=button.dataset.query||'';
+  remoteSuggestions=[];
   updateClearButton();
   hideSuggestions();
-  form.requestSubmit();
 });
 
 function statusMarkup(x){
@@ -1362,9 +1391,30 @@ document.querySelector('#claimClose').onclick=closeClaim;
 claimModal.onclick=e=>{if(e.target.id==='claimModal')closeClaim()};
 
 function updateClearButton(){clearSearch.classList.toggle('visible',!!q.value.trim())}
-clearSearch.onclick=()=>{q.value='';remoteSuggestions=[];updateClearButton();q.focus();showSuggestions()};
-q.addEventListener('input',()=>{updateClearButton();scheduleRemoteSuggestions()});
-q.addEventListener('focus',()=>{showSuggestions();if(q.value.trim().length>=2)scheduleRemoteSuggestions()});
+clearSearch.onclick=()=>{
+  q.value='';
+  remoteSuggestions=[];
+  suggestionsArmed=true;
+  updateClearButton();
+  q.focus({preventScroll:true});
+  showSuggestions(true);
+};
+q.addEventListener('input',()=>{
+  suggestionsArmed=true;
+  updateClearButton();
+  showSuggestions();
+  scheduleRemoteSuggestions();
+});
+q.addEventListener('focus',()=>{
+  suggestionsArmed=true;
+  showSuggestions(true);
+  if(q.value.trim().length>=2)scheduleRemoteSuggestions();
+});
+q.addEventListener('blur',()=>{
+  setTimeout(()=>{
+    if(!document.activeElement?.closest?.('#suggestions'))hideSuggestions();
+  },120);
+});
 sort.onchange=renderResults;
 modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
 freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
@@ -1437,6 +1487,8 @@ form.onsubmit=async e=>{
   if(!originalQuery)return;
   if(handleBang(originalQuery))return;
   saveHistory(originalQuery);
+  clearTimeout(suggestTimer);
+  suggestionsArmed=false;
   hideSuggestions();
   document.body.classList.add('has-results');
   status.classList.add('searching');
@@ -1475,6 +1527,21 @@ form.onsubmit=async e=>{
   }
 };
 document.addEventListener('keydown',e=>{
+  if(document.activeElement===q&&suggestions.classList.contains('open')&&(e.key==='ArrowDown'||e.key==='ArrowUp')){
+    const rows=[...suggestions.querySelectorAll('.suggestion')];
+    if(rows.length){
+      e.preventDefault();
+      activeSuggestionIndex=e.key==='ArrowDown'
+        ? Math.min(activeSuggestionIndex+1,rows.length-1)
+        : Math.max(activeSuggestionIndex-1,0);
+      rows.forEach((row,i)=>row.classList.toggle('active',i===activeSuggestionIndex));
+      const selected=rows[activeSuggestionIndex];
+      if(selected?.dataset.query){
+        q.value=selected.dataset.query;
+        updateClearButton();
+      }
+    }
+  }
   if(e.key==='Escape'){
     if(claimModal.classList.contains('open'))closeClaim();
     else if(document.querySelector('#verifyModal').classList.contains('open'))closeVerification();
@@ -1482,7 +1549,7 @@ document.addEventListener('keydown',e=>{
     else hideSuggestions();
   }
   if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
-    e.preventDefault();q.focus();showSuggestions();
+    e.preventDefault();suggestionsArmed=true;q.focus({preventScroll:true});showSuggestions(true);
   }
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideSuggestions()});
