@@ -24,16 +24,19 @@ class WebSearchService:
         self.lock = threading.Lock()
         self.pool = ThreadPoolExecutor(max_workers=6, thread_name_prefix="nova-verify")
 
-    def search(self, query, limit=10):
-        key = query.strip().lower()
+    def search(self, query, limit=10, mode="web", freshness=""):
+        mode = mode if mode in {"web", "verified", "exact"} else "web"
+        freshness = freshness if freshness in {"d", "w", "m", "y"} else ""
+        key = f"{mode}:{freshness}:{query.strip().lower()}"
 
         with self.lock:
             cached = self.cache.get(key)
             if cached and time.time() - cached["at"] < 45:
                 return cached["results"][:limit], []
 
+        provider_query = f'"{query}"' if mode == "exact" else query
         try:
-            raw = ddg_search(query, max(30, limit * 4))
+            raw = ddg_search(provider_query, max(40 if mode == "verified" else 30, limit * 4), freshness=freshness)
         except Exception as e:
             return [], [f"duckduckgo: {type(e).__name__}"]
 
@@ -42,12 +45,13 @@ class WebSearchService:
             unique.setdefault(canonical(item.url), item)
 
         candidates = rank(query, list(unique.values()))
-        candidate_limit = min(len(candidates), max(20, limit * 2))
+        candidate_limit = min(len(candidates), max(30 if mode == "verified" else 20, limit * 3))
         candidates = candidates[:candidate_limit]
 
-        # Verify enough top candidates to let NOVA safely recognize and promote
-        # a confirmed official site before the final diverse result set is chosen.
-        first_batch = candidates[:min(6, len(candidates))]
+        # Verified mode intentionally spends more verification work because it
+        # only returns results with an independent/curated ownership signal.
+        verify_limit = 12 if mode == "verified" else 6
+        first_batch = candidates[:min(verify_limit, len(candidates))]
         if first_batch:
             with ThreadPoolExecutor(max_workers=6, thread_name_prefix="nova-initial") as pool:
                 futures = {pool.submit(self.verifier.verify, item.url): item for item in first_batch}
@@ -68,6 +72,12 @@ class WebSearchService:
                         }
 
         candidates = promote_verified_official(query, candidates)
+        if mode == "verified":
+            allowed = {"OWNER_VERIFIED", "CONFIRMED", "EXTERNAL_CONFIRMED"}
+            candidates = [
+                item for item in candidates
+                if (item.verification or {}).get("officiality", {}).get("status") in allowed
+            ]
         cache_limit = min(20, len(candidates))
         results = diversify(candidates, cache_limit)
 
