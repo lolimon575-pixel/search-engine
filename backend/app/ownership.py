@@ -34,6 +34,8 @@ def _valid_host(domain):
 
 def create_challenge(domain):
     host = _valid_host(domain)
+    if not get_site(host):
+        raise ValueError("Для этого домена ещё нет NOVA Profile. Сначала домен должен пройти добавление в курируемый реестр.")
     token = "nova-" + secrets.token_urlsafe(24)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=CHALLENGE_TTL_HOURS)
     row = create_ownership_claim(host, _token_hash(token), expires_at)
