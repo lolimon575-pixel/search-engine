@@ -480,6 +480,11 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .challenge-code{display:block;margin:9px 0;padding:10px;border-radius:10px;background:var(--surface-solid);border:1px solid var(--line);font:11px ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
 .claim-policy{margin-top:12px;color:var(--subtle);font-size:9px;line-height:1.55}
 @media(max-width:680px){.entity-card-head{flex-direction:column}.identity-badge{align-self:flex-start}.claim-plan{grid-template-columns:1fr}}
+
+.pref-action{border:0;background:transparent;color:var(--subtle);font-size:10px;font-weight:750;cursor:pointer;padding:5px 6px;border-radius:8px}
+.pref-action:hover{background:var(--surface-soft);color:var(--text)}
+.pref-action.active{background:var(--violet-soft);color:var(--violet)}
+.personal-note{font-size:9px;color:var(--subtle);margin-top:5px}
 </style>
 </head>
 <body>
@@ -659,6 +664,7 @@ let pollTimer=null;
 let lastElapsed=null;
 let currentMode='web';
 let currentEntity=null;
+let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
 
 const THEME_KEY='novaTheme';
 const DEFAULT_FREQUENT=['Google','GitHub','Microsoft','YouTube','Wikipedia','Apple','OpenAI','Amazon','Steam','Discord'];
@@ -778,6 +784,21 @@ function signalMarkup(x){
     .map(s=>'<span class="rank-signal">'+escapeHtml(RANK_LABELS[s])+'</span>')
     .join('');
 }
+
+function domainPreference(url){return domainPrefs[domainOf(url)]||'normal'}
+function setDomainPreference(url,value){
+  const domain=domainOf(url);if(!domain)return;
+  if(value==='normal')delete domainPrefs[domain];else domainPrefs[domain]=value;
+  localStorage.setItem('novaDomainPrefs',JSON.stringify(domainPrefs));
+  renderResults();
+}
+function personalizeResults(list){
+  return list.filter(x=>domainPreference(x.url)!=='block').sort((a,b)=>{
+    const weights={boost:2,normal:1,lower:0};
+    return (weights[domainPreference(b.url)]-weights[domainPreference(a.url)]) || ((b.score||0)-(a.score||0));
+  });
+}
+
 function resultCore(x,index){
   return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>NOVA rank · '+(index+1)+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
     '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domainOf(x.url)||x.url)+'</div></div></div>'+
@@ -791,16 +812,19 @@ function renderCard(x,featured=false,index=0){
     article.className='result featured-official';
     article.innerHTML='<div class="featured-band"><div class="featured-label">Официальный результат</div><div class="featured-confidence">'+escapeHtml(official.organization||domainOf(x.url))+'</div></div>'+
       '<div class="featured-body">'+resultCore(x,index)+
-      '<div class="featured-actions"><button class="primary-action org-profile-open" type="button">Профиль организации</button><a class="secondary-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть сайт ↗</a><button class="secondary-action verify-toggle" type="button">Проверка NOVA</button></div></div>';
+      '<div class="featured-actions"><button class="primary-action org-profile-open" type="button">Профиль организации</button><a class="secondary-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть сайт ↗</a><button class="secondary-action verify-toggle" type="button">Проверка NOVA</button><button class="secondary-action pref-action '+(domainPreference(x.url)==='boost'?'active':'')+'" data-pref="boost" type="button">↑ показывать чаще</button></div></div>';
   }else{
     article.className='result';
     article.innerHTML=resultCore(x,index)+
-      '<div class="result-actions"><button class="text-action verify-toggle" type="button">Почему NOVA доверяет этому статусу?</button><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
+      '<div class="result-actions"><div><button class="text-action verify-toggle" type="button">Почему NOVA доверяет этому статусу?</button><button class="pref-action '+(domainPreference(x.url)==='boost'?'active':'')+'" data-pref="boost" type="button">↑ чаще</button><button class="pref-action" data-pref="block" type="button">скрыть</button></div><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
   }
   const verify=article.querySelector('.verify-toggle');
   if(verify)verify.onclick=()=>openVerification(x);
   const org=article.querySelector('.org-profile-open');
   if(org)org.onclick=()=>openOrganizationProfile(x);
+  article.querySelectorAll('[data-pref]').forEach(button=>{
+    button.onclick=()=>setDomainPreference(x.url,button.dataset.pref||'normal');
+  });
   return article;
 }
 function groupResults(list){
@@ -823,6 +847,7 @@ function updateMetrics(){
 function renderResults(){
   let list=[...currentResults];
   if(sort.value==='title')list.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'ru'));
+  else list=personalizeResults(list);
   results.innerHTML='';
   if(!list.length){
     results.innerHTML='<div class="empty-state"><div class="empty-icon">⌕</div><h3>Ничего не найдено</h3><p>Попробуйте изменить формулировку запроса или использовать меньше уточняющих слов.</p></div>';
@@ -980,7 +1005,7 @@ function applyResponse(data,query,elapsed,refresh=false){
   const pending=currentResults.some(needsVerification);
   status.classList.toggle('searching',pending);
   status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
-  summary.textContent=(data.count||currentResults.length)+' результатов'+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
+  summary.textContent=(data.count||currentResults.length)+' результатов'+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'')+(Object.keys(domainPrefs).length?' · локальная персонализация':'');
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
