@@ -170,7 +170,8 @@ def get_site(domain):
             cur.execute("""
                 SELECT s.*, o.name AS organization, o.category, o.description,
                        o.logo_url, o.links, o.tagline, o.profile_tier,
-                       o.profile_badge, o.profile_accent
+                       o.profile_badge, o.profile_accent, o.stripe_customer_id,
+                       o.stripe_subscription_id, o.billing_status, o.billing_period_end
                 FROM official_sites s
                 JOIN organizations o ON o.id=s.organization_id
                 WHERE s.domain=%s AND s.registry_status='active'
