@@ -11,7 +11,7 @@ from app.websearch.correction import suggest_correction
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "frontend" / "index.html"
-app = FastAPI(title="NOVA Search", version="1.6.0")
+app = FastAPI(title="NOVA Search", version="1.7.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 web_search = WebSearchService()
 ledger = VerificationLedger()
