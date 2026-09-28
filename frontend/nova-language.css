@@ -1,0 +1,37 @@
+/* NOVA language switcher */
+.nova-language-switcher {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin:18px auto 0;
+  padding:5px;
+  width:max-content;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--surface);
+  backdrop-filter:blur(14px);
+}
+
+.nova-language-switcher button {
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.nova-language-switcher button.active {
+  background:var(--primary);
+  color:var(--primary-ink);
+}
+
+@media(max-width:680px){
+  .nova-language-switcher {
+    position:relative;
+    margin-bottom:14px;
+  }
+}
