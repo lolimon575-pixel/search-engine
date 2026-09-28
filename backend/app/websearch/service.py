@@ -47,7 +47,7 @@ class WebSearchService:
 
         # Verify enough top candidates to let NOVA safely recognize and promote
         # a confirmed official site before the final diverse result set is chosen.
-        first_batch = candidates[:min(8, len(candidates))]
+        first_batch = candidates[:min(6, len(candidates))]
         if first_batch:
             with ThreadPoolExecutor(max_workers=6, thread_name_prefix="nova-initial") as pool:
                 futures = {pool.submit(self.verifier.verify, item.url): item for item in first_batch}
@@ -71,6 +71,7 @@ class WebSearchService:
         cache_limit = min(20, len(candidates))
         results = diversify(candidates, cache_limit)
 
+        pending_urls = []
         for item in results:
             if not item.verification:
                 cached_verification = self.verifier.peek(item.url)
@@ -81,10 +82,13 @@ class WebSearchService:
                         "status": "UNKNOWN",
                         "message": "Проверка ещё не выполнялась."
                     }
-                    self._schedule(query, item.url)
+                    pending_urls.append(item.url)
 
         with self.lock:
             self.cache[key] = {"at": time.time(), "results": results}
+
+        for url in pending_urls:
+            self._schedule(query, url)
 
         return results[:limit], []
 
