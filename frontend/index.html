@@ -830,6 +830,8 @@ let showAllHistory=false;
 let currentResults=[];
 let ownershipTokens=JSON.parse(localStorage.getItem('novaOwnershipTokens')||'{}');
 let pollTimer=null;
+let searchController=null;
+let searchGeneration=0;
 let lastElapsed=null;
 let activeMode='web';
 let remoteSuggestions=[];
@@ -1538,12 +1540,12 @@ function applyResponse(data,query,elapsed,refresh=false){
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
-async function refreshVerification(query){
+async function refreshVerification(query,requestUrl,generation,signal){
   try{
-    const r=await fetch(searchRequestUrl(query));
+    const r=await fetch(requestUrl,{signal});
     if(!r.ok)return;
     const data=await r.json();
-    if(q.value.trim().toLowerCase()!==query.toLowerCase())return;
+    if(generation!==searchGeneration||signal.aborted)return;
     applyResponse(data,query,lastElapsed,true);
     if(!currentResults.some(needsVerification)&&pollTimer){
       clearInterval(pollTimer);
@@ -1556,6 +1558,11 @@ form.onsubmit=async e=>{
   const originalQuery=q.value.trim();
   if(!originalQuery)return;
   if(handleBang(originalQuery))return;
+  if(searchController)searchController.abort();
+  searchController=new AbortController();
+  const {signal}=searchController;
+  const generation=++searchGeneration;
+  const requestUrl=searchRequestUrl(originalQuery);
   saveHistory(originalQuery);
   clearTimeout(suggestTimer);
   suggestionsArmed=false;
@@ -1572,8 +1579,9 @@ form.onsubmit=async e=>{
   if(pollTimer){clearInterval(pollTimer);pollTimer=null}
   try{
     const started=performance.now();
-    const r=await fetch(searchRequestUrl(originalQuery));
+    const r=await fetch(requestUrl,{signal});
     const data=await r.json();
+    if(generation!==searchGeneration||signal.aborted)return;
     if(!r.ok)throw Error(data.detail||'Ошибка поиска');
     const elapsed=performance.now()-started;
     showCorrection(originalQuery,data.corrected_query);
@@ -1581,13 +1589,19 @@ form.onsubmit=async e=>{
     applyResponse(data,activeQuery,elapsed,false);
     if(activeMode!=='verified'&&currentResults.some(needsVerification)){
       let attempts=0;
+      let refreshing=false;
       pollTimer=setInterval(async()=>{
+        if(refreshing||generation!==searchGeneration||signal.aborted)return;
+        refreshing=true;
         attempts++;
-        await refreshVerification(activeQuery);
+        try{await refreshVerification(activeQuery,requestUrl,generation,signal)}
+        finally{refreshing=false}
+        if(generation!==searchGeneration||signal.aborted)return;
         if(attempts>=12&&pollTimer){clearInterval(pollTimer);pollTimer=null;status.classList.remove('searching')}
       },850);
     }
   }catch(err){
+    if(generation!==searchGeneration||signal.aborted)return;
     status.classList.remove('searching');
     status.textContent='Поиск не завершён';
     summary.textContent='';
