@@ -1,4 +1,5 @@
 from urllib.parse import urlsplit
+from app.registry_db import get_site, normalize_domain
 
 REGISTRY = {
     "google.com": {"organization": "Google", "category": "Technology"},
@@ -21,16 +22,30 @@ REGISTRY = {
     "vk.com": {"organization": "VK", "category": "Social"},
 }
 
-
 def base_domain(host):
-    host = (host or "").lower().rstrip(".")
-    return host[4:] if host.startswith("www.") else host
-
+    return normalize_domain(host)
 
 def verify_officiality(url, site_signals=None, external=None):
     host = base_domain(urlsplit(url).hostname or "")
-    item = REGISTRY.get(host)
+    try:
+        db_item = get_site(host)
+    except Exception:
+        db_item = None
 
+    if db_item:
+        return {
+            "status": "CONFIRMED",
+            "organization": db_item["organization"],
+            "domain": host,
+            "method": "database-registry",
+            "evidence": [
+                f"Домен {host} находится в реестре NOVA и сопоставлен с организацией {db_item['organization']}.",
+                "Запись хранится в базе данных реестра официальных сайтов NOVA.",
+            ],
+            "registry_id": db_item["id"],
+        }
+
+    item = REGISTRY.get(host)
     if item:
         return {
             "status": "CONFIRMED",
@@ -66,9 +81,7 @@ def verify_officiality(url, site_signals=None, external=None):
             "organization": signals.get("organization", ""),
             "domain": host,
             "method": "site-self-signals",
-            "evidence": evidence + [
-                "Эти признаки не являются независимым подтверждением владения доменом."
-            ],
+            "evidence": evidence + ["Эти признаки не являются независимым подтверждением владения доменом."],
         }
 
     return {
@@ -76,14 +89,33 @@ def verify_officiality(url, site_signals=None, external=None):
         "organization": "",
         "domain": host,
         "method": "no-independent-confirmation",
-        "evidence": [
-            "Независимого подтверждения соответствия организации этому домену пока нет."
-        ],
+        "evidence": ["Независимого подтверждения соответствия организации этому домену пока нет."],
     }
-
 
 def get_organization_profile(domain):
     host = base_domain(domain)
+    try:
+        row = get_site(host)
+    except Exception:
+        row = None
+
+    if row:
+        return {
+            "id": row["organization_id"],
+            "site_id": row["id"],
+            "organization": row["organization"],
+            "domain": host,
+            "url": row["url"],
+            "category": row["category"],
+            "description": row["description"],
+            "logo_url": row["logo_url"],
+            "links": row["links"] or {},
+            "method": row["source"],
+            "confirmation_level": row["confirmation_level"],
+            "source_url": row["source_url"],
+            "last_check": row["last_check"],
+        }
+
     item = REGISTRY.get(host)
     if not item:
         return None
@@ -93,3 +125,12 @@ def get_organization_profile(domain):
         "category": item["category"],
         "method": "curated-domain-registry",
     }
+
+def is_registry_domain(host):
+    normalized = base_domain(host)
+    if normalized in REGISTRY:
+        return True
+    try:
+        return bool(get_site(normalized))
+    except Exception:
+        return False
