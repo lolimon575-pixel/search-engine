@@ -10,11 +10,16 @@ from app.registry_db import save_check
 
 
 class _RedirectRecorder(HTTPRedirectHandler):
-    def __init__(self):
+    def __init__(self, validate_redirect):
         super().__init__()
         self.history = []
+        self.validate_redirect = validate_redirect
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Validate every hop before urllib follows it. The initial URL is checked
+        # separately, so without this guard a public URL could redirect into a
+        # private or loopback network.
+        self.validate_redirect(newurl)
         self.history.append({
             "from": req.full_url,
             "to": newurl,
@@ -60,7 +65,7 @@ class VerificationEngine:
 
         try:
             self._assert_public_host(url)
-            recorder = _RedirectRecorder()
+            recorder = _RedirectRecorder(self._assert_public_host)
             opener = build_opener(recorder)
             req = Request(
                 url,
@@ -165,7 +170,10 @@ class VerificationEngine:
         return True
 
     def _assert_public_host(self, url):
-        host = (urlsplit(url).hostname or "").lower()
+        parsed = urlsplit(url)
+        if parsed.scheme.lower() not in ("http", "https"):
+            raise ValueError("unsupported URL scheme")
+        host = (parsed.hostname or "").lower()
         if not host or host in ("localhost", "127.0.0.1") or host.endswith(".local"):
             raise ValueError("private host")
         self._resolve_public_host(host)
