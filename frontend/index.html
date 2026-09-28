@@ -388,6 +388,83 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .org-description{margin:18px 0;color:var(--muted);font-size:12px;line-height:1.65}
 .org-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
 .footer{padding:0 0 34px;text-align:center;color:var(--subtle);font-size:10px;line-height:1.55}
+
+.search-controls{
+  width:min(820px,100%);margin:12px auto 0;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap
+}
+.mode-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mode-button{
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;
+  padding:7px 10px;font-size:10px;font-weight:800;cursor:pointer;backdrop-filter:blur(12px)
+}
+.mode-button.active{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.search-options{display:flex;align-items:center;gap:8px;color:var(--subtle);font-size:10px;font-weight:700}
+.freshness-select{
+  border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;
+  padding:7px 28px 7px 9px;font-size:10px;font-weight:750
+}
+.bang-hint{white-space:nowrap}
+.company-card{overflow:hidden;position:relative}
+.company-card:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--company-accent,#2563eb)
+}
+.company-head{display:grid;grid-template-columns:44px minmax(0,1fr);gap:11px;align-items:center}
+.company-logo{
+  width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--surface-solid);
+  display:grid;place-items:center
+}
+.company-logo img{width:30px;height:30px;object-fit:contain}
+.company-name{font-size:15px;font-weight:850;letter-spacing:-.02em}
+.company-domain{margin-top:2px;color:var(--subtle);font-size:9px}
+.company-trust{
+  display:inline-flex;margin-top:9px;padding:5px 7px;border-radius:999px;background:var(--green-soft);
+  color:var(--green);font-size:9px;font-weight:850
+}
+.company-tagline{margin-top:13px;font-size:11px;font-weight:800;line-height:1.45}
+.company-description{margin-top:6px;color:var(--muted);font-size:10px;line-height:1.55}
+.company-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.company-link{
+  border:1px solid var(--line);background:var(--surface-soft);color:var(--text);border-radius:9px;
+  padding:6px 8px;text-decoration:none;font-size:9px;font-weight:750
+}
+.company-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:13px}
+.company-actions button,.company-actions a{
+  min-height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  padding:6px 8px;font-size:9px;font-weight:800;text-decoration:none;cursor:pointer
+}
+.company-primary{border:1px solid var(--primary);background:var(--primary);color:var(--primary-ink)}
+.company-secondary{border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.company-policy{margin-top:10px;color:var(--subtle);font-size:9px;line-height:1.45}
+.domain-personal{background:var(--violet-soft);color:var(--violet)}
+.result-action-left{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.domain-pref-button{
+  border:0;background:transparent;color:var(--subtle);padding:5px 0;font-size:10px;font-weight:750;cursor:pointer
+}
+.domain-pref-button:hover{color:var(--blue)}
+.claim-intro{
+  padding:13px;border-radius:14px;background:var(--surface-soft);color:var(--muted);
+  font-size:11px;line-height:1.6;margin-bottom:16px
+}
+.claim-domain{font-weight:850;color:var(--text)}
+.claim-step{display:grid;gap:10px}
+.claim-code{
+  padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+  font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;user-select:all
+}
+.claim-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.claim-status{margin-top:12px;color:var(--muted);font-size:10px;line-height:1.55}
+.claim-success{padding:12px;border-radius:12px;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:750}
+.org-tagline{margin-top:4px;color:var(--muted);font-size:11px;font-weight:700}
+.org-profile-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.org-profile-links a{
+  border:1px solid var(--line);background:var(--surface-soft);border-radius:9px;padding:7px 9px;
+  color:var(--text);font-size:10px;font-weight:750;text-decoration:none
+}
+@media(max-width:680px){
+  .search-controls{align-items:flex-start}.search-options{width:100%;justify-content:space-between}
+  .bang-hint{display:none}.company-actions{grid-template-columns:1fr}.result-action-left{gap:8px}
+}
 .dark{
   color-scheme:dark;
   --bg:#0b0f17;
@@ -480,6 +557,23 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
         </form>
         <div class="suggestions" id="suggestions"></div>
       </div>
+      <div class="search-controls">
+        <div class="mode-tabs" id="modeTabs" aria-label="Режим поиска">
+          <button class="mode-button active" type="button" data-mode="web">Web</button>
+          <button class="mode-button" type="button" data-mode="verified">Verified</button>
+          <button class="mode-button" type="button" data-mode="exact">Exact</button>
+        </div>
+        <div class="search-options">
+          <span class="bang-hint">Быстрый переход: !w · !yt · !gh</span>
+          <select id="freshness" class="freshness-select" aria-label="Свежесть результатов">
+            <option value="">За всё время</option>
+            <option value="d">24 часа</option>
+            <option value="w">Неделя</option>
+            <option value="m">Месяц</option>
+            <option value="y">Год</option>
+          </select>
+        </div>
+      </div>
 
       <div class="pipeline-strip" aria-hidden="true">
         <span><b>Web</b> источник</span><span class="pipeline-arrow">→</span>
@@ -509,6 +603,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
     </section>
 
     <aside class="insights" id="insights">
+      <section class="insight-card company-card" id="companyPanel" hidden></section>
       <section class="insight-card">
         <div class="insight-title">NOVA Layer <span class="mini">LIVE</span></div>
         <div class="metric-grid">
@@ -556,17 +651,40 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
         <div class="org-copy">
           <h2 id="orgModalTitle">Профиль организации</h2>
           <div id="orgDomain" class="org-domain"></div>
-          <span class="org-confirmed">Подтверждено NOVA</span>
+          <div id="orgTagline" class="org-tagline"></div>
+          <span id="orgTrustBadge" class="org-confirmed">Профиль NOVA</span>
         </div>
       </div>
       <button class="close-button" id="orgClose" type="button" aria-label="Закрыть">×</button>
     </div>
     <div id="orgDescription" class="org-description"></div>
+    <div id="orgProfileLinks" class="org-profile-links"></div>
     <div id="orgGrid" class="org-grid"></div>
     <div class="verify-section"><h4>Основания</h4><ul id="orgEvidence" class="org-evidence"></ul></div>
     <div class="org-actions">
       <a id="orgOpen" class="primary-action" target="_blank" rel="noopener noreferrer">Открыть официальный сайт ↗</a>
       <button id="orgCheck" class="secondary-action" type="button">Открыть проверку</button>
+      <button id="orgClaim" class="secondary-action" type="button">Я представляю компанию</button>
+    </div>
+  </div>
+</div>
+
+<div id="claimModal" class="modal">
+  <div class="dialog">
+    <div class="dialog-head">
+      <div>
+        <div class="dialog-title">Подтвердить контроль домена</div>
+        <div class="dialog-subtitle">NOVA Owner Verification</div>
+      </div>
+      <button class="close-button" id="claimClose" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="claim-intro">
+      Для домена <span id="claimDomain" class="claim-domain"></span> мы проверяем именно технический контроль.
+      Это сильнее одного платежа, но не является юридической проверкой компании. Платный профиль в будущем
+      будет доступен только после этого шага и отдельной identity/billing-проверки. Органический рейтинг не продаётся.
+    </div>
+    <div id="claimBody" class="claim-step">
+      <button id="claimStart" class="primary-action" type="button">Создать challenge</button>
     </div>
   </div>
 </div>
