@@ -15,6 +15,10 @@ jobs:
           python-version: "3.13"
           cache: pip
       - run: pip install -r requirements.txt
+      - run: python -m compileall -q app
+        working-directory: backend
+        env:
+          PYTHONPATH: .
       - run: pytest -q
         working-directory: backend
         env:
