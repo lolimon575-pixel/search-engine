@@ -8,7 +8,13 @@
       popular: 'Популярные запросы',
       details: 'Подробнее',
       verification: 'Проверка NOVA',
-      officialSite: 'Официальный сайт'
+      officialSite: 'Официальный сайт',
+      close: 'Закрыть',
+      loading: 'Проверка...',
+      verified: 'Проверено',
+      company: 'Компания',
+      source: 'Источник',
+      score: 'Оценка'
     },
     en: {
       language: 'Language',
@@ -18,7 +24,13 @@
       popular: 'Popular searches',
       details: 'Details',
       verification: 'NOVA Verification',
-      officialSite: 'Official website'
+      officialSite: 'Official website',
+      close: 'Close',
+      loading: 'Checking...',
+      verified: 'Verified',
+      company: 'Company',
+      source: 'Source',
+      score: 'Score'
     }
   };
 
