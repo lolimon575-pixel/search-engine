@@ -123,8 +123,6 @@ def get_organization_profile(domain):
             "profile_accent": row.get("profile_accent"),
             "billing_status": row.get("billing_status") or "inactive",
             "billing_period_end": row.get("billing_period_end"),
-            "stripe_customer_id": row.get("stripe_customer_id"),
-            "stripe_subscription_id": row.get("stripe_subscription_id"),
             "owner_verification": row.get("owner_verification") or "unverified",
             "ownership_verified_at": row.get("ownership_verified_at"),
             "trust_level": "domain_control_verified" if owner_verified else "curated_registry",
