@@ -14,7 +14,7 @@ def _plausible(original,candidate):
     a=re.sub(r"\s+"," ",original.lower().strip())
     b=re.sub(r"\s+"," ",candidate.lower().strip())
     if not b or a==b or len(a)>100 or len(b)>100:return False
-    return _distance(a,b)<=max(1,round(min(len(a),len(b))*.2))
+    return _distance(a,b)<=max(2,round(min(len(a),len(b))*.22))
 
 def _suggestions(q):
     endpoints=[
@@ -22,7 +22,7 @@ def _suggestions(q):
         ("https://duckduckgo.com/ac/",{"q":q,"kl":"ru-ru","type":"list"}),
     ]
     headers={"User-Agent":"Mozilla/5.0 (compatible; NOVA Search/1.6)"}
-    with httpx.Client(timeout=2.5,follow_redirects=True,headers=headers) as client:
+    with httpx.Client(timeout=1.5,follow_redirects=True,headers=headers) as client:
         for url,params in endpoints:
             try:
                 data=client.get(url,params=params).json()
