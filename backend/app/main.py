@@ -10,6 +10,7 @@ from app.registry_catalog import REGISTRY
 from app.registry_db import ensure_schema, seed_registry, get_stats, get_site, create_claim, get_claim
 from app.websearch.correction import suggest_correction
 from app.websearch.query_features import resolve_bang
+from app.websearch.brief import build_brief
 from app.company_claims import challenge_url, expected_value, verify_claim_challenge
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -69,6 +70,7 @@ async def search(
     search_query = corrected or query
     results,errors=web_search.search(search_query,limit,mode=mode)
     entity = find_entity_profile(search_query)
+    brief = build_brief(search_query, results)
     return {
         "query":query,
         "corrected_query":corrected,
@@ -78,6 +80,7 @@ async def search(
         "errors":errors,
         "mode":mode,
         "entity":entity,
+        "brief":brief,
     }
 
 @app.get("/api/verification")
