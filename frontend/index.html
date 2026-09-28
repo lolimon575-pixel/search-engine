@@ -868,7 +868,8 @@ function linkLabel(key){return ({
   charging:'Зарядка',ride:'Поездки',eats:'Uber Eats',stays:'Жильё',flights:'Авиабилеты',
   cars:'Авто',attractions:'Развлечения',games:'Игры',services:'Сервисы',business:'Бизнесу',
   personal:'Частным клиентам',investments:'Инвестиции',sellers:'Продавцам',employers:'Работодателям',
-  maps:'Карты'
+  maps:'Карты',news:'Новости',subscription:'Подписка',app:'Приложение',legal:'Правовая информация',
+  tariffs:'Тарифы',offices:'Офисы',contacts:'Контакты'
 }[key]||key)}
 function linkIcon(key){return ({
   shop:'▣',store:'▣',products:'◆',product:'◆',pricing:'€',docs:'⌘',developer:'⌘',developers:'⌘',
@@ -877,7 +878,8 @@ function linkIcon(key){return ({
   men:'M',women:'W',kids:'K',running:'↗',football:'●',investors:'↗',sustainability:'◌',
   consulting:'◆',download:'↓',safety:'✓',vehicles:'◉',energy:'⚡',charging:'⚡',ride:'→',eats:'◌',
   stays:'⌂',flights:'✈',cars:'◉',attractions:'✦',games:'▶',services:'◆',business:'↗',
-  personal:'●',investments:'↗',sellers:'▣',employers:'↗',maps:'⌖'
+  personal:'●',investments:'↗',sellers:'▣',employers:'↗',maps:'⌖',news:'◫',subscription:'★',
+  app:'↓',legal:'§',tariffs:'₽',offices:'⌖',contacts:'@'
 }[key]||'↗')}
 function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
 function updatePrefReset(){
@@ -1228,7 +1230,14 @@ function linkIntentTerms(key){
     investments:['investment','investments','инвест'],
     sellers:['seller','sellers','продав'],
     employers:['employer','employers','работод'],
-    maps:['map','maps','карта','карты']
+    maps:['map','maps','карта','карты'],
+    news:['news','новост'],
+    subscription:['subscription','подпис'],
+    app:['app','application','прилож'],
+    legal:['legal','правов'],
+    tariffs:['tariff','tariffs','тариф'],
+    offices:['office','offices','офис','банкомат'],
+    contacts:['contact','contacts','контакт']
   }[key]||[]);
 }
 function linkMatchesQuery(key,query){
