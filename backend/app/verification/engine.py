@@ -2,10 +2,11 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError
-import hashlib, ipaddress, json, re, socket, time
+import hashlib, ipaddress, json, re, socket, time, uuid
 from html import unescape
 from .officiality import verify_officiality
 from .external import verify_wikidata
+from app.registry_db import save_check
 
 
 class _RedirectRecorder(HTTPRedirectHandler):
@@ -115,6 +116,7 @@ class VerificationEngine:
             status_reasons = reasons or ["Не все технические проверки пройдены."]
 
         data = {
+            "verification_id": str(uuid.uuid4()),
             "status": status,
             "checked_at": checked,
             "cached": False,
@@ -137,16 +139,17 @@ class VerificationEngine:
             "verification_version": "1.4.0",
         }
 
+        try:
+            save_check(original_host, data)
+        except Exception:
+            pass
         self.cache[url] = {"ts": time.time(), "data": data}
         return data
 
     @staticmethod
     def _is_registry_domain(host):
-        from .officiality import REGISTRY
-        normalized = (host or "").lower().rstrip(".")
-        if normalized.startswith("www."):
-            normalized = normalized[4:]
-        return normalized in REGISTRY
+        from .officiality import is_registry_domain
+        return is_registry_domain(host)
     def _resolve_public_host(self, host):
         if not host:
             raise ValueError("домен не определён")
