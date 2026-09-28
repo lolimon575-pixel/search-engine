@@ -45,7 +45,7 @@ def test_confirmed_official_result_is_promoted_for_exact_organization_query():
     official = result("GitHub", "https://github.com/", 7)
     official.verification = {
         "officiality": {
-            "status": "CONFIRMED",
+            "status": "OWNER_VERIFIED",
             "organization": "GitHub",
         }
     }
