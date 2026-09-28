@@ -585,6 +585,15 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   margin-top:14px;margin-bottom:7px;color:var(--subtle);font-size:8px;font-weight:900;
   text-transform:uppercase;letter-spacing:.11em
 }
+
+.company-link.recommended{
+  border-color:color-mix(in srgb,var(--company-accent,#2563eb) 44%,var(--line));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--company-accent,#2563eb) 12%,transparent)
+}
+.company-link-match{
+  margin-left:auto;padding:2px 5px;border-radius:999px;background:var(--blue-soft);color:var(--blue);
+  font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.05em
+}
 </style>
 </head>
 <body>
@@ -1122,10 +1131,48 @@ function closeVerification(){
   document.querySelector('#verifyModal').classList.remove('open');
   document.body.style.overflow=document.querySelector('#orgModal').classList.contains('open')?'hidden':'';
 }
+function linkIntentTerms(key){
+  return ({
+    careers:['career','careers','job','jobs','ваканс','работ'],
+    jobs:['career','careers','job','jobs','ваканс','работ'],
+    support:['support','help','поддерж','помощ'],
+    help:['support','help','поддерж','помощ'],
+    docs:['docs','documentation','api','документ'],
+    developer:['developer','developers','api','sdk','разработ'],
+    developers:['developer','developers','api','sdk','разработ'],
+    pricing:['pricing','price','cost','тариф','цен'],
+    products:['product','products','продукт'],
+    product:['product','products','продукт'],
+    shop:['shop','store','buy','магазин','куп'],
+    store:['shop','store','buy','магазин','куп'],
+    research:['research','исслед'],
+    cloud:['cloud','облако'],
+    running:['running','run','бег'],
+    football:['football','soccer','футбол'],
+    investors:['investor','investors','stock','share','акци','инвест'],
+    sustainability:['sustainability','esg','устойчив'],
+    charging:['charging','charge','заряд'],
+    vehicles:['vehicle','car','model','автомоб'],
+    flights:['flight','airline','авиа'],
+    cars:['car','rental','авто'],
+    games:['game','games','игр'],
+    download:['download','скач'],
+    safety:['safety','безопас']
+  }[key]||[]);
+}
+function linkMatchesQuery(key,query){
+  const value=String(query||'').toLowerCase();
+  return linkIntentTerms(key).some(term=>value.includes(term));
+}
 function profileLinksMarkup(links,limit=5){
-  return Object.entries(links||{}).slice(0,limit).map(([key,url])=>
-    '<a class="company-link" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer"><span>'+escapeHtml(linkLabel(key))+'</span><span class="company-link-icon">'+escapeHtml(linkIcon(key))+'</span></a>'
-  ).join('');
+  const query=q?.value||'';
+  return Object.entries(links||{})
+    .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
+    .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
+    .slice(0,limit)
+    .map(({key,url,match})=>
+      '<a class="company-link '+(match?'recommended':'')+'" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer"><span>'+escapeHtml(linkLabel(key))+'</span>'+(match?'<span class="company-link-match">по запросу</span>':'')+'<span class="company-link-icon">'+escapeHtml(linkIcon(key))+'</span></a>'
+    ).join('');
 }
 
 async function loadBillingStatus(domain){
