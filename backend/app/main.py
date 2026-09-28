@@ -18,7 +18,7 @@ from app.websearch.service import WebSearchService
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "frontend" / "index.html"
-app = FastAPI(title="NOVA Search", version="1.9.0")
+app = FastAPI(title="NOVA Search", version="1.10.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
