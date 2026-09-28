@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
@@ -9,16 +10,20 @@ except Exception:
     psycopg = None
     dict_row = None
 
+
 def database_url():
     return os.getenv("DATABASE_URL", "").strip()
 
+
 def enabled():
     return bool(database_url()) and psycopg is not None
+
 
 def _connect():
     if not enabled():
         return None
     return psycopg.connect(database_url(), row_factory=dict_row, connect_timeout=5)
+
 
 def ensure_schema():
     if not enabled():
@@ -31,9 +36,12 @@ def ensure_schema():
                     name TEXT NOT NULL,
                     slug TEXT NOT NULL UNIQUE,
                     category TEXT,
+                    tagline TEXT,
                     description TEXT,
                     logo_url TEXT,
                     links JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    profile JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    profile_tier TEXT NOT NULL DEFAULT 'standard',
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
@@ -43,7 +51,8 @@ def ensure_schema():
                     domain TEXT NOT NULL UNIQUE,
                     url TEXT NOT NULL,
                     registry_status TEXT NOT NULL DEFAULT 'active',
-                    confirmation_level TEXT NOT NULL DEFAULT 'NOVA',
+                    confirmation_level TEXT NOT NULL DEFAULT 'CURATED',
+                    ownership_status TEXT NOT NULL DEFAULT 'unclaimed',
                     source TEXT NOT NULL DEFAULT 'NOVA curated registry',
                     source_url TEXT,
                     notes TEXT,
@@ -64,15 +73,37 @@ def ensure_schema():
                     verification_id TEXT,
                     evidence JSONB NOT NULL DEFAULT '[]'::jsonb
                 );
+                CREATE TABLE IF NOT EXISTS company_claims (
+                    id BIGSERIAL PRIMARY KEY,
+                    domain TEXT NOT NULL,
+                    challenge_token TEXT NOT NULL UNIQUE,
+                    challenge_method TEXT NOT NULL DEFAULT 'well-known-file',
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    payment_status TEXT NOT NULL DEFAULT 'not_required',
+                    requested_plan TEXT NOT NULL DEFAULT 'standard',
+                    organization_name TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    verified_at TIMESTAMPTZ,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
                 CREATE INDEX IF NOT EXISTS idx_official_sites_domain ON official_sites(domain);
                 CREATE INDEX IF NOT EXISTS idx_site_checks_site_time ON site_checks(site_id, checked_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_company_claims_domain_time ON company_claims(domain, created_at DESC);
+
+                ALTER TABLE organizations ADD COLUMN IF NOT EXISTS tagline TEXT;
+                ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb;
+                ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_tier TEXT NOT NULL DEFAULT 'standard';
+                ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS ownership_status TEXT NOT NULL DEFAULT 'unclaimed';
+                ALTER TABLE official_sites ALTER COLUMN confirmation_level SET DEFAULT 'CURATED';
             """)
         conn.commit()
     return True
 
+
 def _slug(name):
     value = "".join(ch.lower() if ch.isalnum() else "-" for ch in name).strip("-")
     return value or "organization"
+
 
 def seed_registry(registry):
     if not enabled():
@@ -84,28 +115,53 @@ def seed_registry(registry):
                 name = item["organization"]
                 slug = _slug(name)
                 cur.execute("""
-                    INSERT INTO organizations (name, slug, category, description, updated_at)
-                    VALUES (%s,%s,%s,%s,NOW())
+                    INSERT INTO organizations
+                        (name, slug, category, tagline, description, links, profile, updated_at)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())
                     ON CONFLICT (slug) DO UPDATE SET
-                        name=EXCLUDED.name, category=EXCLUDED.category, updated_at=NOW()
+                        name=EXCLUDED.name,
+                        category=EXCLUDED.category,
+                        tagline=EXCLUDED.tagline,
+                        description=EXCLUDED.description,
+                        links=EXCLUDED.links,
+                        updated_at=NOW()
                     RETURNING id
-                """, (name, slug, item.get("category"), item.get("description")))
+                """, (
+                    name,
+                    slug,
+                    item.get("category"),
+                    item.get("tagline"),
+                    item.get("description"),
+                    item.get("links") or {},
+                    item.get("profile") or {},
+                ))
                 org_id = cur.fetchone()["id"]
                 cur.execute("""
                     INSERT INTO official_sites
                         (organization_id, domain, url, confirmation_level, source, source_url, notes, updated_at)
-                    VALUES (%s,%s,%s,'NOVA','NOVA curated registry',%s,%s,NOW())
+                    VALUES (%s,%s,%s,'CURATED','NOVA curated registry',%s,%s,NOW())
                     ON CONFLICT (domain) DO UPDATE SET
-                        organization_id=EXCLUDED.organization_id, url=EXCLUDED.url,
-                        confirmation_level=EXCLUDED.confirmation_level, source=EXCLUDED.source,
-                        source_url=EXCLUDED.source_url, notes=EXCLUDED.notes, updated_at=NOW()
-                """, (org_id, domain, "https://" + domain, item.get("source_url"), item.get("notes")))
+                        organization_id=EXCLUDED.organization_id,
+                        url=EXCLUDED.url,
+                        source=EXCLUDED.source,
+                        source_url=EXCLUDED.source_url,
+                        notes=EXCLUDED.notes,
+                        updated_at=NOW()
+                """, (
+                    org_id,
+                    domain,
+                    "https://" + domain,
+                    item.get("source_url"),
+                    item.get("notes"),
+                ))
         conn.commit()
     return True
+
 
 def normalize_domain(value):
     raw = value if "://" in str(value) else "https://" + str(value)
     return (urlsplit(raw).hostname or "").lower().strip().rstrip(".").removeprefix("www.")
+
 
 def get_site(domain):
     host = normalize_domain(domain)
@@ -114,8 +170,8 @@ def get_site(domain):
     with _connect() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT s.*, o.name AS organization, o.category, o.description,
-                       o.logo_url, o.links
+                SELECT s.*, o.name AS organization, o.category, o.tagline, o.description,
+                       o.logo_url, o.links, o.profile, o.profile_tier
                 FROM official_sites s JOIN organizations o ON o.id=s.organization_id
                 WHERE s.domain=%s AND s.registry_status='active' LIMIT 1
             """, (host,))
@@ -129,6 +185,7 @@ def get_site(domain):
             """, (row["id"],))
             row["last_check"] = cur.fetchone()
             return row
+
 
 def save_check(domain, verification):
     if not enabled():
@@ -155,9 +212,83 @@ def save_check(domain, verification):
         conn.commit()
     return True
 
+
+def create_claim(domain, organization_name="", requested_plan="standard"):
+    if not enabled():
+        return None
+    ensure_schema()
+    host = normalize_domain(domain)
+    if not host or "." not in host:
+        return None
+    token = secrets.token_urlsafe(24)
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO company_claims
+                    (domain, challenge_token, organization_name, requested_plan)
+                VALUES (%s,%s,%s,%s)
+                RETURNING id, domain, challenge_token, challenge_method, status,
+                          payment_status, requested_plan, organization_name, created_at
+            """, (host, token, organization_name.strip() or None, requested_plan))
+            row = cur.fetchone()
+        conn.commit()
+    return row
+
+
+def get_claim(claim_id):
+    if not enabled():
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM company_claims WHERE id=%s LIMIT 1", (claim_id,))
+            return cur.fetchone()
+
+
+def mark_claim_verified(claim_id):
+    if not enabled():
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE company_claims
+                SET status='verified', verified_at=NOW(), updated_at=NOW()
+                WHERE id=%s AND status<>'verified'
+                RETURNING *
+            """, (claim_id,))
+            claim = cur.fetchone()
+            if not claim:
+                cur.execute("SELECT * FROM company_claims WHERE id=%s LIMIT 1", (claim_id,))
+                claim = cur.fetchone()
+            if claim:
+                cur.execute("""
+                    UPDATE official_sites
+                    SET ownership_status='owner_verified',
+                        confirmation_level='OWNER_VERIFIED',
+                        updated_at=NOW()
+                    WHERE domain=%s
+                """, (claim["domain"],))
+        conn.commit()
+    return claim
+
+
+def get_latest_verified_claim(domain):
+    if not enabled():
+        return None
+    host = normalize_domain(domain)
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT * FROM company_claims
+                WHERE domain=%s AND status='verified'
+                ORDER BY verified_at DESC NULLS LAST, created_at DESC
+                LIMIT 1
+            """, (host,))
+            return cur.fetchone()
+
+
 def get_stats():
     if not enabled():
-        return {"enabled": False, "organizations": 0, "official_sites": 0, "checks": 0}
+        return {"enabled": False, "organizations": 0, "official_sites": 0, "checks": 0, "owner_verified": 0}
     with _connect() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) AS n FROM organizations")
@@ -166,4 +297,12 @@ def get_stats():
             sites = cur.fetchone()["n"]
             cur.execute("SELECT COUNT(*) AS n FROM site_checks")
             checks = cur.fetchone()["n"]
-    return {"enabled": True, "organizations": organizations, "official_sites": sites, "checks": checks}
+            cur.execute("SELECT COUNT(*) AS n FROM official_sites WHERE ownership_status='owner_verified'")
+            owner_verified = cur.fetchone()["n"]
+    return {
+        "enabled": True,
+        "organizations": organizations,
+        "official_sites": sites,
+        "checks": checks,
+        "owner_verified": owner_verified,
+    }
