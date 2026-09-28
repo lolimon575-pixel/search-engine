@@ -11,6 +11,7 @@ from app.registry_db import ensure_schema, get_site, get_stats, seed_registry
 from app.verification.ledger import VerificationLedger
 from app.verification.officiality import REGISTRY, get_organization_profile
 from app.websearch.correction import get_suggestions, suggest_correction
+from app.websearch.brief import build_brief
 from app.websearch.service import WebSearchService
 
 
@@ -68,7 +69,7 @@ async def health():
 async def search(
     q: str = Query("", max_length=300),
     limit: int = Query(10, ge=1, le=30),
-    mode: str = Query("web", pattern="^(web|verified|exact)$"),
+    mode: str = Query("web", pattern="^(web|verified|exact|discussions)$"),
     freshness: str = Query("", pattern="^(|d|w|m|y)$"),
 ):
     query = q.strip()
@@ -84,6 +85,7 @@ async def search(
     corrected = None if mode == "exact" else suggest_correction(query)
     search_query = corrected or query
     results, errors = web_search.search(search_query, limit, mode=mode, freshness=freshness)
+    brief = build_brief(search_query, results)
     return {
         "query": query,
         "corrected_query": corrected,
@@ -92,6 +94,7 @@ async def search(
         "freshness": freshness,
         "count": len(results),
         "results": [r.model_dump() for r in results],
+        "brief": brief,
         "errors": errors,
     }
 
