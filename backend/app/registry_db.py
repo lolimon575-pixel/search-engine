@@ -80,6 +80,7 @@ def ensure_schema():
                     verified_at TIMESTAMPTZ
                 );
             """)
+            cur.execute("ALTER TABLE ownership_claims ADD COLUMN IF NOT EXISTS owner_token_hash TEXT")
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS tagline TEXT")
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_tier TEXT NOT NULL DEFAULT 'standard'")
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_badge TEXT")
@@ -219,7 +220,7 @@ def save_check(domain, verification):
     return True
 
 
-def create_ownership_claim(domain, challenge_hash, expires_at):
+def create_ownership_claim(domain, challenge_hash, expires_at, owner_token_hash):
     host = normalize_domain(domain)
     if not enabled() or not host:
         return None
@@ -227,10 +228,10 @@ def create_ownership_claim(domain, challenge_hash, expires_at):
     with _connect() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO ownership_claims (domain, challenge_hash, expires_at)
-                VALUES (%s,%s,%s)
+                INSERT INTO ownership_claims (domain, challenge_hash, expires_at, owner_token_hash)
+                VALUES (%s,%s,%s,%s)
                 RETURNING id, domain, proof_method, status, requested_at, expires_at
-            """, (host, challenge_hash, expires_at))
+            """, (host, challenge_hash, expires_at, owner_token_hash))
             row = cur.fetchone()
         conn.commit()
     return row
@@ -244,7 +245,7 @@ def get_ownership_claim(domain, challenge_hash=None):
         with conn.cursor() as cur:
             if challenge_hash:
                 cur.execute("""
-                    SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at
+                    SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at, owner_token_hash
                     FROM ownership_claims
                     WHERE domain=%s AND challenge_hash=%s
                     ORDER BY requested_at DESC
@@ -252,13 +253,28 @@ def get_ownership_claim(domain, challenge_hash=None):
                 """, (host, challenge_hash))
             else:
                 cur.execute("""
-                    SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at
+                    SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at, owner_token_hash
                     FROM ownership_claims
                     WHERE domain=%s
                     ORDER BY requested_at DESC
                     LIMIT 1
                 """, (host,))
             return cur.fetchone()
+
+
+def owner_token_authorized(domain, owner_token_hash):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return False
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 1 FROM ownership_claims
+                WHERE domain=%s AND owner_token_hash=%s
+                  AND status='verified' AND expires_at>NOW()
+                LIMIT 1
+            """, (host, owner_token_hash))
+            return cur.fetchone() is not None
 
 
 def mark_ownership_verified(domain, challenge_hash):

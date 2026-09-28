@@ -1,10 +1,11 @@
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
+from pydantic import BaseModel, Field
 
 from app.ownership import create_challenge, ownership_status, verify_challenge
 from app.billing import billing_status, create_checkout, create_portal, handle_webhook
@@ -30,17 +31,18 @@ ledger = VerificationLedger()
 
 
 class OwnershipChallengeRequest(BaseModel):
-    domain: str
+    domain: str = Field(min_length=1, max_length=253)
 
 
 class OwnershipVerifyRequest(BaseModel):
-    domain: str
-    token: str
+    domain: str = Field(min_length=1, max_length=253)
+    token: str = Field(min_length=1, max_length=200)
+    owner_token: str = Field(min_length=1, max_length=200)
 
 
 class BillingActionRequest(BaseModel):
-    domain: str
-    ownership_token: str
+    domain: str = Field(min_length=1, max_length=253)
+    ownership_token: str = Field(min_length=1, max_length=200)
 
 
 @app.on_event("startup")
@@ -58,7 +60,7 @@ async def home():
 
 
 @app.get("/health")
-async def health():
+def health():
     return {
         "status": "ok",
         "service": "nova-search",
@@ -116,12 +118,12 @@ def verification(url: str = Query(..., min_length=8, max_length=2048)):
 
 
 @app.get("/api/verification/ledger/health")
-async def ledger_health():
+def ledger_health():
     return ledger.verify_chain()
 
 
 @app.get("/api/registry/site")
-async def registry_site(domain: str = Query("", max_length=253)):
+def registry_site(domain: str = Query("", max_length=253)):
     raw = domain if "://" in domain else "https://" + domain
     host = (urlsplit(raw).hostname or "").lower().strip().rstrip(".")
     row = get_site(host)
@@ -131,12 +133,12 @@ async def registry_site(domain: str = Query("", max_length=253)):
 
 
 @app.get("/api/registry/stats")
-async def registry_stats():
+def registry_stats():
     return get_stats()
 
 
 @app.get("/api/organization")
-async def organization_profile(domain: str = Query("", max_length=253)):
+def organization_profile(domain: str = Query("", max_length=253)):
     raw = domain if "://" in domain else "https://" + domain
     host = (urlsplit(raw).hostname or "").lower().strip().rstrip(".")
     profile = get_organization_profile(host)
@@ -144,7 +146,8 @@ async def organization_profile(domain: str = Query("", max_length=253)):
 
 
 @app.post("/api/ownership/challenge")
-async def ownership_challenge(body: OwnershipChallengeRequest):
+def ownership_challenge(body: OwnershipChallengeRequest, response: Response):
+    response.headers["Cache-Control"] = "no-store"
     try:
         return create_challenge(body.domain)
     except ValueError as exc:
@@ -154,9 +157,9 @@ async def ownership_challenge(body: OwnershipChallengeRequest):
 
 
 @app.post("/api/ownership/verify")
-async def ownership_verify(body: OwnershipVerifyRequest):
+def ownership_verify(body: OwnershipVerifyRequest):
     try:
-        return verify_challenge(body.domain, body.token)
+        return verify_challenge(body.domain, body.token, body.owner_token)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
@@ -164,17 +167,17 @@ async def ownership_verify(body: OwnershipVerifyRequest):
 
 
 @app.get("/api/ownership/status")
-async def ownership_get_status(domain: str = Query("", max_length=253)):
+def ownership_get_status(domain: str = Query("", max_length=253)):
     return ownership_status(domain)
 
 
 @app.get("/api/billing/status")
-async def profile_plus_status(domain: str = Query("", max_length=253)):
+def profile_plus_status(domain: str = Query("", max_length=253)):
     return billing_status(domain)
 
 
 @app.post("/api/billing/checkout")
-async def profile_plus_checkout(body: BillingActionRequest):
+def profile_plus_checkout(body: BillingActionRequest):
     try:
         return create_checkout(body.domain, body.ownership_token)
     except PermissionError as exc:
@@ -186,7 +189,7 @@ async def profile_plus_checkout(body: BillingActionRequest):
 
 
 @app.post("/api/billing/portal")
-async def profile_plus_portal(body: BillingActionRequest):
+def profile_plus_portal(body: BillingActionRequest):
     try:
         return create_portal(body.domain, body.ownership_token)
     except PermissionError as exc:
@@ -202,7 +205,7 @@ async def stripe_billing_webhook(request: Request):
     payload = await request.body()
     signature = request.headers.get("stripe-signature", "")
     try:
-        return handle_webhook(payload, signature)
+        return await run_in_threadpool(handle_webhook, payload, signature)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid webhook payload")
     except Exception as exc:
