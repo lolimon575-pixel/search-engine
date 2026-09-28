@@ -836,6 +836,7 @@ let remoteSuggestions=[];
 let suggestTimer=null;
 let suggestionsArmed=false;
 let activeSuggestionIndex=-1;
+let suppressSuggestionFocus=false;
 let claimContext={domain:'',token:''};
 
 const THEME_KEY='novaTheme';
@@ -1001,7 +1002,9 @@ suggestions.addEventListener('click',e=>{
     remoteSuggestions=[];
     updateClearButton();
     hideSuggestions();
+    suppressSuggestionFocus=true;
     q.focus({preventScroll:true});
+    suppressSuggestionFocus=false;
     try{q.setSelectionRange(q.value.length,q.value.length)}catch(_){}
     return;
   }
@@ -1471,6 +1474,7 @@ q.addEventListener('input',()=>{
   scheduleRemoteSuggestions();
 });
 q.addEventListener('focus',()=>{
+  if(suppressSuggestionFocus)return;
   suggestionsArmed=true;
   showSuggestions(true);
   if(q.value.trim().length>=2)scheduleRemoteSuggestions();
