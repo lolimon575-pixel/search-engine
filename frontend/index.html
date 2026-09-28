@@ -825,7 +825,7 @@ let activeSuggestionIndex=-1;
 let claimContext={domain:'',token:''};
 
 const THEME_KEY='novaTheme';
-const DEFAULT_FREQUENT=['Google','GitHub','Microsoft','YouTube','Wikipedia','Apple','OpenAI','Amazon','Steam','Discord'];
+const DEFAULT_FREQUENT=['Google','Яндекс','GitHub','VK','Microsoft','YouTube','OpenAI','Ozon','Wikipedia','Apple','Amazon','Steam'];
 const RANK_LABELS={
   official_match:'Официальный домен',
   domain_match:'Домен совпадает',
@@ -852,7 +852,9 @@ function linkLabel(key){return ({
   running:'Running',football:'Football',investors:'Инвесторам',sustainability:'Sustainability',
   consulting:'Консалтинг',download:'Скачать',safety:'Безопасность',vehicles:'Автомобили',energy:'Энергия',
   charging:'Зарядка',ride:'Поездки',eats:'Uber Eats',stays:'Жильё',flights:'Авиабилеты',
-  cars:'Авто',attractions:'Развлечения',games:'Игры'
+  cars:'Авто',attractions:'Развлечения',games:'Игры',services:'Сервисы',business:'Бизнесу',
+  personal:'Частным клиентам',investments:'Инвестиции',sellers:'Продавцам',employers:'Работодателям',
+  maps:'Карты'
 }[key]||key)}
 function linkIcon(key){return ({
   shop:'▣',store:'▣',products:'◆',product:'◆',pricing:'€',docs:'⌘',developer:'⌘',developers:'⌘',
@@ -860,7 +862,8 @@ function linkIcon(key){return ({
   community:'◎',templates:'▦',music:'♪',podcasts:'◉',watch:'▶',homes:'⌂',experiences:'✦',
   men:'M',women:'W',kids:'K',running:'↗',football:'●',investors:'↗',sustainability:'◌',
   consulting:'◆',download:'↓',safety:'✓',vehicles:'◉',energy:'⚡',charging:'⚡',ride:'→',eats:'◌',
-  stays:'⌂',flights:'✈',cars:'◉',attractions:'✦',games:'▶'
+  stays:'⌂',flights:'✈',cars:'◉',attractions:'✦',games:'▶',services:'◆',business:'↗',
+  personal:'●',investments:'↗',sellers:'▣',employers:'↗',maps:'⌖'
 }[key]||'↗')}
 function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
 function updatePrefReset(){
@@ -1186,7 +1189,14 @@ function linkIntentTerms(key){
     cars:['car','rental','авто'],
     games:['game','games','игр'],
     download:['download','скач'],
-    safety:['safety','безопас']
+    safety:['safety','безопас'],
+    services:['service','services','сервис'],
+    business:['business','бизнес','ип','предприним'],
+    personal:['personal','частн','физлиц'],
+    investments:['investment','investments','инвест'],
+    sellers:['seller','sellers','продав'],
+    employers:['employer','employers','работод'],
+    maps:['map','maps','карта','карты']
   }[key]||[]);
 }
 function linkMatchesQuery(key,query){
@@ -1421,6 +1431,7 @@ freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
 resetPrefs.onclick=()=>{domainPrefs={};localStorage.setItem('novaDomainPrefs','{}');updatePrefReset();renderResults()};
 updatePrefReset();
 updateClearButton();
+hideSuggestions();
 
 const billingReturn=new URLSearchParams(location.search).get('billing');
 if(billingReturn==='success'){
