@@ -17,3 +17,5 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pytest -q
         working-directory: backend
+        env:
+          PYTHONPATH: .
