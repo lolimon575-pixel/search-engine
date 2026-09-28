@@ -22,7 +22,7 @@ def verify_officiality(url, site_signals=None, external=None):
         db_item = None
 
     if owner_claim:
-        organization = (db_item or {}).get("organization") or owner_claim.get("organization_name") or host
+        organization = (db_item or {}).get("organization") or host
         return {
             "status": "OWNER_VERIFIED",
             "organization": organization,
