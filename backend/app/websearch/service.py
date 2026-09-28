@@ -3,6 +3,7 @@ from urllib.parse import urlsplit, urlunsplit
 import threading, time, hashlib
 from .ddg import search as ddg_search
 from .ranker import rank, diversify, promote_verified_official
+from .query_features import discussion_query, is_discussion_url
 from app.verification.engine import VerificationEngine
 from app.verification.ledger import VerificationLedger
 
@@ -25,7 +26,7 @@ class WebSearchService:
         self.pool = ThreadPoolExecutor(max_workers=6, thread_name_prefix="nova-verify")
 
     def search(self, query, limit=10, mode="web", freshness=""):
-        mode = mode if mode in {"web", "verified", "exact"} else "web"
+        mode = mode if mode in {"web", "verified", "exact", "discussions"} else "web"
         freshness = freshness if freshness in {"d", "w", "m", "y"} else ""
         key = f"{mode}:{freshness}:{query.strip().lower()}"
 
@@ -34,7 +35,7 @@ class WebSearchService:
             if cached and time.time() - cached["at"] < 45:
                 return cached["results"][:limit], []
 
-        provider_query = f'"{query}"' if mode == "exact" else query
+        provider_query = f'"{query}"' if mode == "exact" else (discussion_query(query) if mode == "discussions" else query)
         try:
             raw = ddg_search(provider_query, max(40 if mode == "verified" else 30, limit * 4), freshness=freshness)
         except Exception as e:
@@ -78,6 +79,8 @@ class WebSearchService:
                 item for item in candidates
                 if (item.verification or {}).get("officiality", {}).get("status") in allowed
             ]
+        elif mode == "discussions":
+            candidates = [item for item in candidates if is_discussion_url(item.url)]
         cache_limit = min(20, len(candidates))
         results = diversify(candidates, cache_limit)
 

@@ -526,6 +526,16 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
 }
+
+.brief-card{margin-bottom:14px;border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:16px;box-shadow:var(--shadow-soft)}
+.brief-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.brief-title{font-size:12px;font-weight:850;letter-spacing:.02em}
+.brief-label{font-size:9px;color:var(--subtle);font-weight:750}
+.brief-passages{display:grid;gap:8px}
+.brief-passage{padding:10px 11px;border-radius:12px;background:var(--surface-soft);border:1px solid var(--line)}
+.brief-passage p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.brief-source{display:inline-flex;margin-top:6px;color:var(--blue);font-size:9px;font-weight:800;text-decoration:none}
+.brief-foot{margin-top:9px;color:var(--subtle);font-size:9px;line-height:1.45}
 </style>
 </head>
 <body>
@@ -565,6 +575,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
         <div class="mode-tabs" id="modeTabs" aria-label="Режим поиска">
           <button class="mode-button active" type="button" data-mode="web">Web</button>
           <button class="mode-button" type="button" data-mode="verified">Verified</button>
+          <button class="mode-button" type="button" data-mode="discussions">Discussions</button>
           <button class="mode-button" type="button" data-mode="exact">Exact</button>
         </div>
         <div class="search-options">
@@ -604,6 +615,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
           </select>
         </div>
       </div>
+      <div id="briefCard"></div>
       <div id="results" class="results-stack"></div>
     </section>
 
@@ -708,6 +720,7 @@ const metricCount=document.querySelector('#metricCount');
 const metricTime=document.querySelector('#metricTime');
 const metricVerified=document.querySelector('#metricVerified');
 const metricOfficial=document.querySelector('#metricOfficial');
+const briefCard=document.querySelector('#briefCard');
 const freshnessSelect=document.querySelector('#freshness');
 const modeButtons=[...document.querySelectorAll('[data-mode]')];
 const companyPanel=document.querySelector('#companyPanel');
@@ -789,7 +802,7 @@ function handleBang(value){
   return true;
 }
 function setMode(mode,resubmit=false){
-  activeMode=['web','verified','exact'].includes(mode)?mode:'web';
+  activeMode=['web','verified','discussions','exact'].includes(mode)?mode:'web';
   modeButtons.forEach(b=>b.classList.toggle('active',b.dataset.mode===activeMode));
   if(resubmit&&q.value.trim())form.requestSubmit();
 }
@@ -1199,11 +1212,18 @@ function searchRequestUrl(query){
   if(freshnessSelect.value)params.set('freshness',freshnessSelect.value);
   return '/api/search?'+params.toString();
 }
+
+function renderBrief(brief){
+  if(!brief||!(brief.passages||[]).length){briefCard.innerHTML='';return}
+  briefCard.innerHTML='<section class="brief-card"><div class="brief-head"><div class="brief-title">'+escapeHtml(brief.title||'NOVA Brief')+'</div><div class="brief-label">extractive · источники видимы</div></div><div class="brief-passages">'+brief.passages.map(p=>'<div class="brief-passage"><p>'+escapeHtml(p.text)+'</p><a class="brief-source" href="'+escapeHtml(p.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(p.domain||p.title)+' ↗</a></div>').join('')+'</div><div class="brief-foot">'+escapeHtml(brief.note||'')+'</div></section>';
+}
+
 function modeLabel(){
-  return activeMode==='verified'?'Verified':activeMode==='exact'?'Exact':'Web';
+  return activeMode==='verified'?'Verified':activeMode==='discussions'?'Discussions':activeMode==='exact'?'Exact':'Web';
 }
 function applyResponse(data,query,elapsed,refresh=false){
   currentResults=data.results||[];
+  renderBrief(data.brief||null);
   if(!refresh)lastElapsed=elapsed;
   renderResults();
   updateCompanyPanel();
@@ -1211,6 +1231,8 @@ function applyResponse(data,query,elapsed,refresh=false){
   status.classList.toggle('searching',pending);
   if(activeMode==='verified'){
     status.textContent=currentResults.length?'Показаны только результаты с подтверждением официальности':'Подтверждённых результатов пока не найдено';
+  }else if(activeMode==='discussions'){
+    status.textContent=currentResults.length?'Обсуждения и ответы сообщества':'Подходящих обсуждений пока не найдено';
   }else{
     status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
   }
@@ -1241,10 +1263,11 @@ form.onsubmit=async e=>{
   hideSuggestions();
   document.body.classList.add('has-results');
   status.classList.add('searching');
-  status.textContent=activeMode==='verified'?'Ищем подтверждённые официальные результаты':activeMode==='exact'?'Ищем точную формулировку':'NOVA собирает и ранжирует выдачу';
+  status.textContent=activeMode==='verified'?'Ищем подтверждённые официальные результаты':activeMode==='discussions'?'Ищем обсуждения и ответы сообщества':activeMode==='exact'?'Ищем точную формулировку':'NOVA собирает и ранжирует выдачу';
   summary.textContent='';
   toolbar.classList.remove('visible');
   companyPanel.hidden=true;
+  briefCard.innerHTML='';
   metricCount.textContent='—';metricTime.textContent='—';metricVerified.textContent='—';metricOfficial.textContent='—';
   showSkeletons();
   if(pollTimer){clearInterval(pollTimer);pollTimer=null}
@@ -1270,6 +1293,7 @@ form.onsubmit=async e=>{
     status.textContent='Поиск не завершён';
     summary.textContent='';
     companyPanel.hidden=true;
+    briefCard.innerHTML='';
     results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p></div>';
   }
 };
