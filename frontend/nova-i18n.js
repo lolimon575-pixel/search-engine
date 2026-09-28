@@ -2,6 +2,8 @@
   const dictionaries = {
     ru: {
       language: 'Язык',
+      russian: 'Русский',
+      english: 'English',
       search: 'Найти',
       searchPlaceholder: 'Введите запрос',
       history: 'История поиска',
@@ -14,10 +16,17 @@
       verified: 'Проверено',
       company: 'Компания',
       source: 'Источник',
-      score: 'Оценка'
+      score: 'Оценка',
+      clear: 'Очистить',
+      more: 'Больше',
+      results: 'Результаты',
+      noResults: 'Ничего не найдено',
+      footerLanguage: 'Язык'
     },
     en: {
       language: 'Language',
+      russian: 'Русский',
+      english: 'English',
       search: 'Search',
       searchPlaceholder: 'Enter query',
       history: 'Search history',
@@ -30,7 +39,12 @@
       verified: 'Verified',
       company: 'Company',
       source: 'Source',
-      score: 'Score'
+      score: 'Score',
+      clear: 'Clear',
+      more: 'More',
+      results: 'Results',
+      noResults: 'No results found',
+      footerLanguage: 'Language'
     }
   };
 
@@ -49,6 +63,9 @@
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       el.placeholder = translate(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      el.title = translate(el.dataset.i18nTitle);
     });
     window.dispatchEvent(new CustomEvent('nova-language-change', {detail:{language: current}}));
   }
