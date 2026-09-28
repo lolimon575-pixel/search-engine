@@ -10,7 +10,7 @@ def test_showcase_profiles_have_safe_product_metadata():
         assert "." in domain
         assert item["organization"]
         assert item["category"]
-        assert item.get("profile_tier") in {"standard", "showcase", "premium"}
+        assert item.get("profile_tier") in {"standard", "showcase", "premium", "premium_demo"}
         accent = item.get("profile_accent")
         if accent:
             assert accent.startswith("#") and len(accent) == 7

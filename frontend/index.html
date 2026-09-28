@@ -541,6 +541,59 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .billing-badge.inactive{background:var(--surface-soft);color:var(--subtle)}
 .billing-badge.past_due{background:var(--amber-soft);color:var(--amber)}
 .billing-note{margin-top:8px;color:var(--subtle);font-size:9px;line-height:1.45}
+
+.company-card.premium-company-card{
+  border-color:color-mix(in srgb,var(--company-accent,#111) 24%,var(--line));
+  background:
+    radial-gradient(circle at 88% 6%,color-mix(in srgb,var(--company-accent,#111) 16%,transparent),transparent 38%),
+    linear-gradient(155deg,var(--surface-solid),var(--surface));
+  box-shadow:0 18px 56px color-mix(in srgb,var(--company-accent,#111) 14%,transparent);
+}
+.company-card.premium-company-card:before{width:5px}
+.premium-kicker{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:13px;
+  color:var(--subtle);font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase
+}
+.premium-kicker strong{color:var(--text);letter-spacing:.06em}
+.premium-company-card .company-logo{width:52px;height:52px;border-radius:15px}
+.premium-company-card .company-logo img{width:36px;height:36px}
+.premium-company-card .company-head{grid-template-columns:52px minmax(0,1fr)}
+.premium-company-card .company-name{font-size:18px}
+.premium-company-card .company-tagline{font-size:12px;margin-top:15px}
+.premium-company-card .company-description{font-size:10px;line-height:1.65}
+.company-links.premium-links{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.company-link{
+  border:1px solid var(--line);background:var(--surface-soft);color:var(--text);border-radius:10px;
+  padding:8px 9px;text-decoration:none;font-size:9px;font-weight:800;display:flex;align-items:center;
+  justify-content:space-between;gap:7px;transition:.15s ease
+}
+.company-link:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.company-link-icon{color:var(--subtle);font-size:11px}
+.premium-company-card .company-link{background:color-mix(in srgb,var(--company-accent,#111) 5%,var(--surface-soft))}
+.profile-demo-note{
+  margin-top:11px;padding:9px 10px;border-radius:10px;
+  background:color-mix(in srgb,var(--company-accent,#111) 7%,var(--surface-soft));
+  border:1px dashed color-mix(in srgb,var(--company-accent,#111) 30%,var(--line));
+  color:var(--muted);font-size:9px;line-height:1.55
+}
+.org-profile-links.premium-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:680px){
+  .company-links.premium-links,.org-profile-links.premium-links{grid-template-columns:1fr}
+}
+
+.company-sections-title{
+  margin-top:14px;margin-bottom:7px;color:var(--subtle);font-size:8px;font-weight:900;
+  text-transform:uppercase;letter-spacing:.11em
+}
+
+.company-link.recommended{
+  border-color:color-mix(in srgb,var(--company-accent,#2563eb) 44%,var(--line));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--company-accent,#2563eb) 12%,transparent)
+}
+.company-link-match{
+  margin-left:auto;padding:2px 5px;border-radius:999px;background:var(--blue-soft);color:var(--blue);
+  font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.05em
+}
 </style>
 </head>
 <body>
@@ -767,7 +820,26 @@ function faviconOf(u){const d=domainOf(u);return d?'https://www.google.com/s2/fa
 function needsVerification(x){return !x.verification||!x.verification.status||x.verification.status==='UNKNOWN'}
 function isOfficialStatus(s){return ['OWNER_VERIFIED','CONFIRMED','EXTERNAL_CONFIRMED'].includes(s)}
 function safeAccent(value){return /^#[0-9a-f]{6}$/i.test(String(value||''))?value:'#2563eb'}
-function linkLabel(key){return ({about:'О компании',careers:'Карьера',support:'Поддержка',help:'Помощь',docs:'Документация',developer:'Разработчикам',community:'Сообщество',newsroom:'Новости',jobs:'Вакансии'}[key]||key)}
+function linkLabel(key){return ({
+  about:'О компании',careers:'Карьера',support:'Поддержка',help:'Помощь',docs:'Документация',
+  developer:'Разработчикам',developers:'Разработчикам',community:'Сообщество',newsroom:'Новости',jobs:'Вакансии',
+  products:'Продукты',product:'Продукт',pricing:'Тарифы',enterprise:'Enterprise',cloud:'Cloud',learn:'Обучение',
+  drivers:'Драйверы',learning:'База знаний',templates:'Шаблоны',research:'Исследования',store:'Магазин',
+  shop:'Магазин',music:'Музыка',podcasts:'Подкасты',watch:'Смотреть',homes:'Жильё',experiences:'Впечатления',
+  men:'Мужчинам',women:'Женщинам',kids:'Детям',membership:'Membership',stories:'Истории',
+  running:'Running',football:'Football',investors:'Инвесторам',sustainability:'Sustainability',
+  consulting:'Консалтинг',download:'Скачать',safety:'Безопасность',vehicles:'Автомобили',energy:'Энергия',
+  charging:'Зарядка',ride:'Поездки',eats:'Uber Eats',stays:'Жильё',flights:'Авиабилеты',
+  cars:'Авто',attractions:'Развлечения',games:'Игры'
+}[key]||key)}
+function linkIcon(key){return ({
+  shop:'▣',store:'▣',products:'◆',product:'◆',pricing:'€',docs:'⌘',developer:'⌘',developers:'⌘',
+  support:'?',help:'?',careers:'↗',jobs:'↗',about:'○',newsroom:'◫',research:'◇',cloud:'☁',
+  community:'◎',templates:'▦',music:'♪',podcasts:'◉',watch:'▶',homes:'⌂',experiences:'✦',
+  men:'M',women:'W',kids:'K',running:'↗',football:'●',investors:'↗',sustainability:'◌',
+  consulting:'◆',download:'↓',safety:'✓',vehicles:'◉',energy:'⚡',charging:'⚡',ride:'→',eats:'◌',
+  stays:'⌂',flights:'✈',cars:'◉',attractions:'✦',games:'▶'
+}[key]||'↗')}
 function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
 function updatePrefReset(){
   const count=Object.keys(domainPrefs).length;
@@ -1059,10 +1131,48 @@ function closeVerification(){
   document.querySelector('#verifyModal').classList.remove('open');
   document.body.style.overflow=document.querySelector('#orgModal').classList.contains('open')?'hidden':'';
 }
+function linkIntentTerms(key){
+  return ({
+    careers:['career','careers','job','jobs','ваканс','работ'],
+    jobs:['career','careers','job','jobs','ваканс','работ'],
+    support:['support','help','поддерж','помощ'],
+    help:['support','help','поддерж','помощ'],
+    docs:['docs','documentation','api','документ'],
+    developer:['developer','developers','api','sdk','разработ'],
+    developers:['developer','developers','api','sdk','разработ'],
+    pricing:['pricing','price','cost','тариф','цен'],
+    products:['product','products','продукт'],
+    product:['product','products','продукт'],
+    shop:['shop','store','buy','магазин','куп'],
+    store:['shop','store','buy','магазин','куп'],
+    research:['research','исслед'],
+    cloud:['cloud','облако'],
+    running:['running','run','бег'],
+    football:['football','soccer','футбол'],
+    investors:['investor','investors','stock','share','акци','инвест'],
+    sustainability:['sustainability','esg','устойчив'],
+    charging:['charging','charge','заряд'],
+    vehicles:['vehicle','car','model','автомоб'],
+    flights:['flight','airline','авиа'],
+    cars:['car','rental','авто'],
+    games:['game','games','игр'],
+    download:['download','скач'],
+    safety:['safety','безопас']
+  }[key]||[]);
+}
+function linkMatchesQuery(key,query){
+  const value=String(query||'').toLowerCase();
+  return linkIntentTerms(key).some(term=>value.includes(term));
+}
 function profileLinksMarkup(links,limit=5){
-  return Object.entries(links||{}).slice(0,limit).map(([key,url])=>
-    '<a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(linkLabel(key))+' ↗</a>'
-  ).join('');
+  const query=q?.value||'';
+  return Object.entries(links||{})
+    .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
+    .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
+    .slice(0,limit)
+    .map(({key,url,match})=>
+      '<a class="company-link '+(match?'recommended':'')+'" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer"><span>'+escapeHtml(linkLabel(key))+'</span>'+(match?'<span class="company-link-match">по запросу</span>':'')+'<span class="company-link-icon">'+escapeHtml(linkIcon(key))+'</span></a>'
+    ).join('');
 }
 
 async function loadBillingStatus(domain){
@@ -1093,9 +1203,14 @@ async function openBillingPortal(domain){
 function billingBadgeMarkup(status){
   if(!status)return '';
   const active=['active','trialing'].includes(status.billing_status);
-  const cls=active?'':status.billing_status==='past_due'?'past_due':'inactive';
-  const label=active?'Profile Plus активен':status.billing_status==='past_due'?'Платёж требует внимания':'Profile Plus не активен';
+  if(!active&&status.billing_status!=='past_due')return '';
+  const cls=active?'':'past_due';
+  const label=active?'Profile Plus активен':'Платёж требует внимания';
   return '<span class="billing-badge '+cls+'">'+label+'</span>';
+}
+function profileVisualBadge(p,billing){
+  if(p?.profile_tier==='premium_demo')return '<span class="billing-badge">Profile Plus Demo</span>';
+  return billingBadgeMarkup(billing);
 }
 
 async function loadOrganizationProfile(domain){
@@ -1115,15 +1230,20 @@ async function updateCompanyPanel(){
     companyPanel.style.setProperty('--company-accent',safeAccent(p.profile_accent));
     const owner=p.owner_verification==='DOMAIN_CONTROL';
     const plus=billing&&['active','trialing'].includes(billing.billing_status);
-    const links=profileLinksMarkup(p.links,3);
+    const premiumVisual=plus||p.profile_tier==='premium'||p.profile_tier==='premium_demo';
+    const isDemo=p.profile_tier==='premium_demo';
+    companyPanel.classList.toggle('premium-company-card',premiumVisual);
+    const links=profileLinksMarkup(p.links,premiumVisual?6:4);
     companyPanel.innerHTML=
+      (premiumVisual?'<div class="premium-kicker"><strong>Profile Plus</strong><span>'+(isDemo?'DEMO':'PREMIUM')+'</span></div>':'')+
       '<div class="insight-title">Company Profile <span class="mini">'+escapeHtml((p.profile_badge||'NOVA').toUpperCase())+'</span></div>'+
       '<div class="company-head"><div class="company-logo"><img src="'+escapeHtml(faviconOf(p.url||top.url))+'" alt=""></div><div><div class="company-name">'+escapeHtml(p.organization)+'</div><div class="company-domain">'+escapeHtml(p.domain)+'</div></div></div>'+
       '<span class="company-trust">'+(owner?'Контроль домена подтверждён':'Курируемый реестр NOVA')+'</span>'+
-      billingBadgeMarkup(billing)+
+      profileVisualBadge(p,billing)+
       (p.tagline?'<div class="company-tagline">'+escapeHtml(p.tagline)+'</div>':'')+
       (p.description?'<div class="company-description">'+escapeHtml(p.description)+'</div>':'')+
-      (links?'<div class="company-links">'+links+'</div>':'')+
+      (links?'<div class="company-sections-title">Ключевые разделы</div><div class="company-links '+(premiumVisual?'premium-links':'')+'">'+links+'</div>':'')+
+      (isDemo?'<div class="profile-demo-note">Демо показывает, что покупает компания: более выразительную карточку и быстрые официальные разделы. Доверие и позиция в поиске остаются независимыми.</div>':'')+
       '<div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button>'+(owner?'<button class="company-secondary" type="button" data-billing>'+(plus?'Управлять Profile Plus':'Подключить Profile Plus')+'</button>':'')+'</div>'+
       '<div class="company-policy">Profile Plus улучшает представление компании, но никогда не повышает органический NOVA Rank.</div>';
     companyPanel.querySelector('[data-company-profile]').onclick=()=>openOrganizationProfile(top);
@@ -1157,12 +1277,14 @@ async function openOrganizationProfile(x){
     document.querySelector('#orgTagline').textContent=p.tagline||'';
     document.querySelector('#orgTrustBadge').textContent=owner?'Контроль домена подтверждён':'Курируемый профиль NOVA';
     document.querySelector('#orgDescription').textContent=p.description||'Официальный домен, зарегистрированный в реестре NOVA.';
-    document.querySelector('#orgProfileLinks').innerHTML=profileLinksMarkup(p.links);
+    const premiumVisual=p.profile_tier==='premium'||p.profile_tier==='premium_demo'||['active','trialing'].includes(p.billing_status);
+    document.querySelector('#orgProfileLinks').classList.toggle('premium-links',premiumVisual);
+    document.querySelector('#orgProfileLinks').innerHTML=profileLinksMarkup(p.links,premiumVisual?8:5);
     document.querySelector('#orgGrid').innerHTML=
       '<span>Организация</span><span>'+escapeHtml(p.organization)+'</span>'+
       '<span>Официальный домен</span><span>'+escapeHtml(p.domain)+'</span>'+
       '<span>Категория</span><span>'+escapeHtml(p.category||'—')+'</span>'+
-      '<span>Профиль</span><span>'+escapeHtml(p.profile_tier||'standard')+'</span>'+
+      '<span>Профиль</span><span>'+escapeHtml(p.profile_tier==='premium_demo'?'Profile Plus Demo':p.profile_tier==='premium'?'Profile Plus':p.profile_tier||'standard')+'</span>'+
       '<span>Billing</span><span>'+escapeHtml(p.billing_status||'inactive')+'</span>'+
       '<span>Контроль домена</span><span>'+escapeHtml(owner?'Подтверждён':'Не подтверждён владельцем')+'</span>'+
       '<span>Источник записи</span><span>'+escapeHtml(p.method||'—')+'</span>'+
