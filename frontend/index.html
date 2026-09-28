@@ -388,6 +388,87 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .org-description{margin:18px 0;color:var(--muted);font-size:12px;line-height:1.65}
 .org-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
 .footer{padding:0 0 34px;text-align:center;color:var(--subtle);font-size:10px;line-height:1.55}
+
+.search-controls{
+  width:min(820px,100%);margin:12px auto 0;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap
+}
+.mode-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mode-button{
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;
+  padding:7px 10px;font-size:10px;font-weight:800;cursor:pointer;backdrop-filter:blur(12px)
+}
+.mode-button.active{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.search-options{display:flex;align-items:center;gap:8px;color:var(--subtle);font-size:10px;font-weight:700}
+.freshness-select{
+  border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;
+  padding:7px 28px 7px 9px;font-size:10px;font-weight:750
+}
+.pref-reset{
+  border:0;background:transparent;color:var(--subtle);font-size:9px;font-weight:750;cursor:pointer;padding:6px 2px
+}
+.pref-reset:hover{color:var(--blue)}
+.bang-hint{white-space:nowrap}
+.company-card{overflow:hidden;position:relative}
+.company-card:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--company-accent,#2563eb)
+}
+.company-head{display:grid;grid-template-columns:44px minmax(0,1fr);gap:11px;align-items:center}
+.company-logo{
+  width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--surface-solid);
+  display:grid;place-items:center
+}
+.company-logo img{width:30px;height:30px;object-fit:contain}
+.company-name{font-size:15px;font-weight:850;letter-spacing:-.02em}
+.company-domain{margin-top:2px;color:var(--subtle);font-size:9px}
+.company-trust{
+  display:inline-flex;margin-top:9px;padding:5px 7px;border-radius:999px;background:var(--green-soft);
+  color:var(--green);font-size:9px;font-weight:850
+}
+.company-tagline{margin-top:13px;font-size:11px;font-weight:800;line-height:1.45}
+.company-description{margin-top:6px;color:var(--muted);font-size:10px;line-height:1.55}
+.company-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.company-link{
+  border:1px solid var(--line);background:var(--surface-soft);color:var(--text);border-radius:9px;
+  padding:6px 8px;text-decoration:none;font-size:9px;font-weight:750
+}
+.company-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:13px}
+.company-actions button,.company-actions a{
+  min-height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  padding:6px 8px;font-size:9px;font-weight:800;text-decoration:none;cursor:pointer
+}
+.company-primary{border:1px solid var(--primary);background:var(--primary);color:var(--primary-ink)}
+.company-secondary{border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.company-policy{margin-top:10px;color:var(--subtle);font-size:9px;line-height:1.45}
+.domain-personal{background:var(--violet-soft);color:var(--violet)}
+.result-action-left{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.domain-pref-button{
+  border:0;background:transparent;color:var(--subtle);padding:5px 0;font-size:10px;font-weight:750;cursor:pointer
+}
+.domain-pref-button:hover{color:var(--blue)}
+.claim-intro{
+  padding:13px;border-radius:14px;background:var(--surface-soft);color:var(--muted);
+  font-size:11px;line-height:1.6;margin-bottom:16px
+}
+.claim-domain{font-weight:850;color:var(--text)}
+.claim-step{display:grid;gap:10px}
+.claim-code{
+  padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+  font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all;user-select:all
+}
+.claim-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.claim-status{margin-top:12px;color:var(--muted);font-size:10px;line-height:1.55}
+.claim-success{padding:12px;border-radius:12px;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:750}
+.org-tagline{margin-top:4px;color:var(--muted);font-size:11px;font-weight:700}
+.org-profile-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.org-profile-links a{
+  border:1px solid var(--line);background:var(--surface-soft);border-radius:9px;padding:7px 9px;
+  color:var(--text);font-size:10px;font-weight:750;text-decoration:none
+}
+@media(max-width:680px){
+  .search-controls{align-items:flex-start}.search-options{width:100%;justify-content:space-between}
+  .bang-hint{display:none}.company-actions{grid-template-columns:1fr}.result-action-left{gap:8px}
+}
 .dark{
   color-scheme:dark;
   --bg:#0b0f17;
@@ -480,6 +561,24 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
         </form>
         <div class="suggestions" id="suggestions"></div>
       </div>
+      <div class="search-controls">
+        <div class="mode-tabs" id="modeTabs" aria-label="Режим поиска">
+          <button class="mode-button active" type="button" data-mode="web">Web</button>
+          <button class="mode-button" type="button" data-mode="verified">Verified</button>
+          <button class="mode-button" type="button" data-mode="exact">Exact</button>
+        </div>
+        <div class="search-options">
+          <span class="bang-hint">Быстрый переход: !w · !yt · !gh</span>
+          <select id="freshness" class="freshness-select" aria-label="Свежесть результатов">
+            <option value="">За всё время</option>
+            <option value="d">24 часа</option>
+            <option value="w">Неделя</option>
+            <option value="m">Месяц</option>
+            <option value="y">Год</option>
+          </select>
+          <button id="resetPrefs" class="pref-reset" type="button" hidden>Сбросить домены</button>
+        </div>
+      </div>
 
       <div class="pipeline-strip" aria-hidden="true">
         <span><b>Web</b> источник</span><span class="pipeline-arrow">→</span>
@@ -509,6 +608,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
     </section>
 
     <aside class="insights" id="insights">
+      <section class="insight-card company-card" id="companyPanel" hidden></section>
       <section class="insight-card">
         <div class="insight-title">NOVA Layer <span class="mini">LIVE</span></div>
         <div class="metric-grid">
@@ -556,17 +656,40 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
         <div class="org-copy">
           <h2 id="orgModalTitle">Профиль организации</h2>
           <div id="orgDomain" class="org-domain"></div>
-          <span class="org-confirmed">Подтверждено NOVA</span>
+          <div id="orgTagline" class="org-tagline"></div>
+          <span id="orgTrustBadge" class="org-confirmed">Профиль NOVA</span>
         </div>
       </div>
       <button class="close-button" id="orgClose" type="button" aria-label="Закрыть">×</button>
     </div>
     <div id="orgDescription" class="org-description"></div>
+    <div id="orgProfileLinks" class="org-profile-links"></div>
     <div id="orgGrid" class="org-grid"></div>
     <div class="verify-section"><h4>Основания</h4><ul id="orgEvidence" class="org-evidence"></ul></div>
     <div class="org-actions">
       <a id="orgOpen" class="primary-action" target="_blank" rel="noopener noreferrer">Открыть официальный сайт ↗</a>
       <button id="orgCheck" class="secondary-action" type="button">Открыть проверку</button>
+      <button id="orgClaim" class="secondary-action" type="button">Я представляю компанию</button>
+    </div>
+  </div>
+</div>
+
+<div id="claimModal" class="modal">
+  <div class="dialog">
+    <div class="dialog-head">
+      <div>
+        <div class="dialog-title">Подтвердить контроль домена</div>
+        <div class="dialog-subtitle">NOVA Owner Verification</div>
+      </div>
+      <button class="close-button" id="claimClose" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="claim-intro">
+      Для домена <span id="claimDomain" class="claim-domain"></span> мы проверяем именно технический контроль.
+      Это сильнее одного платежа, но не является юридической проверкой компании. Платный профиль в будущем
+      будет доступен только после этого шага и отдельной identity/billing-проверки. Органический рейтинг не продаётся.
+    </div>
+    <div id="claimBody" class="claim-step">
+      <button id="claimStart" class="primary-action" type="button">Создать challenge</button>
     </div>
   </div>
 </div>
@@ -585,13 +708,27 @@ const metricCount=document.querySelector('#metricCount');
 const metricTime=document.querySelector('#metricTime');
 const metricVerified=document.querySelector('#metricVerified');
 const metricOfficial=document.querySelector('#metricOfficial');
+const freshnessSelect=document.querySelector('#freshness');
+const modeButtons=[...document.querySelectorAll('[data-mode]')];
+const companyPanel=document.querySelector('#companyPanel');
+const resetPrefs=document.querySelector('#resetPrefs');
+const orgClaim=document.querySelector('#orgClaim');
+const claimModal=document.querySelector('#claimModal');
+const claimDomainEl=document.querySelector('#claimDomain');
+const claimBody=document.querySelector('#claimBody');
+const claimStart=document.querySelector('#claimStart');
 
 let history=JSON.parse(localStorage.getItem('novaHistory')||'[]');
 let queryStats=JSON.parse(localStorage.getItem('novaQueryStats')||'{}');
+let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
 let showAllHistory=false;
 let currentResults=[];
 let pollTimer=null;
 let lastElapsed=null;
+let activeMode='web';
+let remoteSuggestions=[];
+let suggestTimer=null;
+let claimContext={domain:'',token:''};
 
 const THEME_KEY='novaTheme';
 const DEFAULT_FREQUENT=['Google','GitHub','Microsoft','YouTube','Wikipedia','Apple','OpenAI','Amazon','Steam','Discord'];
@@ -609,6 +746,70 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 function domainOf(u){try{return new URL(u).hostname.replace(/^www\./,'')}catch{return''}}
 function faviconOf(u){const d=domainOf(u);return d?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(d)+'&sz=64':''}
 function needsVerification(x){return !x.verification||!x.verification.status||x.verification.status==='UNKNOWN'}
+function isOfficialStatus(s){return ['OWNER_VERIFIED','CONFIRMED','EXTERNAL_CONFIRMED'].includes(s)}
+function safeAccent(value){return /^#[0-9a-f]{6}$/i.test(String(value||''))?value:'#2563eb'}
+function linkLabel(key){return ({about:'О компании',careers:'Карьера',support:'Поддержка',help:'Помощь',docs:'Документация',developer:'Разработчикам',community:'Сообщество',newsroom:'Новости',jobs:'Вакансии'}[key]||key)}
+function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
+function updatePrefReset(){
+  const count=Object.keys(domainPrefs).length;
+  resetPrefs.hidden=!count;
+  resetPrefs.textContent=count?'Сбросить домены ('+count+')':'Сбросить домены';
+}
+function novaRankOf(x){const i=currentResults.indexOf(x);return i>=0?i+1:0}
+function setDomainPreference(domain,value){
+  const key=String(domain||'').toLowerCase();
+  if(!key)return;
+  if(value==='normal')delete domainPrefs[key];else domainPrefs[key]=value;
+  localStorage.setItem('novaDomainPrefs',JSON.stringify(domainPrefs));
+  updatePrefReset();
+  renderResults();
+}
+function applyDomainPreferences(list){
+  const visible=list.filter(x=>domainPreference(domainOf(x.url))!=='blocked');
+  return visible.sort((a,b)=>{
+    const pa=domainPreference(domainOf(a.url))==='boost'?1:0;
+    const pb=domainPreference(domainOf(b.url))==='boost'?1:0;
+    if(pa!==pb)return pb-pa;
+    return currentResults.indexOf(a)-currentResults.indexOf(b);
+  });
+}
+function handleBang(value){
+  const m=String(value||'').trim().match(/^!(\w+)\s+(.+)$/);
+  if(!m)return false;
+  const bang=m[1].toLowerCase(),query=m[2].trim();
+  const targets={
+    w:'https://en.wikipedia.org/w/index.php?search=',
+    yt:'https://www.youtube.com/results?search_query=',
+    gh:'https://github.com/search?q=',
+    r:'https://www.reddit.com/search/?q=',
+    g:'https://www.google.com/search?q='
+  };
+  if(!targets[bang])return false;
+  window.location.href=targets[bang]+encodeURIComponent(query);
+  return true;
+}
+function setMode(mode,resubmit=false){
+  activeMode=['web','verified','exact'].includes(mode)?mode:'web';
+  modeButtons.forEach(b=>b.classList.toggle('active',b.dataset.mode===activeMode));
+  if(resubmit&&q.value.trim())form.requestSubmit();
+}
+async function fetchRemoteSuggestions(value){
+  const query=String(value||'').trim();
+  if(query.length<2){remoteSuggestions=[];return}
+  try{
+    const r=await fetch('/api/suggest?q='+encodeURIComponent(query)+'&limit=6');
+    const d=await r.json();
+    if(q.value.trim()!==query)return;
+    remoteSuggestions=d.suggestions||[];
+    showSuggestions();
+  }catch(e){}
+}
+function scheduleRemoteSuggestions(){
+  clearTimeout(suggestTimer);
+  const value=q.value.trim();
+  if(value.length<2){remoteSuggestions=[];showSuggestions();return}
+  suggestTimer=setTimeout(()=>fetchRemoteSuggestions(value),180);
+}
 function saveHistory(x){
   history=[x,...history.filter(v=>v.toLowerCase()!==x.toLowerCase())].slice(0,60);
   queryStats[x]=(queryStats[x]||0)+1;
@@ -628,12 +829,17 @@ function showSuggestions(){
   const frequent=frequentQueries();
   const combined=(!showAllHistory&&history.length>=8)?visibleHistory:[...visibleHistory,...frequent].filter((x,i,a)=>a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).slice(0,8);
   let html='';
+  const queryNow=q.value.trim().toLowerCase();
+  const remote=remoteSuggestions.filter(x=>x&&x.toLowerCase()!==queryNow).slice(0,6);
+  if(remote.length){
+    html+='<div class="suggestion-section"><div class="suggestions-head">Подсказки из веба</div>'+remote.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
+  }
   if(visibleHistory.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">История</div>'+combined.filter(x=>visibleHistory.some(h=>h.toLowerCase()===x.toLowerCase())).map((x,i)=>suggestionButton(x,i,true)).join('')+'</div>';
   }
   const shown=new Set(visibleHistory.map(x=>x.toLowerCase()));
   const freqVisible=combined.filter(x=>!shown.has(x.toLowerCase()));
-  if(freqVisible.length){
+  if(freqVisible.length&&!remote.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">Популярное у вас</div>'+freqVisible.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
   if(history.length>8&&!showAllHistory)html+='<button class="suggestions-more" type="button" id="showMoreHistory">Показать всю историю</button>';
@@ -677,7 +883,8 @@ function statusMarkup(x){
 function officialityMarkup(x){
   const o=x.verification?.officiality||{};
   let c='unknown',label='Официальность не подтверждена';
-  if(o.status==='CONFIRMED'){c='official';label='Официальность: NOVA'}
+  if(o.status==='OWNER_VERIFIED'){c='verified';label='Контроль домена подтверждён'}
+  else if(o.status==='CONFIRMED'){c='official';label='Официальность: реестр NOVA'}
   else if(o.status==='EXTERNAL_CONFIRMED'){c='official';label='Официальность: внешний источник'}
   else if(o.status==='SUPPORTED'||o.status==='SIGNALS'){c='supported';label='Есть признаки официальности'}
   return '<span class="nova-status '+c+'">'+label+'</span>';
@@ -690,28 +897,43 @@ function signalMarkup(x){
     .join('');
 }
 function resultCore(x,index){
-  return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>NOVA rank · '+(index+1)+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
-    '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domainOf(x.url)||x.url)+'</div></div></div>'+
+  const domain=domainOf(x.url);
+  const pref=domainPreference(domain);
+  const originalRank=novaRankOf(x)||index+1;
+  const rankText=pref==='boost'?'Ваш выбор · NOVA #'+originalRank:'NOVA rank · '+originalRank;
+  const personal=pref==='boost'?'<span class="nova-status domain-personal">Локально выше</span>':'';
+  return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>'+rankText+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
+    '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domain||x.url)+'</div></div></div>'+
     '<div class="desc">'+escapeHtml(x.description||'Сниппет для этого результата недоступен.')+'</div>'+
-    '<div class="result-meta-row">'+officialityMarkup(x)+statusMarkup(x)+signalMarkup(x)+'</div>';
+    '<div class="result-meta-row">'+officialityMarkup(x)+statusMarkup(x)+personal+signalMarkup(x)+'</div>';
 }
 function renderCard(x,featured=false,index=0){
   const article=document.createElement('article');
   const official=x.verification?.officiality||{};
+  const domain=domainOf(x.url);
+  const pref=domainPreference(domain);
+  const boostLabel=pref==='boost'?'Вернуть обычный порядок':'↑ Выше у меня';
+  const prefActions='<div class="result-actions"><div class="result-action-left"><button class="text-action verify-toggle" type="button">Проверка NOVA</button><button class="domain-pref-button" type="button" data-domain-pref="boost">'+boostLabel+'</button><button class="domain-pref-button" type="button" data-domain-pref="blocked">Скрыть домен</button></div><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
   if(featured){
     article.className='result featured-official';
-    article.innerHTML='<div class="featured-band"><div class="featured-label">Официальный результат</div><div class="featured-confidence">'+escapeHtml(official.organization||domainOf(x.url))+'</div></div>'+
+    article.innerHTML='<div class="featured-band"><div class="featured-label">'+(official.status==='OWNER_VERIFIED'?'Владелец домена подтверждён':'Официальный результат')+'</div><div class="featured-confidence">'+escapeHtml(official.organization||domain)+'</div></div>'+
       '<div class="featured-body">'+resultCore(x,index)+
-      '<div class="featured-actions"><button class="primary-action org-profile-open" type="button">Профиль организации</button><a class="secondary-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть сайт ↗</a><button class="secondary-action verify-toggle" type="button">Проверка NOVA</button></div></div>';
+      '<div class="featured-actions"><button class="primary-action org-profile-open" type="button">Профиль организации</button><a class="secondary-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть сайт ↗</a></div>'+prefActions+'</div>';
   }else{
     article.className='result';
-    article.innerHTML=resultCore(x,index)+
-      '<div class="result-actions"><button class="text-action verify-toggle" type="button">Почему NOVA доверяет этому статусу?</button><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
+    article.innerHTML=resultCore(x,index)+prefActions;
   }
-  const verify=article.querySelector('.verify-toggle');
-  if(verify)verify.onclick=()=>openVerification(x);
+  article.querySelectorAll('.verify-toggle').forEach(b=>b.onclick=()=>openVerification(x));
   const org=article.querySelector('.org-profile-open');
   if(org)org.onclick=()=>openOrganizationProfile(x);
+  article.querySelectorAll('[data-domain-pref]').forEach(b=>{
+    b.onclick=()=>{
+      const action=b.dataset.domainPref;
+      const current=domainPreference(domain);
+      if(action==='boost')setDomainPreference(domain,current==='boost'?'normal':'boost');
+      else if(action==='blocked')setDomainPreference(domain,'blocked');
+    };
+  });
   return article;
 }
 function groupResults(list){
@@ -725,14 +947,14 @@ function groupResults(list){
 }
 function updateMetrics(){
   const verified=currentResults.filter(x=>x.verification?.status==='VERIFIED').length;
-  const official=currentResults.filter(x=>['CONFIRMED','EXTERNAL_CONFIRMED'].includes(x.verification?.officiality?.status)).length;
+  const official=currentResults.filter(x=>isOfficialStatus(x.verification?.officiality?.status)).length;
   metricCount.textContent=currentResults.length||'—';
   metricTime.textContent=lastElapsed==null?'—':(lastElapsed<1000?Math.round(lastElapsed)+'мс':(lastElapsed/1000).toFixed(1)+'с');
   metricVerified.textContent=currentResults.length?verified+'/'+currentResults.length:'—';
   metricOfficial.textContent=currentResults.length?official:'—';
 }
 function renderResults(){
-  let list=[...currentResults];
+  let list=applyDomainPreferences([...currentResults]);
   if(sort.value==='title')list.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'ru'));
   results.innerHTML='';
   if(!list.length){
@@ -741,7 +963,7 @@ function renderResults(){
     return;
   }
   const primary=list[0];
-  const primaryOfficial=['CONFIRMED','EXTERNAL_CONFIRMED'].includes(primary?.verification?.officiality?.status);
+  const primaryOfficial=isOfficialStatus(primary?.verification?.officiality?.status);
   if(primaryOfficial){
     results.appendChild(renderCard(primary,true,0));
     groupResults(list.slice(1)).forEach(group=>{
@@ -818,37 +1040,130 @@ function closeVerification(){
   document.querySelector('#verifyModal').classList.remove('open');
   document.body.style.overflow=document.querySelector('#orgModal').classList.contains('open')?'hidden':'';
 }
+function profileLinksMarkup(links,limit=5){
+  return Object.entries(links||{}).slice(0,limit).map(([key,url])=>
+    '<a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(linkLabel(key))+' ↗</a>'
+  ).join('');
+}
+async function loadOrganizationProfile(domain){
+  const r=await fetch('/api/organization?domain='+encodeURIComponent(domain));
+  const d=await r.json();
+  if(!r.ok||!d.found)throw Error('profile not found');
+  return d.profile;
+}
+async function updateCompanyPanel(){
+  const top=currentResults.find(x=>isOfficialStatus(x.verification?.officiality?.status));
+  if(!top){companyPanel.hidden=true;companyPanel.innerHTML='';return}
+  const domain=domainOf(top.url);
+  try{
+    const p=await loadOrganizationProfile(domain);
+    companyPanel.hidden=false;
+    companyPanel.style.setProperty('--company-accent',safeAccent(p.profile_accent));
+    const owner=p.owner_verification==='DOMAIN_CONTROL';
+    const links=profileLinksMarkup(p.links,3);
+    companyPanel.innerHTML=
+      '<div class="insight-title">Company Profile <span class="mini">'+escapeHtml((p.profile_badge||'NOVA').toUpperCase())+'</span></div>'+
+      '<div class="company-head"><div class="company-logo"><img src="'+escapeHtml(faviconOf(p.url||top.url))+'" alt=""></div><div><div class="company-name">'+escapeHtml(p.organization)+'</div><div class="company-domain">'+escapeHtml(p.domain)+'</div></div></div>'+
+      '<span class="company-trust">'+(owner?'Контроль домена подтверждён':'Курируемый реестр NOVA')+'</span>'+
+      (p.tagline?'<div class="company-tagline">'+escapeHtml(p.tagline)+'</div>':'')+
+      (p.description?'<div class="company-description">'+escapeHtml(p.description)+'</div>':'')+
+      (links?'<div class="company-links">'+links+'</div>':'')+
+      '<div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button></div>'+
+      '<div class="company-policy">Расширенная карточка может стать платной услугой компании, но тариф никогда не меняет органический NOVA Rank.</div>';
+    companyPanel.querySelector('[data-company-profile]').onclick=()=>openOrganizationProfile(top);
+    companyPanel.querySelector('[data-company-claim]').onclick=()=>openClaim(domain);
+  }catch(e){
+    companyPanel.hidden=true;
+  }
+}
 async function openOrganizationProfile(x){
   const modal=document.querySelector('#orgModal');
   const domain=domainOf(x.url);
   document.querySelector('#orgLogo').src=faviconOf(x.url);
   document.querySelector('#orgModalTitle').textContent=x.verification?.officiality?.organization||x.title||'Профиль организации';
   document.querySelector('#orgDomain').textContent=domain;
+  document.querySelector('#orgTagline').textContent='';
   document.querySelector('#orgDescription').textContent='Загрузка данных профиля…';
+  document.querySelector('#orgProfileLinks').innerHTML='';
   document.querySelector('#orgGrid').innerHTML='';
   document.querySelector('#orgEvidence').innerHTML='';
   document.querySelector('#orgOpen').href=x.url;
   document.querySelector('#orgCheck').onclick=()=>openVerification(x);
+  orgClaim.onclick=()=>openClaim(domain);
   modal.classList.add('open');
   document.body.style.overflow='hidden';
   try{
-    const r=await fetch('/api/organization?domain='+encodeURIComponent(domain));
-    const d=await r.json();
-    if(!d.found)throw Error('profile not found');
-    const p=d.profile,lc=p.last_check||{};
+    const p=await loadOrganizationProfile(domain),lc=p.last_check||{};
+    const owner=p.owner_verification==='DOMAIN_CONTROL';
+    document.querySelector('#orgModalTitle').textContent=p.organization||document.querySelector('#orgModalTitle').textContent;
+    document.querySelector('#orgTagline').textContent=p.tagline||'';
+    document.querySelector('#orgTrustBadge').textContent=owner?'Контроль домена подтверждён':'Курируемый профиль NOVA';
     document.querySelector('#orgDescription').textContent=p.description||'Официальный домен, зарегистрированный в реестре NOVA.';
+    document.querySelector('#orgProfileLinks').innerHTML=profileLinksMarkup(p.links);
     document.querySelector('#orgGrid').innerHTML=
       '<span>Организация</span><span>'+escapeHtml(p.organization)+'</span>'+
       '<span>Официальный домен</span><span>'+escapeHtml(p.domain)+'</span>'+
       '<span>Категория</span><span>'+escapeHtml(p.category||'—')+'</span>'+
-      '<span>Уровень подтверждения</span><span>'+escapeHtml(p.confirmation_level||'—')+'</span>'+
+      '<span>Профиль</span><span>'+escapeHtml(p.profile_tier||'standard')+'</span>'+
+      '<span>Контроль домена</span><span>'+escapeHtml(owner?'Подтверждён':'Не подтверждён владельцем')+'</span>'+
       '<span>Источник записи</span><span>'+escapeHtml(p.method||'—')+'</span>'+
-      '<span>Последняя проверка</span><span>'+escapeHtml(lc.checked_at||'Пока не проводилась')+'</span>'+
-      '<span>Технический результат</span><span>'+escapeHtml(lc.technical_status||'—')+'</span>';
+      '<span>Последняя техпроверка</span><span>'+escapeHtml(lc.checked_at||'Пока не проводилась')+'</span>'+
+      '<span>Технический результат</span><span>'+escapeHtml(lc.technical_status||'—')+'</span>'+
+      '<span>Политика ранжирования</span><span>'+escapeHtml(p.ranking_policy||'Профиль не влияет на NOVA Rank.')+'</span>';
     document.querySelector('#orgEvidence').innerHTML=(x.verification?.officiality?.evidence||[]).map(e=>'<li>'+escapeHtml(e)+'</li>').join('');
   }catch(e){
     document.querySelector('#orgDescription').textContent='Профиль организации временно недоступен.';
   }
+}
+function openClaim(domain){
+  claimContext={domain,token:''};
+  claimDomainEl.textContent=domain;
+  claimBody.innerHTML='<button class="primary-action" type="button" data-claim-start>Создать challenge</button><div class="claim-status">NOVA выдаст одноразовый token на 24 часа. Его нужно разместить на вашем домене.</div>';
+  claimBody.querySelector('[data-claim-start]').onclick=startClaim;
+  claimModal.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+async function startClaim(){
+  claimBody.innerHTML='<div class="claim-status">Создаём challenge…</div>';
+  try{
+    const r=await fetch('/api/ownership/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain})});
+    const d=await r.json();
+    if(!r.ok)throw Error(d.detail||'Не удалось создать challenge');
+    claimContext.token=d.token;
+    claimBody.innerHTML=
+      '<div class="claim-status">1. Создайте файл по адресу:</div><div class="claim-code">'+escapeHtml(d.challenge_url)+'</div>'+
+      '<div class="claim-status">2. Поместите в него только этот token:</div><div class="claim-code" id="claimTokenCode">'+escapeHtml(d.token)+'</div>'+
+      '<div class="claim-actions"><button class="secondary-action" type="button" data-copy-token>Копировать token</button><button class="primary-action" type="button" data-verify-claim>Проверить домен</button></div>'+
+      '<div class="claim-status">Подтверждение контроля домена не покупает место в выдаче. Для будущего Premium-профиля после этого потребуется отдельная identity/billing-проверка.</div>';
+    claimBody.querySelector('[data-copy-token]').onclick=async()=>{try{await navigator.clipboard.writeText(claimContext.token)}catch(e){}};
+    claimBody.querySelector('[data-verify-claim]').onclick=verifyClaim;
+  }catch(e){
+    claimBody.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Challenge не создан</h3><p>'+escapeHtml(e.message)+'</p></div>';
+  }
+}
+async function verifyClaim(){
+  const button=claimBody.querySelector('[data-verify-claim]');
+  if(button){button.disabled=true;button.textContent='Проверяем…'}
+  try{
+    const r=await fetch('/api/ownership/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain,token:claimContext.token})});
+    const d=await r.json();
+    if(!r.ok)throw Error(d.detail||'Проверка недоступна');
+    if(!d.verified){
+      if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
+      const old=claimBody.querySelector('.claim-status:last-child');
+      const message={proof_not_reachable:'Файл пока не доступен по HTTPS.',proof_mismatch:'Содержимое файла не совпадает с token.',expired:'Challenge истёк. Создайте новый.'}[d.status]||'Подтверждение пока не прошло.';
+      if(old)old.textContent=message;
+      return;
+    }
+    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Этот статус усиливает доверие к профилю, но не повышает органический NOVA Rank.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div>';
+    await updateCompanyPanel();
+  }catch(e){
+    if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
+  }
+}
+function closeClaim(){
+  claimModal.classList.remove('open');
+  if(!document.querySelector('#verifyModal').classList.contains('open')&&!document.querySelector('#orgModal').classList.contains('open'))document.body.style.overflow='';
 }
 function closeOrganizationProfile(){
   document.querySelector('#orgModal').classList.remove('open');
@@ -858,12 +1173,18 @@ document.querySelector('#verifyClose').onclick=closeVerification;
 document.querySelector('#verifyModal').onclick=e=>{if(e.target.id==='verifyModal')closeVerification()};
 document.querySelector('#orgClose').onclick=closeOrganizationProfile;
 document.querySelector('#orgModal').onclick=e=>{if(e.target.id==='orgModal')closeOrganizationProfile()};
+document.querySelector('#claimClose').onclick=closeClaim;
+claimModal.onclick=e=>{if(e.target.id==='claimModal')closeClaim()};
 
 function updateClearButton(){clearSearch.classList.toggle('visible',!!q.value.trim())}
-clearSearch.onclick=()=>{q.value='';updateClearButton();q.focus();showSuggestions()};
-q.addEventListener('input',updateClearButton);
-q.addEventListener('focus',showSuggestions);
+clearSearch.onclick=()=>{q.value='';remoteSuggestions=[];updateClearButton();q.focus();showSuggestions()};
+q.addEventListener('input',()=>{updateClearButton();scheduleRemoteSuggestions()});
+q.addEventListener('focus',()=>{showSuggestions();if(q.value.trim().length>=2)scheduleRemoteSuggestions()});
 sort.onchange=renderResults;
+modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
+freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
+resetPrefs.onclick=()=>{domainPrefs={};localStorage.setItem('novaDomainPrefs','{}');updatePrefReset();renderResults()};
+updatePrefReset();
 updateClearButton();
 
 const savedTheme=localStorage.getItem(THEME_KEY);
@@ -873,20 +1194,34 @@ document.querySelector('#theme').onclick=()=>{
   localStorage.setItem(THEME_KEY,document.body.classList.contains('dark')?'dark':'light');
 };
 
+function searchRequestUrl(query){
+  const params=new URLSearchParams({q:query,mode:activeMode});
+  if(freshnessSelect.value)params.set('freshness',freshnessSelect.value);
+  return '/api/search?'+params.toString();
+}
+function modeLabel(){
+  return activeMode==='verified'?'Verified':activeMode==='exact'?'Exact':'Web';
+}
 function applyResponse(data,query,elapsed,refresh=false){
   currentResults=data.results||[];
   if(!refresh)lastElapsed=elapsed;
   renderResults();
-  const pending=currentResults.some(needsVerification);
+  updateCompanyPanel();
+  const pending=currentResults.some(needsVerification)&&activeMode!=='verified';
   status.classList.toggle('searching',pending);
-  status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
-  summary.textContent=(data.count||currentResults.length)+' результатов'+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
+  if(activeMode==='verified'){
+    status.textContent=currentResults.length?'Показаны только результаты с подтверждением официальности':'Подтверждённых результатов пока не найдено';
+  }else{
+    status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
+  }
+  const freshnessLabel=freshnessSelect.value?(' · '+freshnessSelect.options[freshnessSelect.selectedIndex].text):'';
+  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel()+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
 async function refreshVerification(query){
   try{
-    const r=await fetch('/api/search?q='+encodeURIComponent(query));
+    const r=await fetch(searchRequestUrl(query));
     if(!r.ok)return;
     const data=await r.json();
     if(q.value.trim().toLowerCase()!==query.toLowerCase())return;
@@ -901,26 +1236,28 @@ form.onsubmit=async e=>{
   e.preventDefault();
   const originalQuery=q.value.trim();
   if(!originalQuery)return;
+  if(handleBang(originalQuery))return;
   saveHistory(originalQuery);
   hideSuggestions();
   document.body.classList.add('has-results');
   status.classList.add('searching');
-  status.textContent='NOVA собирает и ранжирует выдачу';
+  status.textContent=activeMode==='verified'?'Ищем подтверждённые официальные результаты':activeMode==='exact'?'Ищем точную формулировку':'NOVA собирает и ранжирует выдачу';
   summary.textContent='';
   toolbar.classList.remove('visible');
+  companyPanel.hidden=true;
   metricCount.textContent='—';metricTime.textContent='—';metricVerified.textContent='—';metricOfficial.textContent='—';
   showSkeletons();
   if(pollTimer){clearInterval(pollTimer);pollTimer=null}
   try{
     const started=performance.now();
-    const r=await fetch('/api/search?q='+encodeURIComponent(originalQuery));
+    const r=await fetch(searchRequestUrl(originalQuery));
     const data=await r.json();
     if(!r.ok)throw Error(data.detail||'Ошибка поиска');
     const elapsed=performance.now()-started;
     showCorrection(originalQuery,data.corrected_query);
     const activeQuery=data.corrected_query||originalQuery;
     applyResponse(data,activeQuery,elapsed,false);
-    if(currentResults.some(needsVerification)){
+    if(activeMode!=='verified'&&currentResults.some(needsVerification)){
       let attempts=0;
       pollTimer=setInterval(async()=>{
         attempts++;
@@ -932,12 +1269,14 @@ form.onsubmit=async e=>{
     status.classList.remove('searching');
     status.textContent='Поиск не завершён';
     summary.textContent='';
+    companyPanel.hidden=true;
     results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p></div>';
   }
 };
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    if(document.querySelector('#verifyModal').classList.contains('open'))closeVerification();
+    if(claimModal.classList.contains('open'))closeClaim();
+    else if(document.querySelector('#verifyModal').classList.contains('open'))closeVerification();
     else if(document.querySelector('#orgModal').classList.contains('open'))closeOrganizationProfile();
     else hideSuggestions();
   }

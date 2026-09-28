@@ -52,3 +52,24 @@ def suggest_correction(query, timeout=2.5):
     except Exception:
         pass
     return None
+
+
+def get_suggestions(query, limit=6):
+    q=query.strip()
+    if len(q)<2 or len(q)>120:
+        return []
+    out=[]
+    seen=set()
+    try:
+        for candidate in _suggestions(q):
+            value=str(candidate).strip()
+            key=value.casefold()
+            if not value or key in seen:
+                continue
+            seen.add(key)
+            out.append(value)
+            if len(out)>=limit:
+                break
+    except Exception:
+        pass
+    return out
