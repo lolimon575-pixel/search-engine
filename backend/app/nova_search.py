@@ -1,4 +1,4 @@
-"""NOVA Search Core v1 - trusted registry ranking layer."""
+"""NOVA Search Core - trusted registry ranking layer."""
 
 from typing import Any
 
@@ -6,37 +6,46 @@ from app.verification.registry_data import REGISTRY
 
 
 def normalize_query(value: str) -> str:
-    return " ".join((value or "").lower().strip().split())
+    return " ".join((value or "").lower().replace("-", " ").split())
 
 
 def search_registry(query: str, limit: int = 10) -> list[dict[str, Any]]:
-    """Search NOVA knowledge layer before external search."""
+    """Search NOVA knowledge layer before external search providers."""
     q = normalize_query(query)
     if not q:
         return []
 
     results = []
     for domain, profile in REGISTRY.items():
+        organization = normalize_query(profile.get("organization", ""))
+        category = normalize_query(profile.get("category", ""))
         text = " ".join([
             domain,
-            profile.get("organization", ""),
-            profile.get("category", ""),
-            profile.get("tagline", ""),
-            profile.get("description", ""),
-        ]).lower()
+            organization,
+            category,
+            normalize_query(profile.get("tagline", "")),
+            normalize_query(profile.get("description", "")),
+        ])
 
         score = 0
         reasons = []
 
-        if q == domain or q == domain.replace(".com", ""):
-            score += 100
+        if q == normalize_query(domain) or q == domain.replace(".com", ""):
+            score += 120
             reasons.append("exact_domain")
-        if q in profile.get("organization", "").lower():
-            score += 90
+        if q == organization:
+            score += 110
+            reasons.append("exact_organization")
+        elif q in organization:
+            score += 80
             reasons.append("organization_match")
         if q in text:
-            score += 40
+            score += 35
             reasons.append("profile_match")
+
+        if profile.get("profile_tier") in ("premium", "verified"):
+            score += 5
+            reasons.append("profile_available")
 
         if score:
             results.append({
@@ -48,5 +57,4 @@ def search_registry(query: str, limit: int = 10) -> list[dict[str, Any]]:
                 "profile": profile,
             })
 
-    results.sort(key=lambda item: item["nova_score"], reverse=True)
-    return results[:limit]
+    return sorted(results, key=lambda item: item["nova_score"], reverse=True)[:limit]
