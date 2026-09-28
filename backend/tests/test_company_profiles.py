@@ -14,6 +14,8 @@ def test_puma_is_profile_plus_demo_with_key_sections():
     assert puma["links"]["careers"].startswith("https://")
     assert puma["links"]["investors"].startswith("https://")
     assert puma["links"]["sustainability"].startswith("https://")
+    assert REGISTRY["eu.puma.com"] is puma
+    assert REGISTRY["about.puma.com"] is puma
 
 
 def test_curated_profiles_have_multiple_key_sections():
