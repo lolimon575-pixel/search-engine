@@ -265,7 +265,7 @@ def mark_claim_verified(claim_id):
                 """, (claim["domain"],))
                 site = cur.fetchone()
                 if not site:
-                    name = (claim.get("organization_name") or claim["domain"]).strip()
+                    name = claim["domain"]
                     slug = _slug(name)
                     cur.execute("""
                         INSERT INTO organizations
