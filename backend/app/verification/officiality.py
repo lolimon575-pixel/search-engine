@@ -156,3 +156,48 @@ def is_registry_domain(host):
         return bool(get_site(normalized))
     except Exception:
         return False
+
+
+def find_entity_profile(query):
+    raw = (query or "").strip().casefold()
+    if not raw:
+        return None
+    normalized = normalize_domain(raw)
+    compact = "".join(ch for ch in raw if ch.isalnum())
+
+    matches = []
+    seen_orgs = set()
+    for domain, item in REGISTRY.items():
+        org = item["organization"]
+        org_key = "".join(ch for ch in org.casefold() if ch.isalnum())
+        domain_key = domain.casefold().removeprefix("www.")
+        root_key = domain_key.split(".")[0]
+        if raw in {domain_key, "www." + domain_key} or compact in {org_key, root_key}:
+            if org_key in seen_orgs:
+                continue
+            seen_orgs.add(org_key)
+            matches.append(domain)
+
+    if normalized in REGISTRY and normalized not in matches:
+        matches.insert(0, normalized)
+
+    if not matches:
+        return None
+
+    domain = matches[0]
+    profile = get_organization_profile(domain)
+    if not profile:
+        return None
+
+    try:
+        claim = get_latest_verified_claim(domain)
+    except Exception:
+        claim = None
+
+    profile["identity_status"] = "OWNER_VERIFIED" if claim else profile.get("confirmation_level", "CURATED")
+    profile["trust_explanation"] = (
+        "Владелец домена подтвердил контроль через challenge на сайте."
+        if claim else
+        "Организация и домен сопоставлены в редакционном реестре NOVA. Владелец ещё не проходил domain-control challenge."
+    )
+    return profile
