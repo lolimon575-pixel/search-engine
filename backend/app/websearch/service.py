@@ -3,6 +3,7 @@ from urllib.parse import urlsplit, urlunsplit
 import threading, time, hashlib
 from .ddg import search as ddg_search
 from .ranker import rank, diversify, promote_verified_official
+from .query_features import discussion_query, is_discussion_url
 from app.verification.engine import VerificationEngine
 from app.verification.ledger import VerificationLedger
 
@@ -24,8 +25,9 @@ class WebSearchService:
         self.lock = threading.Lock()
         self.pool = ThreadPoolExecutor(max_workers=6, thread_name_prefix="nova-verify")
 
-    def search(self, query, limit=10):
-        key = query.strip().lower()
+    def search(self, query, limit=10, mode="web"):
+        mode = (mode or "web").strip().lower()
+        key = f"{mode}:{query.strip().lower()}"
 
         with self.lock:
             cached = self.cache.get(key)
@@ -33,7 +35,8 @@ class WebSearchService:
                 return cached["results"][:limit], []
 
         try:
-            raw = ddg_search(query, max(30, limit * 4))
+            provider_query = discussion_query(query) if mode == "discussions" else query
+            raw = ddg_search(provider_query, max(36, limit * 5))
         except Exception as e:
             return [], [f"duckduckgo: {type(e).__name__}"]
 
@@ -68,6 +71,18 @@ class WebSearchService:
                         }
 
         candidates = promote_verified_official(query, candidates)
+
+        if mode == "discussions":
+            candidates = [item for item in candidates if is_discussion_url(item.url)]
+        elif mode == "official":
+            trusted = {"OWNER_VERIFIED", "EXTERNAL_CONFIRMED", "CURATED"}
+            official_candidates = [
+                item for item in candidates
+                if ((item.verification or {}).get("officiality") or {}).get("status") in trusted
+            ]
+            if official_candidates:
+                candidates = official_candidates
+
         cache_limit = min(20, len(candidates))
         results = diversify(candidates, cache_limit)
 
