@@ -744,17 +744,20 @@ function renderResults(){
   const primaryOfficial=['CONFIRMED','EXTERNAL_CONFIRMED'].includes(primary?.verification?.officiality?.status);
   if(primaryOfficial){
     results.appendChild(renderCard(primary,true,0));
-    const rest=list.slice(1);
-    if(rest.length){
-      const toggle=document.createElement('button');
-      toggle.className='other-results-toggle';
-      toggle.innerHTML='<span>Другие результаты · '+rest.length+'</span><span class="arrow">⌄</span>';
-      const box=document.createElement('div');
-      box.className='other-results';
-      rest.forEach((x,i)=>box.appendChild(renderCard(x,false,i+1)));
-      toggle.onclick=()=>{const open=box.classList.toggle('open');toggle.classList.toggle('open',open)};
-      results.append(toggle,box);
-    }
+    groupResults(list.slice(1)).forEach(group=>{
+      const first=group[0];
+      results.appendChild(renderCard(first.item,false,first.index+1));
+      if(group.length>1){
+        const toggle=document.createElement('button');
+        toggle.className='other-results-toggle';
+        toggle.innerHTML='<span>Ещё '+(group.length-1)+' с домена '+escapeHtml(domainOf(first.item.url))+'</span><span class="arrow">⌄</span>';
+        const box=document.createElement('div');
+        box.className='other-results';
+        group.slice(1).forEach(row=>box.appendChild(renderCard(row.item,false,row.index+1)));
+        toggle.onclick=()=>{const open=box.classList.toggle('open');toggle.classList.toggle('open',open)};
+        results.append(toggle,box);
+      }
+    });
   }else{
     groupResults(list).forEach(group=>{
       const first=group[0];
