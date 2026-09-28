@@ -101,3 +101,8 @@ REGISTRY = {
     ),
     "ikea.com": profile("IKEA", "Retail", "Мебель и товары для дома", "Официальный глобальный домен IKEA.", "#0058a3"),
 }
+
+# Official PUMA surfaces share one presentation profile. Keeping aliases explicit makes
+# the card work when search results land on regional commerce or corporate subdomains.
+REGISTRY["eu.puma.com"] = REGISTRY["puma.com"]
+REGISTRY["about.puma.com"] = REGISTRY["puma.com"]
