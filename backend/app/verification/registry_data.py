@@ -108,6 +108,10 @@ REGISTRY = {
     "gazprombank.ru": profile("Газпромбанк", "Fintech", "Банковские услуги для частных лиц и бизнеса", "Официальный домен Газпромбанка.", "#00a5df", {"personal":"https://www.gazprombank.ru/","business":"https://www.gazprombank.ru/business/","investors":"https://www.gazprombank.ru/investors/","tariffs":"https://www.gazprombank.ru/documents-and-tariffs/","offices":"https://www.gazprombank.ru/offices/"}),
     "yota.ru": profile("Yota", "Telecom", "Мобильная связь, тарифы и цифровые сервисы", "Официальный домен оператора Yota.", "#00aeef", {"tariffs":"https://www.yota.ru/tariff","services":"https://www.yota.ru/services","support":"https://www.yota.ru/support","contacts":"https://www.yota.ru/contacts","business":"https://www.yota.ru/business"}),
 
+    "cian.ru": profile("Циан", "Real Estate", "Недвижимость, поиск жилья и профессиональные сервисы", "Официальный домен Циан.", "#0468ff", {"product":"https://www.cian.ru/","support":"https://support.cian.ru/ru/","careers":"https://www.cian.ru/vacancies/","contacts":"https://www.cian.ru/contacts/"}),
+    "lamoda.ru": profile("Lamoda", "Commerce", "Мода, обувь, beauty и lifestyle", "Официальный домен Lamoda.", "#111111", {"shop":"https://www.lamoda.ru/","careers":"https://job.lamoda.ru/"}),
+    "okko.tv": profile("Okko", "Media", "Онлайн-кинотеатр, сериалы, фильмы и спорт", "Официальный домен Okko.", "#7a35ff", {"watch":"https://okko.tv/","support":"https://help.okko.tv/"}),
+
     "puma.com": profile(
         "PUMA",
         "Apparel",

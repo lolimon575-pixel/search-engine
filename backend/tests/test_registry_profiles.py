@@ -44,6 +44,9 @@ def test_registry_contains_russian_official_sites():
         "rbc.ru",
         "gazprombank.ru",
         "yota.ru",
+        "cian.ru",
+        "lamoda.ru",
+        "okko.tv",
     }
     assert expected.issubset(REGISTRY.keys())
 
