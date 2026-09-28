@@ -480,11 +480,25 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .claim-status{margin-top:12px;color:var(--muted);font-size:10px;line-height:1.55}
 .claim-success{padding:12px;border-radius:12px;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:750}
 .org-tagline{margin-top:4px;color:var(--muted);font-size:11px;font-weight:700}
-.org-profile-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
-.org-profile-links a{
-  border:1px solid var(--line);background:var(--surface-soft);border-radius:9px;padding:7px 9px;
-  color:var(--text);font-size:10px;font-weight:750;text-decoration:none
+.org-profile-links{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 20px
 }
+.org-section-link{
+  min-height:64px;display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;
+  border:1px solid var(--line);background:var(--surface-soft);border-radius:14px;padding:10px 12px;
+  color:var(--text);text-decoration:none;transition:transform .15s ease,border-color .15s ease,background .15s ease
+}
+.org-section-link:hover{transform:translateY(-1px);border-color:var(--line-strong);background:var(--surface)}
+.org-section-link.recommended{border-color:color-mix(in srgb,var(--blue) 42%,var(--line))}
+.org-section-icon{
+  width:38px;height:38px;border-radius:11px;background:var(--surface-solid);border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--muted);font-size:15px;font-weight:850
+}
+.org-section-copy{min-width:0}
+.org-section-name{display:block;font-size:11px;font-weight:850;line-height:1.2}
+.org-section-meta{display:block;margin-top:4px;color:var(--subtle);font-size:8px;font-weight:700}
+.org-section-arrow{color:var(--subtle);font-size:14px}
+.org-section-link.recommended .org-section-meta{color:var(--blue)}
 @media(max-width:680px){
   .search-controls{align-items:flex-start}.search-options{width:100%;justify-content:space-between}
   .bang-hint{display:none}.company-actions{grid-template-columns:1fr}.result-action-left{gap:8px}
@@ -541,7 +555,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   .result-actions{align-items:flex-start}.open-action{white-space:nowrap}
   .insights{grid-template-columns:1fr}.insight-card.pipeline-card{display:none}
   .dialog{padding:18px;border-radius:20px}.verify-grid,.org-grid{grid-template-columns:1fr;gap:2px}.verify-grid>span:nth-child(even),.org-grid>span:nth-child(even){margin-bottom:8px}
-  .org-head{align-items:center}.org-logo{width:54px;height:54px;flex-basis:54px}.org-copy h2{font-size:19px}.org-actions{grid-template-columns:1fr}.org-actions #orgOpen{grid-column:auto}
+  .org-head{align-items:center}.org-logo{width:54px;height:54px;flex-basis:54px}.org-copy h2{font-size:19px}.org-profile-links{grid-template-columns:1fr}.org-actions{grid-template-columns:1fr}.org-actions #orgOpen{grid-column:auto}
 }
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
@@ -621,7 +635,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   <header class="topbar">
     <a class="brand" href="/" aria-label="NOVA Search">
       <div class="brand-mark">N</div>
-      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.11</span></div>
+      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.12</span></div>
     </a>
     <div class="top-actions">
       <span class="live-pill"><span class="live-dot"></span>сервис активен</span>
@@ -939,7 +953,11 @@ function frequentQueries(){
   return [...tracked,...DEFAULT_FREQUENT].filter((x,i,a)=>x&&a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i&&!seen.has(x.toLowerCase()));
 }
 function suggestionButton(x,i,canDelete=false){
-  return '<button class="suggestion" type="button" data-query="'+escapeHtml(x)+'"><span class="suggestion-icon">⌕</span><span class="suggestion-query">'+escapeHtml(x)+'</span>'+(canDelete?'<span class="suggestion-delete" data-delete="'+i+'">×</span>':'')+'</button>';
+  return '<div class="suggestion-row">'+
+    '<button class="suggestion" type="button" data-query="'+escapeHtml(x)+'"><span class="suggestion-icon">⌕</span><span class="suggestion-query">'+escapeHtml(x)+'</span></button>'+
+    '<button class="suggestion-fill" type="button" data-fill-query="'+escapeHtml(x)+'" title="Вставить в поисковую строку" aria-label="Вставить запрос в строку">Вставить</button>'+
+    (canDelete?'<button class="suggestion-delete" type="button" data-delete-query="'+escapeHtml(x)+'" aria-label="Удалить из истории">×</button>':'')+
+  '</div>';
 }
 function showSuggestions(force=false){
   if(!force&&!suggestionsArmed)return;
@@ -973,26 +991,40 @@ function hideSuggestions(){
   suggestions.classList.remove('open');
 }
 suggestions.addEventListener('click',e=>{
-  const del=e.target.closest('[data-delete]');
-  if(del){
+  const fill=e.target.closest('[data-fill-query]');
+  if(fill){
+    e.preventDefault();
     e.stopPropagation();
-    const row=del.closest('.suggestion');
-    const value=row&&row.dataset.query;
+    q.value=fill.dataset.fillQuery||'';
+    remoteSuggestions=[];
+    updateClearButton();
+    hideSuggestions();
+    q.focus({preventScroll:true});
+    try{q.setSelectionRange(q.value.length,q.value.length)}catch(_){}
+    return;
+  }
+  const del=e.target.closest('[data-delete-query]');
+  if(del){
+    e.preventDefault();
+    e.stopPropagation();
+    const value=del.dataset.deleteQuery||'';
     if(value){
       history=history.filter(v=>v!==value);
       localStorage.setItem('novaHistory',JSON.stringify(history));
-      showSuggestions();
+      suggestionsArmed=true;
+      showSuggestions(true);
     }
     return;
   }
-  if(e.target.id==='showMoreHistory'){showAllHistory=true;showSuggestions();return}
-  if(e.target.id==='showLessHistory'){showAllHistory=false;showSuggestions();return}
+  if(e.target.id==='showMoreHistory'){showAllHistory=true;suggestionsArmed=true;showSuggestions(true);return}
+  if(e.target.id==='showLessHistory'){showAllHistory=false;suggestionsArmed=true;showSuggestions(true);return}
   const button=e.target.closest('.suggestion');
   if(!button)return;
   q.value=button.dataset.query||'';
   remoteSuggestions=[];
   updateClearButton();
   hideSuggestions();
+  form.requestSubmit();
 });
 
 function statusMarkup(x){
@@ -1213,6 +1245,20 @@ function profileLinksMarkup(links,limit=5){
       '<a class="company-link '+(match?'recommended':'')+'" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer"><span>'+escapeHtml(linkLabel(key))+'</span>'+(match?'<span class="company-link-match">по запросу</span>':'')+'<span class="company-link-icon">'+escapeHtml(linkIcon(key))+'</span></a>'
     ).join('');
 }
+function orgProfileLinksMarkup(links,limit=8){
+  const query=q?.value||'';
+  return Object.entries(links||{})
+    .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
+    .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
+    .slice(0,limit)
+    .map(({key,url,match})=>
+      '<a class="org-section-link '+(match?'recommended':'')+'" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+
+        '<span class="org-section-icon">'+escapeHtml(linkIcon(key))+'</span>'+
+        '<span class="org-section-copy"><span class="org-section-name">'+escapeHtml(linkLabel(key))+'</span><span class="org-section-meta">'+(match?'Подходит вашему запросу':'Официальный раздел')+'</span></span>'+
+        '<span class="org-section-arrow">↗</span>'+
+      '</a>'
+    ).join('');
+}
 
 async function loadBillingStatus(domain){
   const r=await fetch('/api/billing/status?domain='+encodeURIComponent(domain));
@@ -1317,8 +1363,8 @@ async function openOrganizationProfile(x){
     document.querySelector('#orgTrustBadge').textContent=owner?'Контроль домена подтверждён':'Курируемый профиль NOVA';
     document.querySelector('#orgDescription').textContent=p.description||'Официальный домен, зарегистрированный в реестре NOVA.';
     const premiumVisual=p.profile_tier==='premium'||p.profile_tier==='premium_demo'||['active','trialing'].includes(p.billing_status);
-    document.querySelector('#orgProfileLinks').classList.toggle('premium-links',premiumVisual);
-    document.querySelector('#orgProfileLinks').innerHTML=profileLinksMarkup(p.links,premiumVisual?8:5);
+    document.querySelector('#orgProfileLinks').classList.remove('premium-links');
+    document.querySelector('#orgProfileLinks').innerHTML=orgProfileLinksMarkup(p.links,premiumVisual?8:6);
     document.querySelector('#orgGrid').innerHTML=
       '<span>Организация</span><span>'+escapeHtml(p.organization)+'</span>'+
       '<span>Официальный домен</span><span>'+escapeHtml(p.domain)+'</span>'+
