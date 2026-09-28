@@ -109,7 +109,7 @@ a{color:inherit}
 .hero-sub{
   max-width:670px;margin:0 auto 30px;color:var(--muted);font-size:16px;line-height:1.65;
 }
-.search-wrap{position:relative;width:min(820px,100%);margin:0 auto}
+.search-wrap{position:relative;z-index:40;width:min(820px,100%);margin:0 auto}
 .search-panel{
   position:relative;z-index:30;display:grid;grid-template-columns:44px minmax(0,1fr) auto auto auto;
   align-items:center;gap:4px;padding:7px;border:1px solid var(--line-strong);border-radius:22px;
@@ -143,14 +143,17 @@ a{color:inherit}
   position:absolute;z-index:20;left:0;right:0;top:65px;display:none;text-align:left;
   background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:18px;
   box-shadow:0 22px 70px rgba(16,24,40,.14);padding:10px;backdrop-filter:blur(22px);
+  max-height:min(460px,50dvh);overflow-y:auto;overscroll-behavior:contain;
 }
 .suggestions.open{display:block;animation:dropIn .16s ease both}
 @keyframes dropIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .suggestions-head{
   padding:9px 10px 6px;color:var(--subtle);font-size:10px;font-weight:850;letter-spacing:.09em;text-transform:uppercase
 }
+.suggestion-row{display:flex;align-items:center;gap:2px;min-width:0;border-radius:11px;padding-right:4px}
+.suggestion-row:hover,.suggestion-row:focus-within{background:var(--surface-soft)}
 .suggestion{
-  width:100%;display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--text);
+  flex:1 1 0;min-width:0;width:auto;display:flex;align-items:center;gap:11px;border:0;background:transparent;color:var(--text);
   padding:10px 11px;border-radius:11px;text-align:left;cursor:pointer;
 }
 .suggestion:hover{background:var(--surface-soft)}
@@ -165,8 +168,22 @@ a{color:inherit}
   width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
   background:var(--surface-soft);color:var(--muted);flex:0 0 30px
 }
-.suggestion-delete{margin-left:auto;color:var(--subtle);padding:5px 7px;border-radius:8px}
-.suggestion-delete:hover{background:var(--line)}
+.suggestion-fill,.suggestion-delete{
+  flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;
+  border:0;background:transparent;color:var(--muted);padding:0;border-radius:9px;
+  font-size:19px;line-height:1;cursor:pointer;opacity:.65;
+  transition:opacity .15s ease,background .15s ease,color .15s ease
+}
+.suggestion-fill:hover,.suggestion-fill:focus-visible{background:var(--blue-soft);color:var(--blue);opacity:1}
+.suggestion-delete:hover,.suggestion-delete:focus-visible{background:var(--red-soft);color:var(--red);opacity:1}
+@media(hover:hover) and (pointer:fine){
+  .suggestion-fill,.suggestion-delete{opacity:0}
+  .suggestion-row:hover .suggestion-fill,.suggestion-row:hover .suggestion-delete,
+  .suggestion-row:focus-within .suggestion-fill,.suggestion-row:focus-within .suggestion-delete{opacity:1}
+}
+@media(pointer:coarse){
+  .suggestion-fill,.suggestion-delete{flex-basis:44px;width:44px;height:44px}
+}
 .suggestions-more{
   width:100%;border:0;border-top:1px solid var(--line);background:transparent;color:var(--blue);
   margin-top:6px;padding:11px 10px 5px;text-align:left;font-size:12px;font-weight:750;cursor:pointer
@@ -364,14 +381,14 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .modal.open{display:flex;animation:fade .14s ease both}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 .dialog{
-  width:min(680px,100%);max-height:min(86vh,780px);overflow:auto;background:var(--surface-solid);
+  width:min(680px,100%);max-height:min(86dvh,780px);overflow:auto;overscroll-behavior:contain;overflow-wrap:anywhere;background:var(--surface-solid);
   color:var(--text);border:1px solid var(--line);border-radius:24px;box-shadow:0 30px 100px rgba(15,23,42,.28);padding:22px
 }
 .dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
 .dialog-title{font-size:19px;font-weight:820;letter-spacing:-.02em}
 .dialog-subtitle{margin-top:4px;color:var(--subtle);font-size:11px;word-break:break-all}
 .close-button{
-  width:36px;height:36px;border:1px solid var(--line);border-radius:11px;background:var(--surface-soft);
+  flex:0 0 36px;width:36px;height:36px;border:1px solid var(--line);border-radius:11px;background:var(--surface-soft);
   color:var(--text);cursor:pointer;font-size:18px
 }
 .verify-hero{
@@ -742,17 +759,17 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   <footer class="footer">NOVA показывает состояние и доступные подтверждения на момент проверки. Веб-сайты могут измениться после неё.</footer>
 </div>
 
-<div id="verifyModal" class="modal">
+<div id="verifyModal" class="modal" role="dialog" aria-labelledby="verifyTitle" aria-hidden="true">
   <div class="dialog">
     <div class="dialog-head">
-      <div><div class="dialog-title">Проверка NOVA</div><div id="verifySubtitle" class="dialog-subtitle"></div></div>
+      <div><div class="dialog-title" id="verifyTitle">Проверка NOVA</div><div id="verifySubtitle" class="dialog-subtitle"></div></div>
       <button class="close-button" id="verifyClose" type="button" aria-label="Закрыть">×</button>
     </div>
     <div id="verifyBody"></div>
   </div>
 </div>
 
-<div id="orgModal" class="modal">
+<div id="orgModal" class="modal" role="dialog" aria-labelledby="orgModalTitle" aria-hidden="true">
   <div class="dialog">
     <div class="dialog-head">
       <div class="org-head">
@@ -778,11 +795,11 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   </div>
 </div>
 
-<div id="claimModal" class="modal">
+<div id="claimModal" class="modal" role="dialog" aria-labelledby="claimTitle" aria-hidden="true">
   <div class="dialog">
     <div class="dialog-head">
       <div>
-        <div class="dialog-title">Подтвердить контроль домена</div>
+        <div class="dialog-title" id="claimTitle">Подтвердить контроль домена</div>
         <div class="dialog-subtitle">NOVA Owner Verification</div>
       </div>
       <button class="close-button" id="claimClose" type="button" aria-label="Закрыть">×</button>
@@ -967,7 +984,7 @@ function showSuggestions(force=false){
   activeSuggestionIndex=-1;
   const visibleHistory=showAllHistory?history:history.slice(0,8);
   const frequent=frequentQueries();
-  const combined=(!showAllHistory&&history.length>=8)?visibleHistory:[...visibleHistory,...frequent].filter((x,i,a)=>a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).slice(0,8);
+
   let html='';
   const queryNow=q.value.trim().toLowerCase();
   const remote=remoteSuggestions.filter(x=>x&&x.toLowerCase()!==queryNow).slice(0,6);
@@ -975,10 +992,9 @@ function showSuggestions(force=false){
     html+='<div class="suggestion-section"><div class="suggestions-head">Подсказки из веба</div>'+remote.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
   if(visibleHistory.length){
-    html+='<div class="suggestion-section"><div class="suggestions-head">История</div>'+combined.filter(x=>visibleHistory.some(h=>h.toLowerCase()===x.toLowerCase())).map((x,i)=>suggestionButton(x,i,true)).join('')+'</div>';
+    html+='<div class="suggestion-section"><div class="suggestions-head">История</div>'+visibleHistory.map((x,i)=>suggestionButton(x,i,true)).join('')+'</div>';
   }
-  const shown=new Set(visibleHistory.map(x=>x.toLowerCase()));
-  const freqVisible=combined.filter(x=>!shown.has(x.toLowerCase()));
+  const freqVisible=frequent.slice(0,4);
   if(freqVisible.length&&!remote.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">Популярное у вас</div>'+freqVisible.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
@@ -1182,6 +1198,44 @@ function showCorrection(originalQuery,correctedQuery){
     else if(ev.target.closest('[data-use-original]')){q.value=originalQuery;form.requestSubmit()}
   };
 }
+const modalStack=[];
+let profileRequest=0;
+function syncModalStack(){
+  const top=modalStack.at(-1)?.modal;
+  document.querySelector('.shell').inert=!!top;
+  document.body.style.overflow=top?'hidden':'';
+  document.querySelectorAll('.modal').forEach(modal=>{
+    const active=modal===top;
+    modal.inert=!active;
+    modal.setAttribute('aria-hidden',String(!active));
+    if(active)modal.setAttribute('aria-modal','true');
+    else modal.removeAttribute('aria-modal');
+  });
+  modalStack.forEach(({modal},index)=>{modal.style.zIndex=String(1000+index)});
+}
+function openModal(modal){
+  const existing=modalStack.findIndex(entry=>entry.modal===modal);
+  if(existing!==-1)return;
+  modalStack.push({modal,opener:document.activeElement});
+  modal.classList.add('open');
+  syncModalStack();
+  modal.querySelector('.dialog').scrollTop=0;
+  modal.querySelector('.close-button').focus({preventScroll:true});
+}
+function closeModal(modal){
+  const index=modalStack.findIndex(entry=>entry.modal===modal);
+  if(index===-1)return;
+  const wasTop=index===modalStack.length-1;
+  const [{opener}]=modalStack.splice(index,1);
+  modal.classList.remove('open');
+  modal.style.removeProperty('z-index');
+  syncModalStack();
+  if(wasTop){
+    const top=modalStack.at(-1)?.modal;
+    const target=opener?.isConnected&&(!top||top.contains(opener))?opener:top?.querySelector('.close-button');
+    target?.focus({preventScroll:true});
+  }
+}
 function openVerification(x){
   const v=x.verification||{},t=v.technical||{},o=v.officiality||{};
   document.querySelector('#verifySubtitle').textContent=x.url;
@@ -1193,12 +1247,10 @@ function openVerification(x){
     '<div class="verify-section"><h4>Техническая проверка</h4><div class="verify-grid"><span>Результат</span><span>'+escapeHtml(v.status||'UNKNOWN')+'</span><span>Проверено</span><span>'+escapeHtml(v.checked_at||'—')+'</span><span>DNS</span><span>'+escapeHtml(t.dns_resolved?'Пройден':'Нет данных')+'</span><span>HTTPS</span><span>'+escapeHtml(t.final_https?'Да':'Не подтверждено')+'</span><span>HTTP</span><span>'+escapeHtml(t.http_status??'—')+'</span><span>Конечный домен</span><span>'+escapeHtml(t.final_host||'—')+'</span><span>Редиректы</span><span>'+escapeHtml(t.redirect_count??'—')+'</span></div></div>'+
     '<div class="verify-section"><h4>Основания</h4><ul class="verify-evidence">'+((o.evidence||[]).length?(o.evidence||[]):['Независимое подтверждение не найдено.']).map(e=>'<li>'+escapeHtml(e)+'</li>').join('')+'</ul></div>'+
     '<div class="verify-note">Проверка отражает состояние сайта в конкретный момент времени. NOVA не делает выводов о намерениях владельца и не заменяет вашу собственную оценку риска.</div>';
-  document.querySelector('#verifyModal').classList.add('open');
-  document.body.style.overflow='hidden';
+  openModal(document.querySelector('#verifyModal'));
 }
 function closeVerification(){
-  document.querySelector('#verifyModal').classList.remove('open');
-  document.body.style.overflow=document.querySelector('#orgModal').classList.contains('open')?'hidden':'';
+  closeModal(document.querySelector('#verifyModal'));
 }
 function linkIntentTerms(key){
   return ({
@@ -1365,10 +1417,12 @@ async function openOrganizationProfile(x){
   document.querySelector('#orgOpen').href=x.url;
   document.querySelector('#orgCheck').onclick=()=>openVerification(x);
   orgClaim.onclick=()=>openClaim(domain);
-  modal.classList.add('open');
-  document.body.style.overflow='hidden';
+  openModal(modal);
+  const request=++profileRequest;
   try{
-    const p=await loadOrganizationProfile(domain),lc=p.last_check||{};
+    const p=await loadOrganizationProfile(domain);
+    if(request!==profileRequest||!modal.classList.contains('open'))return;
+    const lc=p.last_check||{};
     const owner=p.owner_verification==='DOMAIN_CONTROL';
     document.querySelector('#orgModalTitle').textContent=p.organization||document.querySelector('#orgModalTitle').textContent;
     document.querySelector('#orgTagline').textContent=p.tagline||'';
@@ -1390,7 +1444,7 @@ async function openOrganizationProfile(x){
       '<span>Политика ранжирования</span><span>'+escapeHtml(p.ranking_policy||'Профиль не влияет на NOVA Rank.')+'</span>';
     document.querySelector('#orgEvidence').innerHTML=(x.verification?.officiality?.evidence||[]).map(e=>'<li>'+escapeHtml(e)+'</li>').join('');
   }catch(e){
-    document.querySelector('#orgDescription').textContent='Профиль организации временно недоступен.';
+    if(request===profileRequest&&modal.classList.contains('open'))document.querySelector('#orgDescription').textContent='Профиль организации временно недоступен.';
   }
 }
 function openClaim(domain){
@@ -1398,8 +1452,7 @@ function openClaim(domain){
   claimDomainEl.textContent=domain;
   claimBody.innerHTML='<button class="primary-action" type="button" data-claim-start>Создать challenge</button><div class="claim-status">NOVA выдаст одноразовый token на 24 часа. Его нужно разместить на вашем домене.</div>';
   claimBody.querySelector('[data-claim-start]').onclick=startClaim;
-  claimModal.classList.add('open');
-  document.body.style.overflow='hidden';
+  openModal(claimModal);
 }
 async function startClaim(){
   claimBody.innerHTML='<div class="claim-status">Создаём challenge…</div>';
@@ -1443,13 +1496,10 @@ async function verifyClaim(){
     if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
   }
 }
-function closeClaim(){
-  claimModal.classList.remove('open');
-  if(!document.querySelector('#verifyModal').classList.contains('open')&&!document.querySelector('#orgModal').classList.contains('open'))document.body.style.overflow='';
-}
+function closeClaim(){closeModal(claimModal)}
 function closeOrganizationProfile(){
-  document.querySelector('#orgModal').classList.remove('open');
-  if(!document.querySelector('#verifyModal').classList.contains('open'))document.body.style.overflow='';
+  profileRequest++;
+  closeModal(document.querySelector('#orgModal'));
 }
 document.querySelector('#verifyClose').onclick=closeVerification;
 document.querySelector('#verifyModal').onclick=e=>{if(e.target.id==='verifyModal')closeVerification()};
@@ -1494,7 +1544,7 @@ hideSuggestions();
 
 const billingReturn=new URLSearchParams(location.search).get('billing');
 if(billingReturn==='success'){
-  setTimeout(()=>{history.replaceState(null,'',location.pathname);},1200);
+  setTimeout(()=>{window.history.replaceState(null,'',location.pathname);},1200);
 }
 
 const savedTheme=localStorage.getItem(THEME_KEY);
@@ -1597,6 +1647,20 @@ form.onsubmit=async e=>{
   }
 };
 document.addEventListener('keydown',e=>{
+  const topModal=modalStack.at(-1)?.modal;
+  if(topModal){
+    if(e.key==='Escape'){
+      e.preventDefault();
+      if(topModal.id==='orgModal')closeOrganizationProfile();
+      else closeModal(topModal);
+    }else if(e.key==='Tab'){
+      const focusable=[...topModal.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')].filter(el=>el.getClientRects().length);
+      const first=focusable[0],last=focusable.at(-1);
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
+    }
+    return;
+  }
   if(document.activeElement===q&&suggestions.classList.contains('open')&&(e.key==='ArrowDown'||e.key==='ArrowUp')){
     const rows=[...suggestions.querySelectorAll('.suggestion')];
     if(rows.length){
