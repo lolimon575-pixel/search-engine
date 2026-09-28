@@ -703,13 +703,26 @@ const metricCount=document.querySelector('#metricCount');
 const metricTime=document.querySelector('#metricTime');
 const metricVerified=document.querySelector('#metricVerified');
 const metricOfficial=document.querySelector('#metricOfficial');
+const freshnessSelect=document.querySelector('#freshness');
+const modeButtons=[...document.querySelectorAll('[data-mode]')];
+const companyPanel=document.querySelector('#companyPanel');
+const orgClaim=document.querySelector('#orgClaim');
+const claimModal=document.querySelector('#claimModal');
+const claimDomainEl=document.querySelector('#claimDomain');
+const claimBody=document.querySelector('#claimBody');
+const claimStart=document.querySelector('#claimStart');
 
 let history=JSON.parse(localStorage.getItem('novaHistory')||'[]');
 let queryStats=JSON.parse(localStorage.getItem('novaQueryStats')||'{}');
+let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
 let showAllHistory=false;
 let currentResults=[];
 let pollTimer=null;
 let lastElapsed=null;
+let activeMode='web';
+let remoteSuggestions=[];
+let suggestTimer=null;
+let claimContext={domain:'',token:''};
 
 const THEME_KEY='novaTheme';
 const DEFAULT_FREQUENT=['Google','GitHub','Microsoft','YouTube','Wikipedia','Apple','OpenAI','Amazon','Steam','Discord'];
@@ -727,6 +740,63 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 function domainOf(u){try{return new URL(u).hostname.replace(/^www\./,'')}catch{return''}}
 function faviconOf(u){const d=domainOf(u);return d?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(d)+'&sz=64':''}
 function needsVerification(x){return !x.verification||!x.verification.status||x.verification.status==='UNKNOWN'}
+function isOfficialStatus(s){return ['OWNER_VERIFIED','CONFIRMED','EXTERNAL_CONFIRMED'].includes(s)}
+function safeAccent(value){return /^#[0-9a-f]{6}$/i.test(String(value||''))?value:'#2563eb'}
+function linkLabel(key){return ({about:'О компании',careers:'Карьера',support:'Поддержка',help:'Помощь',docs:'Документация',developer:'Разработчикам',community:'Сообщество',newsroom:'Новости',jobs:'Вакансии'}[key]||key)}
+function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
+function setDomainPreference(domain,value){
+  const key=String(domain||'').toLowerCase();
+  if(!key)return;
+  if(value==='normal')delete domainPrefs[key];else domainPrefs[key]=value;
+  localStorage.setItem('novaDomainPrefs',JSON.stringify(domainPrefs));
+  renderResults();
+}
+function applyDomainPreferences(list){
+  const visible=list.filter(x=>domainPreference(domainOf(x.url))!=='blocked');
+  return visible.sort((a,b)=>{
+    const pa=domainPreference(domainOf(a.url))==='boost'?1:0;
+    const pb=domainPreference(domainOf(b.url))==='boost'?1:0;
+    if(pa!==pb)return pb-pa;
+    return currentResults.indexOf(a)-currentResults.indexOf(b);
+  });
+}
+function handleBang(value){
+  const m=String(value||'').trim().match(/^!(\w+)\s+(.+)$/);
+  if(!m)return false;
+  const bang=m[1].toLowerCase(),query=m[2].trim();
+  const targets={
+    w:'https://en.wikipedia.org/w/index.php?search=',
+    yt:'https://www.youtube.com/results?search_query=',
+    gh:'https://github.com/search?q=',
+    r:'https://www.reddit.com/search/?q=',
+    g:'https://www.google.com/search?q='
+  };
+  if(!targets[bang])return false;
+  window.location.href=targets[bang]+encodeURIComponent(query);
+  return true;
+}
+function setMode(mode,resubmit=false){
+  activeMode=['web','verified','exact'].includes(mode)?mode:'web';
+  modeButtons.forEach(b=>b.classList.toggle('active',b.dataset.mode===activeMode));
+  if(resubmit&&q.value.trim())form.requestSubmit();
+}
+async function fetchRemoteSuggestions(value){
+  const query=String(value||'').trim();
+  if(query.length<2){remoteSuggestions=[];return}
+  try{
+    const r=await fetch('/api/suggest?q='+encodeURIComponent(query)+'&limit=6');
+    const d=await r.json();
+    if(q.value.trim()!==query)return;
+    remoteSuggestions=d.suggestions||[];
+    showSuggestions();
+  }catch(e){}
+}
+function scheduleRemoteSuggestions(){
+  clearTimeout(suggestTimer);
+  const value=q.value.trim();
+  if(value.length<2){remoteSuggestions=[];showSuggestions();return}
+  suggestTimer=setTimeout(()=>fetchRemoteSuggestions(value),180);
+}
 function saveHistory(x){
   history=[x,...history.filter(v=>v.toLowerCase()!==x.toLowerCase())].slice(0,60);
   queryStats[x]=(queryStats[x]||0)+1;
@@ -746,12 +816,17 @@ function showSuggestions(){
   const frequent=frequentQueries();
   const combined=(!showAllHistory&&history.length>=8)?visibleHistory:[...visibleHistory,...frequent].filter((x,i,a)=>a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).slice(0,8);
   let html='';
+  const queryNow=q.value.trim().toLowerCase();
+  const remote=remoteSuggestions.filter(x=>x&&x.toLowerCase()!==queryNow).slice(0,6);
+  if(remote.length){
+    html+='<div class="suggestion-section"><div class="suggestions-head">Подсказки из веба</div>'+remote.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
+  }
   if(visibleHistory.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">История</div>'+combined.filter(x=>visibleHistory.some(h=>h.toLowerCase()===x.toLowerCase())).map((x,i)=>suggestionButton(x,i,true)).join('')+'</div>';
   }
   const shown=new Set(visibleHistory.map(x=>x.toLowerCase()));
   const freqVisible=combined.filter(x=>!shown.has(x.toLowerCase()));
-  if(freqVisible.length){
+  if(freqVisible.length&&!remote.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">Популярное у вас</div>'+freqVisible.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
   if(history.length>8&&!showAllHistory)html+='<button class="suggestions-more" type="button" id="showMoreHistory">Показать всю историю</button>';
