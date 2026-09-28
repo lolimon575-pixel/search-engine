@@ -1,8 +1,7 @@
+import re
 import httpx
 
 def _distance(a,b):
-    if a==b:return 0
-    if not a or not b:return max(len(a),len(b))
     prev=list(range(len(b)+1))
     for i,ca in enumerate(a,1):
         cur=[i]
@@ -12,20 +11,42 @@ def _distance(a,b):
     return prev[-1]
 
 def _plausible(original,candidate):
-    a=original.lower().strip(); b=candidate.lower().strip()
-    if not b or a==b or len(a)>80 or len(b)>80:return False
-    return _distance(a,b)<=max(2,round(len(a)*0.22))
+    a=re.sub(r"\s+"," ",original.lower().strip())
+    b=re.sub(r"\s+"," ",candidate.lower().strip())
+    if not b or a==b or len(a)>100 or len(b)>100:return False
+    return _distance(a,b)<=max(1,round(min(len(a),len(b))*.2))
 
-def suggest_correction(query, timeout=2.0):
+def _suggestions(q):
+    endpoints=[
+        ("https://suggestqueries.google.com/complete/search",{"client":"firefox","hl":"ru","q":q}),
+        ("https://duckduckgo.com/ac/",{"q":q,"kl":"ru-ru","type":"list"}),
+    ]
+    headers={"User-Agent":"Mozilla/5.0 (compatible; NOVA Search/1.6)"}
+    with httpx.Client(timeout=2.5,follow_redirects=True,headers=headers) as client:
+        for url,params in endpoints:
+            try:
+                data=client.get(url,params=params).json()
+                if not isinstance(data,list): continue
+                if len(data)>1 and isinstance(data[1],list):
+                    for item in data[1][:10]:
+                        if isinstance(item,str) and item.strip(): yield item.strip()
+                else:
+                    for item in data[:10]:
+                        if isinstance(item,dict):
+                            value=str(item.get("phrase","")).strip()
+                            if value: yield value
+            except Exception:
+                continue
+
+def suggest_correction(query, timeout=2.5):
     q=query.strip()
     if len(q)<3 or len(q)>120:return None
+    seen=set()
     try:
-        with httpx.Client(timeout=timeout,follow_redirects=True,headers={"User-Agent":"NOVA-Search/1.6"}) as c:
-            r=c.get("https://duckduckgo.com/ac/",params={"q":q,"kl":"ru-ru","type":"list"})
-            r.raise_for_status()
-            items=r.json()
-        for item in items[:8]:
-            candidate=str(item.get("phrase","")).strip() if isinstance(item,dict) else ""
+        for candidate in _suggestions(q):
+            key=candidate.lower()
+            if key in seen: continue
+            seen.add(key)
             if _plausible(q,candidate):
                 return candidate
     except Exception:
