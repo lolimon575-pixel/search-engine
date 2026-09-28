@@ -25,8 +25,8 @@ class Parser(HTMLParser):
             if self.items and not self.items[-1][2]: self.items[-1][2]=" ".join("".join(self.buf).split())
             self.cur=None
 
-def search(query: str, limit=20, timeout=8):
+def search(query: str, limit=20, timeout=8, freshness=""):
     with httpx.Client(timeout=timeout, follow_redirects=True, headers={"User-Agent":"Mozilla/5.0 (compatible; NOVA-Search/1.0)"}) as c:
-        r=c.get("https://html.duckduckgo.com/html/", params={"q":query}); r.raise_for_status()
+        params={"q":query}\n        if freshness in {"d","w","m","y"}:\n            params["df"]=freshness\n        r=c.get("https://html.duckduckgo.com/html/", params=params); r.raise_for_status()
     p=Parser(); p.feed(r.text)
     return [WebResult(title=t,url=u,description=d,provider_rank=i) for i,(t,u,d) in enumerate(p.items[:limit],1)]
