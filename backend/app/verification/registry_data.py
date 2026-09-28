@@ -102,6 +102,12 @@ REGISTRY = {
     "alfa-bank.ru": profile("Альфа-Банк", "Fintech", "Банковские сервисы для частных лиц и бизнеса", "Официальный домен Альфа-Банка.", "#ef3124", {"personal":"https://alfabank.ru/","business":"https://alfabank.ru/sme/","help":"https://alfabank.ru/help/"}),
     "vtb.ru": profile("ВТБ", "Fintech", "Банковские сервисы для частных лиц и бизнеса", "Официальный домен ВТБ.", "#003f8f", {"personal":"https://www.vtb.ru/personal/","business":"https://www.vtb.ru/malyj-biznes/","about":"https://www.vtb.ru/about/"}),
 
+    "kinopoisk.ru": profile("Кинопоиск", "Media", "Онлайн-кинотеатр, фильмы, сериалы и киноэнциклопедия", "Официальный домен Кинопоиска.", "#ff6600", {"watch":"https://www.kinopoisk.ru/"}),
+    "rutube.ru": profile("RUTUBE", "Media", "Российская видеоплатформа", "Официальный домен RUTUBE.", "#100943", {"watch":"https://rutube.ru/","app":"https://rutube.ru/app/","legal":"https://rutube.ru/info/legal/"}),
+    "rbc.ru": profile("РБК", "Media", "Деловые новости, аналитика и профессиональные материалы", "Официальный домен РБК.", "#1b6ac9", {"news":"https://www.rbc.ru/","business":"https://www.rbc.ru/rubric/business","subscription":"https://pro.rbc.ru/offers"}),
+    "gazprombank.ru": profile("Газпромбанк", "Fintech", "Банковские услуги для частных лиц и бизнеса", "Официальный домен Газпромбанка.", "#00a5df", {"personal":"https://www.gazprombank.ru/","business":"https://www.gazprombank.ru/business/","investors":"https://www.gazprombank.ru/investors/","tariffs":"https://www.gazprombank.ru/documents-and-tariffs/","offices":"https://www.gazprombank.ru/offices/"}),
+    "yota.ru": profile("Yota", "Telecom", "Мобильная связь, тарифы и цифровые сервисы", "Официальный домен оператора Yota.", "#00aeef", {"tariffs":"https://www.yota.ru/tariff","services":"https://www.yota.ru/services","support":"https://www.yota.ru/support","contacts":"https://www.yota.ru/contacts","business":"https://www.yota.ru/business"}),
+
     "puma.com": profile(
         "PUMA",
         "Apparel",
