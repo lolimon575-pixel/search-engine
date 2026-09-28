@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -11,6 +12,7 @@ from app.registry_db import (
     get_site,
     mark_ownership_verified,
     normalize_domain,
+    owner_token_authorized,
 )
 from app.verification.engine import VerificationEngine
 
@@ -37,8 +39,9 @@ def create_challenge(domain):
     if not get_site(host):
         raise ValueError("Для этого домена ещё нет NOVA Profile. Сначала домен должен пройти добавление в курируемый реестр.")
     token = "nova-" + secrets.token_urlsafe(24)
+    owner_token = "nova-owner-" + secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=CHALLENGE_TTL_HOURS)
-    row = create_ownership_claim(host, _token_hash(token), expires_at)
+    row = create_ownership_claim(host, _token_hash(token), expires_at, _token_hash(owner_token))
     if not row:
         raise RuntimeError("Реестр подтверждения временно недоступен")
     return {
@@ -48,6 +51,7 @@ def create_challenge(domain):
         "challenge_path": CHALLENGE_PATH,
         "challenge_url": f"https://{host}{CHALLENGE_PATH}",
         "token": token,
+        "owner_token": owner_token,
         "expires_at": row["expires_at"],
         "instructions": [
             f"Создайте текстовый файл по адресу https://{host}{CHALLENGE_PATH}",
@@ -58,7 +62,7 @@ def create_challenge(domain):
     }
 
 
-def verify_challenge(domain, token):
+def verify_challenge(domain, token, owner_token=""):
     host = _valid_host(domain)
     clean_token = (token or "").strip()
     if not clean_token.startswith("nova-") or len(clean_token) > 200:
@@ -69,11 +73,16 @@ def verify_challenge(domain, token):
     if not claim:
         return {"domain": host, "verified": False, "status": "challenge_not_found"}
 
+    private_token = (owner_token or "").strip()
+    expected_hash = claim.get("owner_token_hash")
+    if (not private_token.startswith("nova-owner-") or len(private_token) > 200
+            or not expected_hash or not hmac.compare_digest(_token_hash(private_token), expected_hash)):
+        return {"domain": host, "verified": False, "status": "invalid_owner_token"}
     now = datetime.now(timezone.utc)
-    if claim["status"] == "verified":
-        return _verified_response(host, claim)
     if claim["expires_at"] <= now:
         return {"domain": host, "verified": False, "status": "expired"}
+    if claim["status"] == "verified":
+        return _verified_response(host, claim)
 
     url = f"https://{host}{CHALLENGE_PATH}"
     try:
@@ -138,7 +147,6 @@ def ownership_status(domain):
 def authorize_owner(domain, token):
     host = _valid_host(domain)
     clean_token = (token or "").strip()
-    if not clean_token.startswith("nova-") or len(clean_token) > 200:
+    if not clean_token.startswith("nova-owner-") or len(clean_token) > 200:
         return False
-    claim = get_ownership_claim(host, _token_hash(clean_token))
-    return bool(claim and claim.get("status") == "verified")
+    return owner_token_authorized(host, _token_hash(clean_token))

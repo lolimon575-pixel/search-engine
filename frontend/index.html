@@ -793,7 +793,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
       будет доступен только после этого шага и отдельной identity/billing-проверки. Органический рейтинг не продаётся.
     </div>
     <div id="claimBody" class="claim-step">
-      <button id="claimStart" class="primary-action" type="button">Создать challenge</button>
+      <button id="claimStart" class="primary-action" type="button">Начать подтверждение</button>
     </div>
   </div>
 </div>
@@ -828,7 +828,9 @@ let queryStats=JSON.parse(localStorage.getItem('novaQueryStats')||'{}');
 let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
 let showAllHistory=false;
 let currentResults=[];
-let ownershipTokens=JSON.parse(localStorage.getItem('novaOwnershipTokens')||'{}');
+// Public proof tokens from older versions must never authorize billing.
+localStorage.removeItem('novaOwnershipTokens');
+let ownershipTokens=JSON.parse(sessionStorage.getItem('novaOwnerCredentials')||'{}');
 let pollTimer=null;
 let searchController=null;
 let searchGeneration=0;
@@ -1396,48 +1398,49 @@ async function openOrganizationProfile(x){
   }
 }
 function openClaim(domain){
-  claimContext={domain,token:''};
+  claimContext={domain,token:'',ownerToken:''};
   claimDomainEl.textContent=domain;
-  claimBody.innerHTML='<button class="primary-action" type="button" data-claim-start>Создать challenge</button><div class="claim-status">NOVA выдаст одноразовый token на 24 часа. Его нужно разместить на вашем домене.</div>';
+  claimBody.innerHTML='<button class="primary-action" type="button" data-claim-start>Начать подтверждение</button><div class="claim-status">Разместите код проверки на своём домене. Запрос действует 24 часа. Приватный ключ управления останется в этой вкладке и не публикуется.</div>';
   claimBody.querySelector('[data-claim-start]').onclick=startClaim;
   claimModal.classList.add('open');
   document.body.style.overflow='hidden';
 }
 async function startClaim(){
-  claimBody.innerHTML='<div class="claim-status">Создаём challenge…</div>';
+  claimBody.innerHTML='<div class="claim-status">Готовим подтверждение…</div>';
   try{
     const r=await fetch('/api/ownership/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain})});
     const d=await r.json();
-    if(!r.ok)throw Error(d.detail||'Не удалось создать challenge');
+    if(!r.ok)throw Error(d.detail||'Не удалось начать подтверждение');
     claimContext.token=d.token;
+    claimContext.ownerToken=d.owner_token;
     claimBody.innerHTML=
       '<div class="claim-status">1. Создайте файл по адресу:</div><div class="claim-code">'+escapeHtml(d.challenge_url)+'</div>'+
-      '<div class="claim-status">2. Поместите в него только этот token:</div><div class="claim-code" id="claimTokenCode">'+escapeHtml(d.token)+'</div>'+
-      '<div class="claim-actions"><button class="secondary-action" type="button" data-copy-token>Копировать token</button><button class="primary-action" type="button" data-verify-claim>Проверить домен</button></div>'+
+      '<div class="claim-status">2. Поместите в него только этот код:</div><div class="claim-code" id="claimTokenCode">'+escapeHtml(d.token)+'</div>'+
+      '<div class="claim-actions"><button class="secondary-action" type="button" data-copy-token>Копировать код</button><button class="primary-action" type="button" data-verify-claim>Проверить домен</button></div>'+
       '<div class="claim-status">Подтверждение контроля домена не покупает место в выдаче. Для будущего Premium-профиля после этого потребуется отдельная identity/billing-проверка.</div>';
     claimBody.querySelector('[data-copy-token]').onclick=async()=>{try{await navigator.clipboard.writeText(claimContext.token)}catch(e){}};
     claimBody.querySelector('[data-verify-claim]').onclick=verifyClaim;
   }catch(e){
-    claimBody.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Challenge не создан</h3><p>'+escapeHtml(e.message)+'</p></div>';
+    claimBody.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось начать подтверждение</h3><p>'+escapeHtml(e.message)+'</p></div>';
   }
 }
 async function verifyClaim(){
   const button=claimBody.querySelector('[data-verify-claim]');
   if(button){button.disabled=true;button.textContent='Проверяем…'}
   try{
-    const r=await fetch('/api/ownership/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain,token:claimContext.token})});
+    const r=await fetch('/api/ownership/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain,token:claimContext.token,owner_token:claimContext.ownerToken})});
     const d=await r.json();
     if(!r.ok)throw Error(d.detail||'Проверка недоступна');
     if(!d.verified){
       if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
       const old=claimBody.querySelector('.claim-status:last-child');
-      const message={proof_not_reachable:'Файл пока не доступен по HTTPS.',proof_mismatch:'Содержимое файла не совпадает с token.',expired:'Challenge истёк. Создайте новый.'}[d.status]||'Подтверждение пока не прошло.';
+      const message={proof_not_reachable:'Файл пока не доступен по HTTPS.',proof_mismatch:'Содержимое файла не совпадает с кодом.',expired:'Подтверждение истекло. Создайте новое.',invalid_owner_token:'Откройте новое подтверждение в этой вкладке.'}[d.status]||'Подтверждение пока не прошло.';
       if(old)old.textContent=message;
       return;
     }
-    ownershipTokens[claimContext.domain]=claimContext.token;
-    localStorage.setItem('novaOwnershipTokens',JSON.stringify(ownershipTokens));
-    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Управление Profile Plus разрешено на этом устройстве.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div><div class="claim-actions"><button class="primary-action" type="button" data-start-plus>Подключить Profile Plus</button></div>';
+    ownershipTokens[claimContext.domain]=claimContext.ownerToken;
+    sessionStorage.setItem('novaOwnerCredentials',JSON.stringify(ownershipTokens));
+    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Управление Profile Plus доступно в этой вкладке до истечения 24 часов с начала подтверждения.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div><div class="claim-actions"><button class="primary-action" type="button" data-start-plus>Подключить Profile Plus</button></div>';
     const plusButton=claimBody.querySelector('[data-start-plus]');
     if(plusButton)plusButton.onclick=()=>startProfilePlus(claimContext.domain);
     await updateCompanyPanel();
