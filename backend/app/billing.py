@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 
 import stripe
 
+from app.ownership import authorize_owner
+
 from app.registry_db import (
     find_domain_by_customer,
     find_domain_by_subscription,
@@ -54,8 +56,10 @@ def _require_owner_verified(domain):
     return host, profile
 
 
-def create_checkout(domain):
+def create_checkout(domain, ownership_token):
     host, profile = _require_owner_verified(domain)
+    if not authorize_owner(host, ownership_token):
+        raise PermissionError("Нужно повторно подтвердить право управления этим доменом.")
     if profile.get("billing_status") in {"active", "trialing"}:
         raise ValueError("Profile Plus уже активен для этого домена.")
 
@@ -108,8 +112,10 @@ def create_checkout(domain):
     }
 
 
-def create_portal(domain):
+def create_portal(domain, ownership_token):
     host, profile = _require_owner_verified(domain)
+    if not authorize_owner(host, ownership_token):
+        raise PermissionError("Нужно повторно подтвердить право управления этим доменом.")
     customer = profile.get("stripe_customer_id")
     if not customer:
         raise ValueError("Для этого домена ещё нет Stripe Customer.")
@@ -139,8 +145,6 @@ def billing_status(domain):
         "profile_tier": profile.get("profile_tier") or "standard",
         "billing_status": profile.get("billing_status") or "inactive",
         "billing_period_end": profile.get("billing_period_end"),
-        "customer_id": profile.get("stripe_customer_id"),
-        "subscription_id": profile.get("stripe_subscription_id"),
         "price_id": _price_id() or None,
         "mode": os.getenv("NOVA_STRIPE_MODE", "sandbox"),
         "ranking_policy": "Оплата Profile Plus не влияет на NOVA Rank.",
