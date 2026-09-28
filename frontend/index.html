@@ -485,6 +485,15 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .pref-action:hover{background:var(--surface-soft);color:var(--text)}
 .pref-action.active{background:var(--violet-soft);color:var(--violet)}
 .personal-note{font-size:9px;color:var(--subtle);margin-top:5px}
+
+.brief-card{margin-bottom:16px;border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:17px;box-shadow:var(--shadow-soft)}
+.brief-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.brief-title{font-size:13px;font-weight:850;letter-spacing:.02em}
+.brief-note{font-size:9px;color:var(--subtle)}
+.brief-passages{display:grid;gap:9px}
+.brief-passage{padding:11px 12px;border-radius:13px;background:var(--surface-soft);border:1px solid var(--line)}
+.brief-passage p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.brief-source{display:inline-flex;margin-top:7px;color:var(--blue);font-size:9px;font-weight:800;text-decoration:none}
 </style>
 </head>
 <body>
@@ -553,6 +562,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
         </div>
       </div>
       <div id="entityCard"></div>
+      <div id="briefCard"></div>
       <div id="results" class="results-stack"></div>
     </section>
 
@@ -654,6 +664,7 @@ const metricTime=document.querySelector('#metricTime');
 const metricVerified=document.querySelector('#metricVerified');
 const metricOfficial=document.querySelector('#metricOfficial');
 const entityCard=document.querySelector('#entityCard');
+const briefCard=document.querySelector('#briefCard');
 const modeNote=document.querySelector('#modeNote');
 
 let history=JSON.parse(localStorage.getItem('novaHistory')||'[]');
@@ -744,6 +755,12 @@ suggestions.addEventListener('click',e=>{
   form.requestSubmit();
 });
 
+
+
+function renderBrief(brief){
+  if(!brief||!(brief.passages||[]).length){briefCard.innerHTML='';return}
+  briefCard.innerHTML='<section class="brief-card"><div class="brief-head"><div class="brief-title">'+escapeHtml(brief.title||'NOVA Brief')+'</div><div class="brief-note">extractive · источники видимы</div></div><div class="brief-passages">'+brief.passages.map(p=>'<div class="brief-passage"><p>'+escapeHtml(p.text)+'</p><a class="brief-source" href="'+escapeHtml(p.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(p.domain||p.title)+' ↗</a></div>').join('')+'</div><div class="claim-policy">'+escapeHtml(brief.note||'')+'</div></section>';
+}
 
 function identityLabel(profile){
   if(profile?.identity_status==='OWNER_VERIFIED'||profile?.ownership_status==='owner_verified')return {label:'Owner Verified',cls:'identity-owner'};
@@ -1000,6 +1017,7 @@ document.querySelector('#theme').onclick=()=>{
 function applyResponse(data,query,elapsed,refresh=false){
   currentResults=data.results||[];
   renderEntity(data.entity||null);
+  renderBrief(data.brief||null);
   if(!refresh)lastElapsed=elapsed;
   renderResults();
   const pending=currentResults.some(needsVerification);
@@ -1034,6 +1052,7 @@ form.onsubmit=async e=>{
   summary.textContent='';
   toolbar.classList.remove('visible');
   entityCard.innerHTML='';
+  briefCard.innerHTML='';
   metricCount.textContent='—';metricTime.textContent='—';metricVerified.textContent='—';metricOfficial.textContent='—';
   showSkeletons();
   if(pollTimer){clearInterval(pollTimer);pollTimer=null}
