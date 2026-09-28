@@ -1180,20 +1180,34 @@ document.querySelector('#theme').onclick=()=>{
   localStorage.setItem(THEME_KEY,document.body.classList.contains('dark')?'dark':'light');
 };
 
+function searchRequestUrl(query){
+  const params=new URLSearchParams({q:query,mode:activeMode});
+  if(freshnessSelect.value)params.set('freshness',freshnessSelect.value);
+  return '/api/search?'+params.toString();
+}
+function modeLabel(){
+  return activeMode==='verified'?'Verified':activeMode==='exact'?'Exact':'Web';
+}
 function applyResponse(data,query,elapsed,refresh=false){
   currentResults=data.results||[];
   if(!refresh)lastElapsed=elapsed;
   renderResults();
-  const pending=currentResults.some(needsVerification);
+  updateCompanyPanel();
+  const pending=currentResults.some(needsVerification)&&activeMode!=='verified';
   status.classList.toggle('searching',pending);
-  status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
-  summary.textContent=(data.count||currentResults.length)+' результатов'+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
+  if(activeMode==='verified'){
+    status.textContent=currentResults.length?'Показаны только результаты с подтверждением официальности':'Подтверждённых результатов пока не найдено';
+  }else{
+    status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
+  }
+  const freshnessLabel=freshnessSelect.value?(' · '+freshnessSelect.options[freshnessSelect.selectedIndex].text):'';
+  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel()+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
 async function refreshVerification(query){
   try{
-    const r=await fetch('/api/search?q='+encodeURIComponent(query));
+    const r=await fetch(searchRequestUrl(query));
     if(!r.ok)return;
     const data=await r.json();
     if(q.value.trim().toLowerCase()!==query.toLowerCase())return;
@@ -1208,26 +1222,28 @@ form.onsubmit=async e=>{
   e.preventDefault();
   const originalQuery=q.value.trim();
   if(!originalQuery)return;
+  if(handleBang(originalQuery))return;
   saveHistory(originalQuery);
   hideSuggestions();
   document.body.classList.add('has-results');
   status.classList.add('searching');
-  status.textContent='NOVA собирает и ранжирует выдачу';
+  status.textContent=activeMode==='verified'?'Ищем подтверждённые официальные результаты':activeMode==='exact'?'Ищем точную формулировку':'NOVA собирает и ранжирует выдачу';
   summary.textContent='';
   toolbar.classList.remove('visible');
+  companyPanel.hidden=true;
   metricCount.textContent='—';metricTime.textContent='—';metricVerified.textContent='—';metricOfficial.textContent='—';
   showSkeletons();
   if(pollTimer){clearInterval(pollTimer);pollTimer=null}
   try{
     const started=performance.now();
-    const r=await fetch('/api/search?q='+encodeURIComponent(originalQuery));
+    const r=await fetch(searchRequestUrl(originalQuery));
     const data=await r.json();
     if(!r.ok)throw Error(data.detail||'Ошибка поиска');
     const elapsed=performance.now()-started;
     showCorrection(originalQuery,data.corrected_query);
     const activeQuery=data.corrected_query||originalQuery;
     applyResponse(data,activeQuery,elapsed,false);
-    if(currentResults.some(needsVerification)){
+    if(activeMode!=='verified'&&currentResults.some(needsVerification)){
       let attempts=0;
       pollTimer=setInterval(async()=>{
         attempts++;
@@ -1239,12 +1255,14 @@ form.onsubmit=async e=>{
     status.classList.remove('searching');
     status.textContent='Поиск не завершён';
     summary.textContent='';
+    companyPanel.hidden=true;
     results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p></div>';
   }
 };
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    if(document.querySelector('#verifyModal').classList.contains('open'))closeVerification();
+    if(claimModal.classList.contains('open'))closeClaim();
+    else if(document.querySelector('#verifyModal').classList.contains('open'))closeVerification();
     else if(document.querySelector('#orgModal').classList.contains('open'))closeOrganizationProfile();
     else hideSuggestions();
   }
