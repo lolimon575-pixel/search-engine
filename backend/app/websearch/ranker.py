@@ -98,7 +98,7 @@ def promote_verified_official(query: str, results: list[WebResult]) -> list[WebR
     for result in results:
         officiality = (result.verification or {}).get("officiality") or {}
         status = officiality.get("status")
-        if status not in {"CONFIRMED", "EXTERNAL_CONFIRMED"}:
+        if status not in {"OWNER_VERIFIED", "CURATED", "EXTERNAL_CONFIRMED"}:
             continue
 
         organization = _text(officiality.get("organization", ""))
@@ -112,7 +112,8 @@ def promote_verified_official(query: str, results: list[WebResult]) -> list[WebR
         full_org_match = bool(query_terms and query_terms.issubset(organization_terms))
 
         if exact_org or exact_domain or full_org_match:
-            result.score = round(result.score + (18.0 if status == "CONFIRMED" else 12.0), 4)
+            bonus = 20.0 if status == "OWNER_VERIFIED" else (12.0 if status == "EXTERNAL_CONFIRMED" else 8.0)
+            result.score = round(result.score + bonus, 4)
             result.rank_signals = ["official_match", *[s for s in result.rank_signals if s != "official_match"]]
 
     return sorted(results, key=lambda item: (item.score, -item.provider_rank), reverse=True)
