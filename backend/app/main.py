@@ -7,10 +7,11 @@ from app.websearch.service import WebSearchService
 from app.verification.ledger import VerificationLedger
 from app.verification.officiality import get_organization_profile, REGISTRY
 from app.registry_db import ensure_schema, seed_registry, get_stats, get_site
+from app.websearch.correction import suggest_correction
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "frontend" / "index.html"
-app = FastAPI(title="NOVA Search", version="1.5.0")
+app = FastAPI(title="NOVA Search", version="1.6.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 web_search = WebSearchService()
 ledger = VerificationLedger()
@@ -45,8 +46,10 @@ async def search(q: str = Query("", max_length=300), limit: int = Query(10, ge=1
     query=q.strip()
     if not query:
         return {"query":q,"count":0,"results":[],"errors":[]}
-    results,errors=web_search.search(query,limit)
-    return {"query":query,"count":len(results),"results":[r.model_dump() for r in results],"errors":errors}
+    corrected = suggest_correction(query)
+    search_query = corrected or query
+    results,errors=web_search.search(search_query,limit)
+    return {"query":query,"corrected_query":corrected,"searched_query":search_query,"count":len(results),"results":[r.model_dump() for r in results],"errors":errors}
 
 @app.get("/api/verification")
 async def verification(url: str = Query(..., min_length=8, max_length=2048)):
