@@ -18,3 +18,32 @@ def test_showcase_profiles_have_safe_product_metadata():
         assert "score" not in item
         assert "rank" not in item
         assert "boost" not in item
+
+
+def test_registry_contains_russian_official_sites():
+    expected = {
+        "yandex.ru",
+        "vk.com",
+        "mail.ru",
+        "sberbank.ru",
+        "tbank.ru",
+        "ozon.ru",
+        "wildberries.ru",
+        "avito.ru",
+        "kaspersky.ru",
+        "2gis.ru",
+        "hh.ru",
+        "mts.ru",
+        "megafon.ru",
+        "beeline.ru",
+        "rt.ru",
+        "alfa-bank.ru",
+        "vtb.ru",
+    }
+    assert expected.issubset(REGISTRY.keys())
+
+
+def test_registry_profile_links_are_https():
+    for domain, item in REGISTRY.items():
+        for key, url in (item.get("links") or {}).items():
+            assert url.startswith("https://"), f"{domain}:{key} must use HTTPS"
