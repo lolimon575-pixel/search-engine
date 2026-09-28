@@ -635,7 +635,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   <header class="topbar">
     <a class="brand" href="/" aria-label="NOVA Search">
       <div class="brand-mark">N</div>
-      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.12</span></div>
+      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.13</span></div>
     </a>
     <div class="top-actions">
       <span class="live-pill"><span class="live-dot"></span>сервис активен</span>
@@ -958,7 +958,7 @@ function frequentQueries(){
 function suggestionButton(x,i,canDelete=false){
   return '<div class="suggestion-row">'+
     '<button class="suggestion" type="button" data-query="'+escapeHtml(x)+'"><span class="suggestion-icon">⌕</span><span class="suggestion-query">'+escapeHtml(x)+'</span></button>'+
-    '<button class="suggestion-fill" type="button" data-fill-query="'+escapeHtml(x)+'" title="Вставить в поисковую строку" aria-label="Вставить запрос в строку">Вставить</button>'+
+    '<button class="suggestion-fill" type="button" data-fill-query="'+escapeHtml(x)+'" title="Подставить в поисковую строку" aria-label="Подставить запрос в поисковую строку">↖</button>'+
     (canDelete?'<button class="suggestion-delete" type="button" data-delete-query="'+escapeHtml(x)+'" aria-label="Удалить из истории">×</button>':'')+
   '</div>';
 }
