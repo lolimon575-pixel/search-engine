@@ -4,13 +4,14 @@
   align-items:center;
   justify-content:center;
   gap:6px;
-  margin:18px auto 0;
+  margin:22px auto 12px;
   padding:5px;
   width:max-content;
   border:1px solid var(--line);
   border-radius:999px;
   background:var(--surface);
   backdrop-filter:blur(14px);
+  box-shadow:0 8px 24px rgba(0,0,0,.08);
 }
 
 .nova-language-switcher button {
@@ -18,10 +19,15 @@
   background:transparent;
   color:var(--muted);
   border-radius:999px;
-  padding:7px 12px;
-  font-size:11px;
+  padding:8px 14px;
+  font-size:12px;
   font-weight:800;
   cursor:pointer;
+  transition:.18s ease;
+}
+
+.nova-language-switcher button:hover {
+  background:rgba(127,127,127,.1);
 }
 
 .nova-language-switcher button.active {
@@ -31,7 +37,15 @@
 
 @media(max-width:680px){
   .nova-language-switcher {
+    margin:20px auto 16px;
     position:relative;
-    margin-bottom:14px;
+    bottom:auto;
+    width:auto;
+    max-width:calc(100% - 32px);
+  }
+
+  .nova-language-switcher button {
+    flex:1;
+    min-width:110px;
   }
 }
