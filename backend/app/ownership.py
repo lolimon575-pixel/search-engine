@@ -133,3 +133,12 @@ def ownership_status(domain):
         row.get("status") == "verified" and row.get("profile_exists")
     )
     return row
+
+
+def authorize_owner(domain, token):
+    host = _valid_host(domain)
+    clean_token = (token or "").strip()
+    if not clean_token.startswith("nova-") or len(clean_token) > 200:
+        return False
+    claim = get_ownership_claim(host, _token_hash(clean_token))
+    return bool(claim and claim.get("status") == "verified")

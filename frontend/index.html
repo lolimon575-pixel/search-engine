@@ -536,6 +536,11 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .brief-passage p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
 .brief-source{display:inline-flex;margin-top:6px;color:var(--blue);font-size:9px;font-weight:800;text-decoration:none}
 .brief-foot{margin-top:9px;color:var(--subtle);font-size:9px;line-height:1.45}
+
+.billing-badge{display:inline-flex;margin-top:7px;padding:5px 7px;border-radius:999px;background:var(--violet-soft);color:var(--violet);font-size:9px;font-weight:850}
+.billing-badge.inactive{background:var(--surface-soft);color:var(--subtle)}
+.billing-badge.past_due{background:var(--amber-soft);color:var(--amber)}
+.billing-note{margin-top:8px;color:var(--subtle);font-size:9px;line-height:1.45}
 </style>
 </head>
 <body>
@@ -736,6 +741,7 @@ let queryStats=JSON.parse(localStorage.getItem('novaQueryStats')||'{}');
 let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
 let showAllHistory=false;
 let currentResults=[];
+let ownershipTokens=JSON.parse(localStorage.getItem('novaOwnershipTokens')||'{}');
 let pollTimer=null;
 let lastElapsed=null;
 let activeMode='web';
@@ -1058,6 +1064,40 @@ function profileLinksMarkup(links,limit=5){
     '<a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(linkLabel(key))+' ↗</a>'
   ).join('');
 }
+
+async function loadBillingStatus(domain){
+  const r=await fetch('/api/billing/status?domain='+encodeURIComponent(domain));
+  if(!r.ok)return null;
+  return r.json();
+}
+async function startProfilePlus(domain){
+  try{
+    const token=ownershipTokens[domain]||'';
+    if(!token)throw Error('Для управления Profile Plus нужно заново подтвердить домен на этом устройстве.');
+    const r=await fetch('/api/billing/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ownership_token:token})});
+    const d=await r.json();
+    if(!r.ok)throw Error(d.detail||'Checkout недоступен');
+    if(d.checkout_url)window.location.href=d.checkout_url;
+  }catch(e){alert(e.message)}
+}
+async function openBillingPortal(domain){
+  try{
+    const token=ownershipTokens[domain]||'';
+    if(!token)throw Error('Для управления подпиской нужно заново подтвердить домен на этом устройстве.');
+    const r=await fetch('/api/billing/portal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ownership_token:token})});
+    const d=await r.json();
+    if(!r.ok)throw Error(d.detail||'Billing Portal недоступен');
+    if(d.portal_url)window.location.href=d.portal_url;
+  }catch(e){alert(e.message)}
+}
+function billingBadgeMarkup(status){
+  if(!status)return '';
+  const active=['active','trialing'].includes(status.billing_status);
+  const cls=active?'':status.billing_status==='past_due'?'past_due':'inactive';
+  const label=active?'Profile Plus активен':status.billing_status==='past_due'?'Платёж требует внимания':'Profile Plus не активен';
+  return '<span class="billing-badge '+cls+'">'+label+'</span>';
+}
+
 async function loadOrganizationProfile(domain){
   const r=await fetch('/api/organization?domain='+encodeURIComponent(domain));
   const d=await r.json();
@@ -1070,21 +1110,26 @@ async function updateCompanyPanel(){
   const domain=domainOf(top.url);
   try{
     const p=await loadOrganizationProfile(domain);
+    const billing=await loadBillingStatus(domain);
     companyPanel.hidden=false;
     companyPanel.style.setProperty('--company-accent',safeAccent(p.profile_accent));
     const owner=p.owner_verification==='DOMAIN_CONTROL';
+    const plus=billing&&['active','trialing'].includes(billing.billing_status);
     const links=profileLinksMarkup(p.links,3);
     companyPanel.innerHTML=
       '<div class="insight-title">Company Profile <span class="mini">'+escapeHtml((p.profile_badge||'NOVA').toUpperCase())+'</span></div>'+
       '<div class="company-head"><div class="company-logo"><img src="'+escapeHtml(faviconOf(p.url||top.url))+'" alt=""></div><div><div class="company-name">'+escapeHtml(p.organization)+'</div><div class="company-domain">'+escapeHtml(p.domain)+'</div></div></div>'+
       '<span class="company-trust">'+(owner?'Контроль домена подтверждён':'Курируемый реестр NOVA')+'</span>'+
+      billingBadgeMarkup(billing)+
       (p.tagline?'<div class="company-tagline">'+escapeHtml(p.tagline)+'</div>':'')+
       (p.description?'<div class="company-description">'+escapeHtml(p.description)+'</div>':'')+
       (links?'<div class="company-links">'+links+'</div>':'')+
-      '<div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button></div>'+
-      '<div class="company-policy">Расширенная карточка может стать платной услугой компании, но тариф никогда не меняет органический NOVA Rank.</div>';
+      '<div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button>'+(owner?'<button class="company-secondary" type="button" data-billing>'+(plus?'Управлять Profile Plus':'Подключить Profile Plus')+'</button>':'')+'</div>'+
+      '<div class="company-policy">Profile Plus улучшает представление компании, но никогда не повышает органический NOVA Rank.</div>';
     companyPanel.querySelector('[data-company-profile]').onclick=()=>openOrganizationProfile(top);
     companyPanel.querySelector('[data-company-claim]').onclick=()=>openClaim(domain);
+    const billingButton=companyPanel.querySelector('[data-billing]');
+    if(billingButton)billingButton.onclick=()=>plus?openBillingPortal(domain):startProfilePlus(domain);
   }catch(e){
     companyPanel.hidden=true;
   }
@@ -1118,6 +1163,7 @@ async function openOrganizationProfile(x){
       '<span>Официальный домен</span><span>'+escapeHtml(p.domain)+'</span>'+
       '<span>Категория</span><span>'+escapeHtml(p.category||'—')+'</span>'+
       '<span>Профиль</span><span>'+escapeHtml(p.profile_tier||'standard')+'</span>'+
+      '<span>Billing</span><span>'+escapeHtml(p.billing_status||'inactive')+'</span>'+
       '<span>Контроль домена</span><span>'+escapeHtml(owner?'Подтверждён':'Не подтверждён владельцем')+'</span>'+
       '<span>Источник записи</span><span>'+escapeHtml(p.method||'—')+'</span>'+
       '<span>Последняя техпроверка</span><span>'+escapeHtml(lc.checked_at||'Пока не проводилась')+'</span>'+
@@ -1168,7 +1214,11 @@ async function verifyClaim(){
       if(old)old.textContent=message;
       return;
     }
-    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Этот статус усиливает доверие к профилю, но не повышает органический NOVA Rank.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div>';
+    ownershipTokens[claimContext.domain]=claimContext.token;
+    localStorage.setItem('novaOwnershipTokens',JSON.stringify(ownershipTokens));
+    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Управление Profile Plus разрешено на этом устройстве.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div><div class="claim-actions"><button class="primary-action" type="button" data-start-plus>Подключить Profile Plus</button></div>';
+    const plusButton=claimBody.querySelector('[data-start-plus]');
+    if(plusButton)plusButton.onclick=()=>startProfilePlus(claimContext.domain);
     await updateCompanyPanel();
   }catch(e){
     if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
@@ -1199,6 +1249,11 @@ freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
 resetPrefs.onclick=()=>{domainPrefs={};localStorage.setItem('novaDomainPrefs','{}');updatePrefReset();renderResults()};
 updatePrefReset();
 updateClearButton();
+
+const billingReturn=new URLSearchParams(location.search).get('billing');
+if(billingReturn==='success'){
+  setTimeout(()=>{history.replaceState(null,'',location.pathname);},1200);
+}
 
 const savedTheme=localStorage.getItem(THEME_KEY);
 if(savedTheme==='dark'||(!savedTheme&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.body.classList.add('dark');
