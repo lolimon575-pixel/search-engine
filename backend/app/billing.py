@@ -1,4 +1,6 @@
 import os
+import hmac
+import hashlib
 from datetime import datetime, timezone
 
 import stripe
@@ -38,6 +40,29 @@ def configured():
     return bool((_secret_key() or _payment_link()) and _price_id() and _public_url())
 
 
+def _reference_for_domain(domain):
+    secret = _webhook_secret()
+    if not secret:
+        raise RuntimeError("STRIPE_WEBHOOK_SECRET is not configured")
+    encoded = normalize_domain(domain).replace(".", "_")
+    signature = hmac.new(secret.encode(), encoded.encode(), hashlib.sha256).hexdigest()[:20]
+    return f"{encoded}__{signature}"
+
+
+def _domain_from_reference(reference):
+    value = (reference or "").strip()
+    if "__" not in value:
+        return None
+    encoded, supplied = value.rsplit("__", 1)
+    secret = _webhook_secret()
+    if not secret:
+        return None
+    expected = hmac.new(secret.encode(), encoded.encode(), hashlib.sha256).hexdigest()[:20]
+    if not hmac.compare_digest(supplied, expected):
+        return None
+    return normalize_domain(encoded.replace("_", "."))
+
+
 def _client():
     key = _secret_key()
     if not key:
@@ -69,7 +94,7 @@ def create_checkout(domain, ownership_token):
             raise RuntimeError("Stripe checkout is not configured")
         separator = "&" if "?" in link else "?"
         return {
-            "checkout_url": f"{link}{separator}client_reference_id={host.replace('.', '_')}",
+            "checkout_url": f"{link}{separator}client_reference_id={_reference_for_domain(host)}",
             "session_id": None,
             "domain": host,
             "checkout_mode": "payment_link",
@@ -84,7 +109,7 @@ def create_checkout(domain, ownership_token):
         "success_url": f"{_public_url()}/?billing=success&domain={host}",
         "cancel_url": f"{_public_url()}/?billing=cancel&domain={host}",
         "allow_promotion_codes": True,
-        "client_reference_id": host.replace(".", "_"),
+        "client_reference_id": _reference_for_domain(host),
         "metadata": {
             "nova_domain": host,
             "nova_plan": "profile_plus",
@@ -188,8 +213,9 @@ def handle_webhook(payload, signature):
 
     if event_type == "checkout.session.completed":
         reference = obj.get("client_reference_id") or ""
-        fallback_domain = reference.replace("_", ".") if reference and "." not in reference else reference
-        domain = normalize_domain((obj.get("metadata") or {}).get("nova_domain") or fallback_domain or "")
+        verified_reference_domain = _domain_from_reference(reference)
+        metadata_domain = normalize_domain((obj.get("metadata") or {}).get("nova_domain") or "")
+        domain = metadata_domain or verified_reference_domain or ""
         subscription_id = obj.get("subscription")
         if domain:
             set_billing_state(
