@@ -38,6 +38,11 @@ class OwnershipVerifyRequest(BaseModel):
     token: str
 
 
+class BillingActionRequest(BaseModel):
+    domain: str
+    ownership_token: str
+
+
 @app.on_event("startup")
 def init_registry():
     try:
@@ -169,9 +174,9 @@ async def profile_plus_status(domain: str = Query("", max_length=253)):
 
 
 @app.post("/api/billing/checkout")
-async def profile_plus_checkout(domain: str = Query(..., min_length=3, max_length=253)):
+async def profile_plus_checkout(body: BillingActionRequest):
     try:
-        return create_checkout(domain)
+        return create_checkout(body.domain, body.ownership_token)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
@@ -181,9 +186,9 @@ async def profile_plus_checkout(domain: str = Query(..., min_length=3, max_lengt
 
 
 @app.post("/api/billing/portal")
-async def profile_plus_portal(domain: str = Query(..., min_length=3, max_length=253)):
+async def profile_plus_portal(body: BillingActionRequest):
     try:
-        return create_portal(domain)
+        return create_portal(body.domain, body.ownership_token)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
