@@ -404,6 +404,10 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;
   padding:7px 28px 7px 9px;font-size:10px;font-weight:750
 }
+.pref-reset{
+  border:0;background:transparent;color:var(--subtle);font-size:9px;font-weight:750;cursor:pointer;padding:6px 2px
+}
+.pref-reset:hover{color:var(--blue)}
 .bang-hint{white-space:nowrap}
 .company-card{overflow:hidden;position:relative}
 .company-card:before{
@@ -572,6 +576,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
             <option value="m">Месяц</option>
             <option value="y">Год</option>
           </select>
+          <button id="resetPrefs" class="pref-reset" type="button" hidden>Сбросить домены</button>
         </div>
       </div>
 
@@ -706,6 +711,7 @@ const metricOfficial=document.querySelector('#metricOfficial');
 const freshnessSelect=document.querySelector('#freshness');
 const modeButtons=[...document.querySelectorAll('[data-mode]')];
 const companyPanel=document.querySelector('#companyPanel');
+const resetPrefs=document.querySelector('#resetPrefs');
 const orgClaim=document.querySelector('#orgClaim');
 const claimModal=document.querySelector('#claimModal');
 const claimDomainEl=document.querySelector('#claimDomain');
@@ -744,12 +750,18 @@ function isOfficialStatus(s){return ['OWNER_VERIFIED','CONFIRMED','EXTERNAL_CONF
 function safeAccent(value){return /^#[0-9a-f]{6}$/i.test(String(value||''))?value:'#2563eb'}
 function linkLabel(key){return ({about:'О компании',careers:'Карьера',support:'Поддержка',help:'Помощь',docs:'Документация',developer:'Разработчикам',community:'Сообщество',newsroom:'Новости',jobs:'Вакансии'}[key]||key)}
 function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
+function updatePrefReset(){
+  const count=Object.keys(domainPrefs).length;
+  resetPrefs.hidden=!count;
+  resetPrefs.textContent=count?'Сбросить домены ('+count+')':'Сбросить домены';
+}
 function novaRankOf(x){const i=currentResults.indexOf(x);return i>=0?i+1:0}
 function setDomainPreference(domain,value){
   const key=String(domain||'').toLowerCase();
   if(!key)return;
   if(value==='normal')delete domainPrefs[key];else domainPrefs[key]=value;
   localStorage.setItem('novaDomainPrefs',JSON.stringify(domainPrefs));
+  updatePrefReset();
   renderResults();
 }
 function applyDomainPreferences(list){
@@ -1171,6 +1183,8 @@ q.addEventListener('focus',()=>{showSuggestions();if(q.value.trim().length>=2)sc
 sort.onchange=renderResults;
 modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
 freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
+resetPrefs.onclick=()=>{domainPrefs={};localStorage.setItem('novaDomainPrefs','{}');updatePrefReset();renderResults()};
+updatePrefReset();
 updateClearButton();
 
 const savedTheme=localStorage.getItem(THEME_KEY);
