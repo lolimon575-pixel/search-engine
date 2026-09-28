@@ -1,12 +1,13 @@
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.ownership import create_challenge, ownership_status, verify_challenge
+from app.billing import billing_status, create_checkout, create_portal, handle_webhook
 from app.registry_db import ensure_schema, get_site, get_stats, seed_registry
 from app.verification.ledger import VerificationLedger
 from app.verification.officiality import REGISTRY, get_organization_profile
@@ -17,7 +18,7 @@ from app.websearch.service import WebSearchService
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "frontend" / "index.html"
-app = FastAPI(title="NOVA Search", version="1.8.0")
+app = FastAPI(title="NOVA Search", version="1.9.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -160,3 +161,46 @@ async def ownership_verify(body: OwnershipVerifyRequest):
 @app.get("/api/ownership/status")
 async def ownership_get_status(domain: str = Query("", max_length=253)):
     return ownership_status(domain)
+
+
+@app.get("/api/billing/status")
+async def profile_plus_status(domain: str = Query("", max_length=253)):
+    return billing_status(domain)
+
+
+@app.post("/api/billing/checkout")
+async def profile_plus_checkout(domain: str = Query(..., min_length=3, max_length=253)):
+    try:
+        return create_checkout(domain)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/api/billing/portal")
+async def profile_plus_portal(domain: str = Query(..., min_length=3, max_length=253)):
+    try:
+        return create_portal(domain)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/api/billing/webhook")
+async def stripe_billing_webhook(request: Request):
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature", "")
+    try:
+        return handle_webhook(payload, signature)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid webhook payload")
+    except Exception as exc:
+        if exc.__class__.__name__ == "SignatureVerificationError":
+            raise HTTPException(status_code=400, detail="Invalid webhook signature")
+        raise HTTPException(status_code=503, detail=f"Billing webhook unavailable: {type(exc).__name__}")
