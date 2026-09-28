@@ -741,6 +741,7 @@ let queryStats=JSON.parse(localStorage.getItem('novaQueryStats')||'{}');
 let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
 let showAllHistory=false;
 let currentResults=[];
+let ownershipTokens=JSON.parse(localStorage.getItem('novaOwnershipTokens')||'{}');
 let pollTimer=null;
 let lastElapsed=null;
 let activeMode='web';
@@ -1071,7 +1072,9 @@ async function loadBillingStatus(domain){
 }
 async function startProfilePlus(domain){
   try{
-    const r=await fetch('/api/billing/checkout?domain='+encodeURIComponent(domain),{method:'POST'});
+    const token=ownershipTokens[domain]||'';
+    if(!token)throw Error('Для управления Profile Plus нужно заново подтвердить домен на этом устройстве.');
+    const r=await fetch('/api/billing/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ownership_token:token})});
     const d=await r.json();
     if(!r.ok)throw Error(d.detail||'Checkout недоступен');
     if(d.checkout_url)window.location.href=d.checkout_url;
@@ -1079,7 +1082,9 @@ async function startProfilePlus(domain){
 }
 async function openBillingPortal(domain){
   try{
-    const r=await fetch('/api/billing/portal?domain='+encodeURIComponent(domain),{method:'POST'});
+    const token=ownershipTokens[domain]||'';
+    if(!token)throw Error('Для управления подпиской нужно заново подтвердить домен на этом устройстве.');
+    const r=await fetch('/api/billing/portal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain,ownership_token:token})});
     const d=await r.json();
     if(!r.ok)throw Error(d.detail||'Billing Portal недоступен');
     if(d.portal_url)window.location.href=d.portal_url;
@@ -1209,7 +1214,11 @@ async function verifyClaim(){
       if(old)old.textContent=message;
       return;
     }
-    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Этот статус усиливает доверие к профилю, но не повышает органический NOVA Rank.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div>';
+    ownershipTokens[claimContext.domain]=claimContext.token;
+    localStorage.setItem('novaOwnershipTokens',JSON.stringify(ownershipTokens));
+    claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Управление Profile Plus разрешено на этом устройстве.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div><div class="claim-actions"><button class="primary-action" type="button" data-start-plus>Подключить Profile Plus</button></div>';
+    const plusButton=claimBody.querySelector('[data-start-plus]');
+    if(plusButton)plusButton.onclick=()=>startProfilePlus(claimContext.domain);
     await updateCompanyPanel();
   }catch(e){
     if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
