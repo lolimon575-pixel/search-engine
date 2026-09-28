@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
@@ -9,16 +10,20 @@ except Exception:
     psycopg = None
     dict_row = None
 
+
 def database_url():
     return os.getenv("DATABASE_URL", "").strip()
 
+
 def enabled():
     return bool(database_url()) and psycopg is not None
+
 
 def _connect():
     if not enabled():
         return None
     return psycopg.connect(database_url(), row_factory=dict_row, connect_timeout=5)
+
 
 def ensure_schema():
     if not enabled():
@@ -64,15 +69,34 @@ def ensure_schema():
                     verification_id TEXT,
                     evidence JSONB NOT NULL DEFAULT '[]'::jsonb
                 );
-                CREATE INDEX IF NOT EXISTS idx_official_sites_domain ON official_sites(domain);
-                CREATE INDEX IF NOT EXISTS idx_site_checks_site_time ON site_checks(site_id, checked_at DESC);
+                CREATE TABLE IF NOT EXISTS ownership_claims (
+                    id BIGSERIAL PRIMARY KEY,
+                    domain TEXT NOT NULL,
+                    challenge_hash TEXT NOT NULL,
+                    proof_method TEXT NOT NULL DEFAULT 'http-well-known',
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    verified_at TIMESTAMPTZ
+                );
             """)
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS tagline TEXT")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_tier TEXT NOT NULL DEFAULT 'standard'")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_badge TEXT")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_accent TEXT")
+            cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS owner_verification TEXT NOT NULL DEFAULT 'unverified'")
+            cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS ownership_verified_at TIMESTAMPTZ")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_official_sites_domain ON official_sites(domain)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_site_checks_site_time ON site_checks(site_id, checked_at DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_ownership_claims_domain_time ON ownership_claims(domain, requested_at DESC)")
         conn.commit()
     return True
+
 
 def _slug(name):
     value = "".join(ch.lower() if ch.isalnum() else "-" for ch in name).strip("-")
     return value or "organization"
+
 
 def seed_registry(registry):
     if not enabled():
@@ -83,29 +107,55 @@ def seed_registry(registry):
             for domain, item in registry.items():
                 name = item["organization"]
                 slug = _slug(name)
+                links = json.dumps(item.get("links") or {}, ensure_ascii=False)
                 cur.execute("""
-                    INSERT INTO organizations (name, slug, category, description, updated_at)
-                    VALUES (%s,%s,%s,%s,NOW())
+                    INSERT INTO organizations
+                        (name, slug, category, description, logo_url, links, tagline,
+                         profile_tier, profile_badge, profile_accent, updated_at)
+                    VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,NOW())
                     ON CONFLICT (slug) DO UPDATE SET
-                        name=EXCLUDED.name, category=EXCLUDED.category, updated_at=NOW()
+                        name=EXCLUDED.name,
+                        category=CASE WHEN organizations.profile_tier='premium' THEN organizations.category ELSE EXCLUDED.category END,
+                        description=CASE WHEN organizations.profile_tier='premium' THEN organizations.description ELSE EXCLUDED.description END,
+                        logo_url=CASE WHEN organizations.profile_tier='premium' THEN organizations.logo_url ELSE EXCLUDED.logo_url END,
+                        links=CASE WHEN organizations.profile_tier='premium' THEN organizations.links ELSE EXCLUDED.links END,
+                        tagline=CASE WHEN organizations.profile_tier='premium' THEN organizations.tagline ELSE EXCLUDED.tagline END,
+                        profile_tier=CASE WHEN organizations.profile_tier='premium' THEN organizations.profile_tier ELSE EXCLUDED.profile_tier END,
+                        profile_badge=CASE WHEN organizations.profile_tier='premium' THEN organizations.profile_badge ELSE EXCLUDED.profile_badge END,
+                        profile_accent=CASE WHEN organizations.profile_tier='premium' THEN organizations.profile_accent ELSE EXCLUDED.profile_accent END,
+                        updated_at=NOW()
                     RETURNING id
-                """, (name, slug, item.get("category"), item.get("description")))
+                """, (
+                    name, slug, item.get("category"), item.get("description"),
+                    item.get("logo_url"), links, item.get("tagline"),
+                    item.get("profile_tier", "standard"), item.get("profile_badge"),
+                    item.get("profile_accent")
+                ))
                 org_id = cur.fetchone()["id"]
                 cur.execute("""
                     INSERT INTO official_sites
                         (organization_id, domain, url, confirmation_level, source, source_url, notes, updated_at)
                     VALUES (%s,%s,%s,'NOVA','NOVA curated registry',%s,%s,NOW())
                     ON CONFLICT (domain) DO UPDATE SET
-                        organization_id=EXCLUDED.organization_id, url=EXCLUDED.url,
-                        confirmation_level=EXCLUDED.confirmation_level, source=EXCLUDED.source,
-                        source_url=EXCLUDED.source_url, notes=EXCLUDED.notes, updated_at=NOW()
-                """, (org_id, domain, "https://" + domain, item.get("source_url"), item.get("notes")))
+                        organization_id=EXCLUDED.organization_id,
+                        url=EXCLUDED.url,
+                        confirmation_level=EXCLUDED.confirmation_level,
+                        source=EXCLUDED.source,
+                        source_url=EXCLUDED.source_url,
+                        notes=EXCLUDED.notes,
+                        updated_at=NOW()
+                """, (
+                    org_id, domain, "https://" + domain,
+                    item.get("source_url"), item.get("notes")
+                ))
         conn.commit()
     return True
+
 
 def normalize_domain(value):
     raw = value if "://" in str(value) else "https://" + str(value)
     return (urlsplit(raw).hostname or "").lower().strip().rstrip(".").removeprefix("www.")
+
 
 def get_site(domain):
     host = normalize_domain(domain)
@@ -115,9 +165,12 @@ def get_site(domain):
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT s.*, o.name AS organization, o.category, o.description,
-                       o.logo_url, o.links
-                FROM official_sites s JOIN organizations o ON o.id=s.organization_id
-                WHERE s.domain=%s AND s.registry_status='active' LIMIT 1
+                       o.logo_url, o.links, o.tagline, o.profile_tier,
+                       o.profile_badge, o.profile_accent
+                FROM official_sites s
+                JOIN organizations o ON o.id=s.organization_id
+                WHERE s.domain=%s AND s.registry_status='active'
+                LIMIT 1
             """, (host,))
             row = cur.fetchone()
             if not row:
@@ -125,10 +178,14 @@ def get_site(domain):
             cur.execute("""
                 SELECT checked_at, technical_status, officiality_status, officiality_method,
                        http_status, dns_resolved, https, final_domain, verification_id, evidence
-                FROM site_checks WHERE site_id=%s ORDER BY checked_at DESC LIMIT 1
+                FROM site_checks
+                WHERE site_id=%s
+                ORDER BY checked_at DESC
+                LIMIT 1
             """, (row["id"],))
             row["last_check"] = cur.fetchone()
             return row
+
 
 def save_check(domain, verification):
     if not enabled():
@@ -144,20 +201,129 @@ def save_check(domain, verification):
                 INSERT INTO site_checks
                     (site_id, checked_at, technical_status, officiality_status, officiality_method,
                      http_status, dns_resolved, https, final_domain, verification_id, evidence)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)
             """, (
                 site["id"], verification.get("checked_at") or datetime.now(timezone.utc),
                 verification.get("status"), officiality.get("status"), officiality.get("method"),
                 technical.get("http_status"), technical.get("dns_resolved"),
                 technical.get("final_https", technical.get("https")), technical.get("final_host"),
-                verification.get("verification_id"), officiality.get("evidence") or []
+                verification.get("verification_id"),
+                json.dumps(officiality.get("evidence") or [], ensure_ascii=False),
             ))
         conn.commit()
     return True
 
+
+def create_ownership_claim(domain, challenge_hash, expires_at):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return None
+    ensure_schema()
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO ownership_claims (domain, challenge_hash, expires_at)
+                VALUES (%s,%s,%s)
+                RETURNING id, domain, proof_method, status, requested_at, expires_at
+            """, (host, challenge_hash, expires_at))
+            row = cur.fetchone()
+        conn.commit()
+    return row
+
+
+def get_ownership_claim(domain, challenge_hash=None):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            if challenge_hash:
+                cur.execute("""
+                    SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at
+                    FROM ownership_claims
+                    WHERE domain=%s AND challenge_hash=%s
+                    ORDER BY requested_at DESC
+                    LIMIT 1
+                """, (host, challenge_hash))
+            else:
+                cur.execute("""
+                    SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at
+                    FROM ownership_claims
+                    WHERE domain=%s
+                    ORDER BY requested_at DESC
+                    LIMIT 1
+                """, (host,))
+            return cur.fetchone()
+
+
+def mark_ownership_verified(domain, challenge_hash):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return None
+    now = datetime.now(timezone.utc)
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE ownership_claims
+                SET status='verified', verified_at=%s
+                WHERE id=(
+                    SELECT id FROM ownership_claims
+                    WHERE domain=%s AND challenge_hash=%s
+                      AND status='pending' AND expires_at>%s
+                    ORDER BY requested_at DESC
+                    LIMIT 1
+                )
+                RETURNING id, domain, proof_method, status, requested_at, expires_at, verified_at
+            """, (now, host, challenge_hash, now))
+            claim = cur.fetchone()
+            if claim:
+                cur.execute("""
+                    UPDATE official_sites
+                    SET owner_verification='DOMAIN_CONTROL',
+                        ownership_verified_at=%s,
+                        updated_at=NOW()
+                    WHERE domain=%s
+                """, (now, host))
+        conn.commit()
+    return claim
+
+
+def get_claim_status(domain):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return {"domain": host, "status": "unavailable"}
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at
+                FROM ownership_claims
+                WHERE domain=%s AND status='verified'
+                ORDER BY verified_at DESC
+                LIMIT 1
+            """, (host,))
+            verified = cur.fetchone()
+            if verified:
+                return verified
+            cur.execute("""
+                SELECT id, domain, proof_method, status, requested_at, expires_at, verified_at
+                FROM ownership_claims
+                WHERE domain=%s
+                ORDER BY requested_at DESC
+                LIMIT 1
+            """, (host,))
+            pending = cur.fetchone()
+            return pending or {"domain": host, "status": "not_started"}
+
+
 def get_stats():
     if not enabled():
-        return {"enabled": False, "organizations": 0, "official_sites": 0, "checks": 0}
+        return {
+            "enabled": False,
+            "organizations": 0,
+            "official_sites": 0,
+            "checks": 0,
+            "owner_verified": 0,
+        }
     with _connect() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) AS n FROM organizations")
@@ -166,4 +332,12 @@ def get_stats():
             sites = cur.fetchone()["n"]
             cur.execute("SELECT COUNT(*) AS n FROM site_checks")
             checks = cur.fetchone()["n"]
-    return {"enabled": True, "organizations": organizations, "official_sites": sites, "checks": checks}
+            cur.execute("SELECT COUNT(*) AS n FROM official_sites WHERE owner_verification='DOMAIN_CONTROL'")
+            owner_verified = cur.fetchone()["n"]
+    return {
+        "enabled": True,
+        "organizations": organizations,
+        "official_sites": sites,
+        "checks": checks,
+        "owner_verified": owner_verified,
+    }
