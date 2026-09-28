@@ -28,8 +28,12 @@ def _price_id():
     return os.getenv("STRIPE_PROFILE_PLUS_PRICE_ID", "").strip()
 
 
+def _payment_link():
+    return os.getenv("STRIPE_PROFILE_PLUS_PAYMENT_LINK", "").strip()
+
+
 def configured():
-    return bool(_secret_key() and _price_id() and _public_url())
+    return bool((_secret_key() or _payment_link()) and _price_id() and _public_url())
 
 
 def _client():
@@ -55,6 +59,19 @@ def create_checkout(domain):
     if profile.get("billing_status") in {"active", "trialing"}:
         raise ValueError("Profile Plus уже активен для этого домена.")
 
+    if not _secret_key():
+        link = _payment_link()
+        if not link:
+            raise RuntimeError("Stripe checkout is not configured")
+        separator = "&" if "?" in link else "?"
+        return {
+            "checkout_url": f"{link}{separator}client_reference_id={host.replace('.', '_')}",
+            "session_id": None,
+            "domain": host,
+            "checkout_mode": "payment_link",
+            "ranking_policy": "Profile Plus не влияет на органический NOVA Rank.",
+        }
+
     client = _client()
     customer = profile.get("stripe_customer_id")
     params = {
@@ -63,7 +80,7 @@ def create_checkout(domain):
         "success_url": f"{_public_url()}/?billing=success&domain={host}",
         "cancel_url": f"{_public_url()}/?billing=cancel&domain={host}",
         "allow_promotion_codes": True,
-        "client_reference_id": host,
+        "client_reference_id": host.replace(".", "_"),
         "metadata": {
             "nova_domain": host,
             "nova_plan": "profile_plus",
@@ -86,6 +103,7 @@ def create_checkout(domain):
         "checkout_url": session.url,
         "session_id": session.id,
         "domain": host,
+        "checkout_mode": "checkout_session",
         "ranking_policy": "Profile Plus не влияет на органический NOVA Rank.",
     }
 
@@ -165,7 +183,9 @@ def handle_webhook(payload, signature):
     obj = event["data"]["object"]
 
     if event_type == "checkout.session.completed":
-        domain = normalize_domain((obj.get("metadata") or {}).get("nova_domain") or obj.get("client_reference_id") or "")
+        reference = obj.get("client_reference_id") or ""
+        fallback_domain = reference.replace("_", ".") if reference and "." not in reference else reference
+        domain = normalize_domain((obj.get("metadata") or {}).get("nova_domain") or fallback_domain or "")
         subscription_id = obj.get("subscription")
         if domain:
             set_billing_state(
