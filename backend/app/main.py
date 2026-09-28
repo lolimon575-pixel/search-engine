@@ -72,7 +72,7 @@ async def health():
 
 
 @app.get("/api/search")
-async def search(
+def search(
     q: str = Query("", max_length=300),
     limit: int = Query(10, ge=1, le=30),
     mode: str = Query("web", pattern="^(web|verified|exact|discussions)$"),
@@ -111,7 +111,7 @@ async def suggest(q: str = Query("", max_length=120), limit: int = Query(6, ge=1
 
 
 @app.get("/api/verification")
-async def verification(url: str = Query(..., min_length=8, max_length=2048)):
+def verification(url: str = Query(..., min_length=8, max_length=2048)):
     return web_search.verifier.verify(url)
 
 
