@@ -744,6 +744,7 @@ function isOfficialStatus(s){return ['OWNER_VERIFIED','CONFIRMED','EXTERNAL_CONF
 function safeAccent(value){return /^#[0-9a-f]{6}$/i.test(String(value||''))?value:'#2563eb'}
 function linkLabel(key){return ({about:'О компании',careers:'Карьера',support:'Поддержка',help:'Помощь',docs:'Документация',developer:'Разработчикам',community:'Сообщество',newsroom:'Новости',jobs:'Вакансии'}[key]||key)}
 function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
+function novaRankOf(x){const i=currentResults.indexOf(x);return i>=0?i+1:0}
 function setDomainPreference(domain,value){
   const key=String(domain||'').toLowerCase();
   if(!key)return;
@@ -870,7 +871,8 @@ function statusMarkup(x){
 function officialityMarkup(x){
   const o=x.verification?.officiality||{};
   let c='unknown',label='Официальность не подтверждена';
-  if(o.status==='CONFIRMED'){c='official';label='Официальность: NOVA'}
+  if(o.status==='OWNER_VERIFIED'){c='verified';label='Контроль домена подтверждён'}
+  else if(o.status==='CONFIRMED'){c='official';label='Официальность: реестр NOVA'}
   else if(o.status==='EXTERNAL_CONFIRMED'){c='official';label='Официальность: внешний источник'}
   else if(o.status==='SUPPORTED'||o.status==='SIGNALS'){c='supported';label='Есть признаки официальности'}
   return '<span class="nova-status '+c+'">'+label+'</span>';
@@ -883,28 +885,43 @@ function signalMarkup(x){
     .join('');
 }
 function resultCore(x,index){
-  return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>NOVA rank · '+(index+1)+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
-    '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domainOf(x.url)||x.url)+'</div></div></div>'+
+  const domain=domainOf(x.url);
+  const pref=domainPreference(domain);
+  const originalRank=novaRankOf(x)||index+1;
+  const rankText=pref==='boost'?'Ваш выбор · NOVA #'+originalRank:'NOVA rank · '+originalRank;
+  const personal=pref==='boost'?'<span class="nova-status domain-personal">Локально выше</span>':'';
+  return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>'+rankText+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
+    '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domain||x.url)+'</div></div></div>'+
     '<div class="desc">'+escapeHtml(x.description||'Сниппет для этого результата недоступен.')+'</div>'+
-    '<div class="result-meta-row">'+officialityMarkup(x)+statusMarkup(x)+signalMarkup(x)+'</div>';
+    '<div class="result-meta-row">'+officialityMarkup(x)+statusMarkup(x)+personal+signalMarkup(x)+'</div>';
 }
 function renderCard(x,featured=false,index=0){
   const article=document.createElement('article');
   const official=x.verification?.officiality||{};
+  const domain=domainOf(x.url);
+  const pref=domainPreference(domain);
+  const boostLabel=pref==='boost'?'Вернуть обычный порядок':'↑ Выше у меня';
+  const prefActions='<div class="result-actions"><div class="result-action-left"><button class="text-action verify-toggle" type="button">Проверка NOVA</button><button class="domain-pref-button" type="button" data-domain-pref="boost">'+boostLabel+'</button><button class="domain-pref-button" type="button" data-domain-pref="blocked">Скрыть домен</button></div><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
   if(featured){
     article.className='result featured-official';
-    article.innerHTML='<div class="featured-band"><div class="featured-label">Официальный результат</div><div class="featured-confidence">'+escapeHtml(official.organization||domainOf(x.url))+'</div></div>'+
+    article.innerHTML='<div class="featured-band"><div class="featured-label">'+(official.status==='OWNER_VERIFIED'?'Владелец домена подтверждён':'Официальный результат')+'</div><div class="featured-confidence">'+escapeHtml(official.organization||domain)+'</div></div>'+
       '<div class="featured-body">'+resultCore(x,index)+
-      '<div class="featured-actions"><button class="primary-action org-profile-open" type="button">Профиль организации</button><a class="secondary-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть сайт ↗</a><button class="secondary-action verify-toggle" type="button">Проверка NOVA</button></div></div>';
+      '<div class="featured-actions"><button class="primary-action org-profile-open" type="button">Профиль организации</button><a class="secondary-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть сайт ↗</a></div>'+prefActions+'</div>';
   }else{
     article.className='result';
-    article.innerHTML=resultCore(x,index)+
-      '<div class="result-actions"><button class="text-action verify-toggle" type="button">Почему NOVA доверяет этому статусу?</button><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
+    article.innerHTML=resultCore(x,index)+prefActions;
   }
-  const verify=article.querySelector('.verify-toggle');
-  if(verify)verify.onclick=()=>openVerification(x);
+  article.querySelectorAll('.verify-toggle').forEach(b=>b.onclick=()=>openVerification(x));
   const org=article.querySelector('.org-profile-open');
   if(org)org.onclick=()=>openOrganizationProfile(x);
+  article.querySelectorAll('[data-domain-pref]').forEach(b=>{
+    b.onclick=()=>{
+      const action=b.dataset.domainPref;
+      const current=domainPreference(domain);
+      if(action==='boost')setDomainPreference(domain,current==='boost'?'normal':'boost');
+      else if(action==='blocked')setDomainPreference(domain,'blocked');
+    };
+  });
   return article;
 }
 function groupResults(list){
@@ -918,14 +935,14 @@ function groupResults(list){
 }
 function updateMetrics(){
   const verified=currentResults.filter(x=>x.verification?.status==='VERIFIED').length;
-  const official=currentResults.filter(x=>['CONFIRMED','EXTERNAL_CONFIRMED'].includes(x.verification?.officiality?.status)).length;
+  const official=currentResults.filter(x=>isOfficialStatus(x.verification?.officiality?.status)).length;
   metricCount.textContent=currentResults.length||'—';
   metricTime.textContent=lastElapsed==null?'—':(lastElapsed<1000?Math.round(lastElapsed)+'мс':(lastElapsed/1000).toFixed(1)+'с');
   metricVerified.textContent=currentResults.length?verified+'/'+currentResults.length:'—';
   metricOfficial.textContent=currentResults.length?official:'—';
 }
 function renderResults(){
-  let list=[...currentResults];
+  let list=applyDomainPreferences([...currentResults]);
   if(sort.value==='title')list.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'ru'));
   results.innerHTML='';
   if(!list.length){
@@ -934,7 +951,7 @@ function renderResults(){
     return;
   }
   const primary=list[0];
-  const primaryOfficial=['CONFIRMED','EXTERNAL_CONFIRMED'].includes(primary?.verification?.officiality?.status);
+  const primaryOfficial=isOfficialStatus(primary?.verification?.officiality?.status);
   if(primaryOfficial){
     results.appendChild(renderCard(primary,true,0));
     groupResults(list.slice(1)).forEach(group=>{
