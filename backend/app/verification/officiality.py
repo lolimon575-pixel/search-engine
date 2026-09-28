@@ -1,29 +1,12 @@
 from urllib.parse import urlsplit
-from app.registry_db import get_site, normalize_domain
 
-REGISTRY = {
-    "google.com": {"organization": "Google", "category": "Technology"},
-    "github.com": {"organization": "GitHub", "category": "Technology"},
-    "microsoft.com": {"organization": "Microsoft", "category": "Technology"},
-    "apple.com": {"organization": "Apple", "category": "Technology"},
-    "openai.com": {"organization": "OpenAI", "category": "AI"},
-    "riotgames.com": {"organization": "Riot Games", "category": "Games"},
-    "steampowered.com": {"organization": "Valve / Steam", "category": "Games"},
-    "discord.com": {"organization": "Discord", "category": "Technology"},
-    "amazon.com": {"organization": "Amazon", "category": "Commerce"},
-    "amazon.de": {"organization": "Amazon", "category": "Commerce"},
-    "tesla.com": {"organization": "Tesla", "category": "Automotive"},
-    "nvidia.com": {"organization": "NVIDIA", "category": "Technology"},
-    "adobe.com": {"organization": "Adobe", "category": "Technology"},
-    "spotify.com": {"organization": "Spotify", "category": "Media"},
-    "netflix.com": {"organization": "Netflix", "category": "Media"},
-    "x.com": {"organization": "X", "category": "Social"},
-    "yandex.ru": {"organization": "Yandex", "category": "Technology"},
-    "vk.com": {"organization": "VK", "category": "Social"},
-}
+from app.registry_db import get_site, normalize_domain
+from app.verification.registry_data import REGISTRY
+
 
 def base_domain(host):
     return normalize_domain(host)
+
 
 def verify_officiality(url, site_signals=None, external=None):
     host = base_domain(urlsplit(url).hostname or "")
@@ -33,6 +16,22 @@ def verify_officiality(url, site_signals=None, external=None):
         db_item = None
 
     if db_item:
+        owner_verified = db_item.get("owner_verification") == "DOMAIN_CONTROL"
+        if owner_verified:
+            return {
+                "status": "OWNER_VERIFIED",
+                "organization": db_item["organization"],
+                "domain": host,
+                "method": "domain-control+database-registry",
+                "evidence": [
+                    f"Домен {host} находится в реестре NOVA и сопоставлен с организацией {db_item['organization']}.",
+                    f"Контроль домена подтверждён через файл {host}/.well-known/nova-verification.txt.",
+                    "Платный профиль, если он подключён, не влияет на органическую позицию результата.",
+                ],
+                "registry_id": db_item["id"],
+                "ownership_verified_at": db_item.get("ownership_verified_at"),
+            }
+
         return {
             "status": "CONFIRMED",
             "organization": db_item["organization"],
@@ -40,7 +39,8 @@ def verify_officiality(url, site_signals=None, external=None):
             "method": "database-registry",
             "evidence": [
                 f"Домен {host} находится в реестре NOVA и сопоставлен с организацией {db_item['organization']}.",
-                "Запись хранится в базе данных реестра официальных сайтов NOVA.",
+                "Запись хранится в курируемом реестре официальных сайтов NOVA.",
+                "Контроль домена владельцем через NOVA пока не подтверждён.",
             ],
             "registry_id": db_item["id"],
         }
@@ -53,7 +53,8 @@ def verify_officiality(url, site_signals=None, external=None):
             "domain": host,
             "method": "curated-domain-registry",
             "evidence": [
-                f"Домен {host} находится в реестре доменов, сопоставленных NOVA с организацией {item['organization']}."
+                f"Домен {host} находится в курируемом реестре NOVA и сопоставлен с организацией {item['organization']}.",
+                "Эта запись не является подтверждением юридической личности владельца.",
             ],
         }
 
@@ -92,6 +93,7 @@ def verify_officiality(url, site_signals=None, external=None):
         "evidence": ["Независимого подтверждения соответствия организации этому домену пока нет."],
     }
 
+
 def get_organization_profile(domain):
     host = base_domain(domain)
     try:
@@ -100,6 +102,7 @@ def get_organization_profile(domain):
         row = None
 
     if row:
+        owner_verified = row.get("owner_verification") == "DOMAIN_CONTROL"
         return {
             "id": row["organization_id"],
             "site_id": row["id"],
@@ -107,6 +110,7 @@ def get_organization_profile(domain):
             "domain": host,
             "url": row["url"],
             "category": row["category"],
+            "tagline": row.get("tagline"),
             "description": row["description"],
             "logo_url": row["logo_url"],
             "links": row["links"] or {},
@@ -114,6 +118,14 @@ def get_organization_profile(domain):
             "confirmation_level": row["confirmation_level"],
             "source_url": row["source_url"],
             "last_check": row["last_check"],
+            "profile_tier": row.get("profile_tier") or "standard",
+            "profile_badge": row.get("profile_badge"),
+            "profile_accent": row.get("profile_accent"),
+            "owner_verification": row.get("owner_verification") or "unverified",
+            "ownership_verified_at": row.get("ownership_verified_at"),
+            "trust_level": "domain_control_verified" if owner_verified else "curated_registry",
+            "premium_eligible": owner_verified,
+            "ranking_policy": "Профиль компании и его тариф не влияют на органический NOVA Rank.",
         }
 
     item = REGISTRY.get(host)
@@ -122,9 +134,21 @@ def get_organization_profile(domain):
     return {
         "organization": item["organization"],
         "domain": host,
-        "category": item["category"],
+        "url": "https://" + host,
+        "category": item.get("category"),
+        "tagline": item.get("tagline"),
+        "description": item.get("description"),
+        "links": item.get("links") or {},
+        "profile_tier": item.get("profile_tier", "standard"),
+        "profile_badge": item.get("profile_badge"),
+        "profile_accent": item.get("profile_accent"),
         "method": "curated-domain-registry",
+        "owner_verification": "unverified",
+        "trust_level": "curated_registry",
+        "premium_eligible": False,
+        "ranking_policy": "Профиль компании и его тариф не влияют на органический NOVA Rank.",
     }
+
 
 def is_registry_domain(host):
     normalized = base_domain(host)
