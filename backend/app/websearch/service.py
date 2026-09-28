@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlsplit, urlunsplit
 import threading, time, hashlib
 from .ddg import search as ddg_search
-from .ranker import rank
+from .ranker import rank, diversify, promote_verified_official
 from app.verification.engine import VerificationEngine
 from app.verification.ledger import VerificationLedger
 
@@ -33,7 +33,7 @@ class WebSearchService:
                 return cached["results"][:limit], []
 
         try:
-            raw = ddg_search(query, max(20, limit * 3))
+            raw = ddg_search(query, max(30, limit * 4))
         except Exception as e:
             return [], [f"duckduckgo: {type(e).__name__}"]
 
@@ -41,11 +41,13 @@ class WebSearchService:
         for item in raw:
             unique.setdefault(canonical(item.url), item)
 
-        results = rank(query, list(unique.values()))[:limit]
+        candidates = rank(query, list(unique.values()))
+        candidate_limit = min(len(candidates), max(20, limit * 2))
+        candidates = candidates[:candidate_limit]
 
-        # The visible results are checked before the API response is returned.
-        # This prevents the browser from being stuck on UNKNOWN until a second search.
-        first_batch = results[:min(6, len(results))]
+        # Verify enough top candidates to let NOVA safely recognize and promote
+        # a confirmed official site before the final diverse result set is chosen.
+        first_batch = candidates[:min(8, len(candidates))]
         if first_batch:
             with ThreadPoolExecutor(max_workers=6, thread_name_prefix="nova-initial") as pool:
                 futures = {pool.submit(self.verifier.verify, item.url): item for item in first_batch}
@@ -65,20 +67,26 @@ class WebSearchService:
                             "verification_version": "1.4.0",
                         }
 
+        candidates = promote_verified_official(query, candidates)
+        cache_limit = min(20, len(candidates))
+        results = diversify(candidates, cache_limit)
+
         for item in results:
             if not item.verification:
-                item.verification = self.verifier.peek(item.url) or {
-                    "status": "UNKNOWN",
-                    "message": "Проверка ещё не выполнялась."
-                }
+                cached_verification = self.verifier.peek(item.url)
+                if cached_verification:
+                    item.verification = cached_verification
+                else:
+                    item.verification = {
+                        "status": "UNKNOWN",
+                        "message": "Проверка ещё не выполнялась."
+                    }
+                    self._schedule(query, item.url)
 
         with self.lock:
             self.cache[key] = {"at": time.time(), "results": results}
 
-        for item in results[len(first_batch):]:
-            self._schedule(query, item.url)
-
-        return results, []
+        return results[:limit], []
 
     def _record_verification(self, url, data):
         try:
