@@ -580,6 +580,11 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 @media(max-width:680px){
   .company-links.premium-links,.org-profile-links.premium-links{grid-template-columns:1fr}
 }
+
+.company-sections-title{
+  margin-top:14px;margin-bottom:7px;color:var(--subtle);font-size:8px;font-weight:900;
+  text-transform:uppercase;letter-spacing:.11em
+}
 </style>
 </head>
 <body>
@@ -813,13 +818,18 @@ function linkLabel(key){return ({
   drivers:'Драйверы',learning:'База знаний',templates:'Шаблоны',research:'Исследования',store:'Магазин',
   shop:'Магазин',music:'Музыка',podcasts:'Подкасты',watch:'Смотреть',homes:'Жильё',experiences:'Впечатления',
   men:'Мужчинам',women:'Женщинам',kids:'Детям',membership:'Membership',stories:'Истории',
-  running:'Running',football:'Football',investors:'Инвесторам',sustainability:'Sustainability'
+  running:'Running',football:'Football',investors:'Инвесторам',sustainability:'Sustainability',
+  consulting:'Консалтинг',download:'Скачать',safety:'Безопасность',vehicles:'Автомобили',energy:'Энергия',
+  charging:'Зарядка',ride:'Поездки',eats:'Uber Eats',stays:'Жильё',flights:'Авиабилеты',
+  cars:'Авто',attractions:'Развлечения',games:'Игры'
 }[key]||key)}
 function linkIcon(key){return ({
   shop:'▣',store:'▣',products:'◆',product:'◆',pricing:'€',docs:'⌘',developer:'⌘',developers:'⌘',
   support:'?',help:'?',careers:'↗',jobs:'↗',about:'○',newsroom:'◫',research:'◇',cloud:'☁',
   community:'◎',templates:'▦',music:'♪',podcasts:'◉',watch:'▶',homes:'⌂',experiences:'✦',
-  men:'M',women:'W',kids:'K',running:'↗',football:'●',investors:'↗',sustainability:'◌'
+  men:'M',women:'W',kids:'K',running:'↗',football:'●',investors:'↗',sustainability:'◌',
+  consulting:'◆',download:'↓',safety:'✓',vehicles:'◉',energy:'⚡',charging:'⚡',ride:'→',eats:'◌',
+  stays:'⌂',flights:'✈',cars:'◉',attractions:'✦',games:'▶'
 }[key]||'↗')}
 function domainPreference(domain){return domainPrefs[String(domain||'').toLowerCase()]||'normal'}
 function updatePrefReset(){
@@ -1185,7 +1195,7 @@ async function updateCompanyPanel(){
       profileVisualBadge(p,billing)+
       (p.tagline?'<div class="company-tagline">'+escapeHtml(p.tagline)+'</div>':'')+
       (p.description?'<div class="company-description">'+escapeHtml(p.description)+'</div>':'')+
-      (links?'<div class="company-links '+(premiumVisual?'premium-links':'')+'">'+links+'</div>':'')+
+      (links?'<div class="company-sections-title">Ключевые разделы</div><div class="company-links '+(premiumVisual?'premium-links':'')+'">'+links+'</div>':'')+
       (isDemo?'<div class="profile-demo-note">Демо показывает, что покупает компания: более выразительную карточку и быстрые официальные разделы. Доверие и позиция в поиске остаются независимыми.</div>':'')+
       '<div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button>'+(owner?'<button class="company-secondary" type="button" data-billing>'+(plus?'Управлять Profile Plus':'Подключить Profile Plus')+'</button>':'')+'</div>'+
       '<div class="company-policy">Profile Plus улучшает представление компании, но никогда не повышает органический NOVA Rank.</div>';
