@@ -23,16 +23,25 @@
   font-size:12px;
   font-weight:800;
   cursor:pointer;
-  transition:.18s ease;
+  transition:transform .18s ease,background .18s ease,color .18s ease;
 }
 
 .nova-language-switcher button:hover {
   background:rgba(127,127,127,.1);
+  transform:translateY(-1px);
 }
 
 .nova-language-switcher button.active {
   background:var(--primary);
   color:var(--primary-ink);
+}
+
+/* Footer placement */
+.nova-footer-language {
+  width:100%;
+  display:flex;
+  justify-content:center;
+  padding:12px 0 24px;
 }
 
 @media(max-width:680px){
