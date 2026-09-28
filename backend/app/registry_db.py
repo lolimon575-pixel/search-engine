@@ -261,6 +261,31 @@ def mark_claim_verified(claim_id):
                 claim = cur.fetchone()
             if claim:
                 cur.execute("""
+                    SELECT id FROM official_sites WHERE domain=%s LIMIT 1
+                """, (claim["domain"],))
+                site = cur.fetchone()
+                if not site:
+                    name = (claim.get("organization_name") or claim["domain"]).strip()
+                    slug = _slug(name)
+                    cur.execute("""
+                        INSERT INTO organizations
+                            (name, slug, category, tagline, description, updated_at)
+                        VALUES (%s,%s,'Company','Owner verified domain',
+                                'Профиль создан после подтверждения контроля домена владельцем.',NOW())
+                        ON CONFLICT (slug) DO UPDATE SET updated_at=NOW()
+                        RETURNING id
+                    """, (name, slug))
+                    org_id = cur.fetchone()["id"]
+                    cur.execute("""
+                        INSERT INTO official_sites
+                            (organization_id, domain, url, confirmation_level, ownership_status,
+                             source, notes, updated_at)
+                        VALUES (%s,%s,%s,'OWNER_VERIFIED','owner_verified',
+                                'Owner domain-control verification',
+                                'Created automatically after successful ownership challenge.',NOW())
+                        ON CONFLICT (domain) DO NOTHING
+                    """, (org_id, claim["domain"], "https://" + claim["domain"]))
+                cur.execute("""
                     UPDATE official_sites
                     SET ownership_status='owner_verified',
                         confirmation_level='OWNER_VERIFIED',
