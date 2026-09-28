@@ -86,6 +86,10 @@ def ensure_schema():
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_accent TEXT")
             cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS owner_verification TEXT NOT NULL DEFAULT 'unverified'")
             cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS ownership_verified_at TIMESTAMPTZ")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS billing_status TEXT NOT NULL DEFAULT 'inactive'")
+            cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS billing_period_end TIMESTAMPTZ")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_official_sites_domain ON official_sites(domain)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_site_checks_site_time ON site_checks(site_id, checked_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_ownership_claims_domain_time ON ownership_claims(domain, requested_at DESC)")
@@ -341,3 +345,84 @@ def get_stats():
         "checks": checks,
         "owner_verified": owner_verified,
     }
+
+
+def get_billing_profile(domain):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT o.id AS organization_id, o.name, o.profile_tier, o.stripe_customer_id,
+                       o.stripe_subscription_id, o.billing_status, o.billing_period_end,
+                       s.domain, s.owner_verification
+                FROM official_sites s
+                JOIN organizations o ON o.id=s.organization_id
+                WHERE s.domain=%s AND s.registry_status='active'
+                LIMIT 1
+            """, (host,))
+            return cur.fetchone()
+
+
+def set_billing_state(domain, *, customer_id=None, subscription_id=None, status=None, period_end=None):
+    host = normalize_domain(domain)
+    if not enabled() or not host:
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE organizations o
+                SET stripe_customer_id=COALESCE(%s, o.stripe_customer_id),
+                    stripe_subscription_id=COALESCE(%s, o.stripe_subscription_id),
+                    billing_status=COALESCE(%s, o.billing_status),
+                    billing_period_end=COALESCE(%s, o.billing_period_end),
+                    profile_tier=CASE
+                        WHEN COALESCE(%s, o.billing_status) IN ('active','trialing') THEN 'premium'
+                        WHEN COALESCE(%s, o.billing_status) IN ('canceled','unpaid','incomplete_expired') THEN 'standard'
+                        ELSE o.profile_tier
+                    END,
+                    updated_at=NOW()
+                FROM official_sites s
+                WHERE s.organization_id=o.id AND s.domain=%s
+                RETURNING o.id, o.name, o.profile_tier, o.stripe_customer_id,
+                          o.stripe_subscription_id, o.billing_status, o.billing_period_end
+            """, (
+                customer_id, subscription_id, status, period_end,
+                status, status, host
+            ))
+            row = cur.fetchone()
+        conn.commit()
+    return row
+
+
+def find_domain_by_subscription(subscription_id):
+    if not enabled() or not subscription_id:
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT s.domain
+                FROM organizations o
+                JOIN official_sites s ON s.organization_id=o.id
+                WHERE o.stripe_subscription_id=%s
+                LIMIT 1
+            """, (subscription_id,))
+            row = cur.fetchone()
+            return row["domain"] if row else None
+
+
+def find_domain_by_customer(customer_id):
+    if not enabled() or not customer_id:
+        return None
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT s.domain
+                FROM organizations o
+                JOIN official_sites s ON s.organization_id=o.id
+                WHERE o.stripe_customer_id=%s
+                LIMIT 1
+            """, (customer_id,))
+            row = cur.fetchone()
+            return row["domain"] if row else None
