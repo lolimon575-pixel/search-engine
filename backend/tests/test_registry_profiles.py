@@ -39,6 +39,11 @@ def test_registry_contains_russian_official_sites():
         "rt.ru",
         "alfa-bank.ru",
         "vtb.ru",
+        "kinopoisk.ru",
+        "rutube.ru",
+        "rbc.ru",
+        "gazprombank.ru",
+        "yota.ru",
     }
     assert expected.issubset(REGISTRY.keys())
 
@@ -47,3 +52,10 @@ def test_registry_profile_links_are_https():
     for domain, item in REGISTRY.items():
         for key, url in (item.get("links") or {}).items():
             assert url.startswith("https://"), f"{domain}:{key} must use HTTPS"
+
+
+def test_new_russian_profiles_have_useful_key_sections():
+    assert len(REGISTRY["rutube.ru"]["links"]) >= 3
+    assert len(REGISTRY["rbc.ru"]["links"]) >= 3
+    assert len(REGISTRY["gazprombank.ru"]["links"]) >= 4
+    assert len(REGISTRY["yota.ru"]["links"]) >= 4
