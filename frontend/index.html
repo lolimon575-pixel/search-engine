@@ -36,7 +36,7 @@
   --radius-md:14px;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;overflow-x:clip}
+html{scroll-behavior:smooth;overflow-x:clip;scrollbar-gutter:stable}
 body{
   margin:0;
   min-width:320px;
@@ -140,10 +140,10 @@ a{color:inherit}
 .search-submit:hover{transform:translateY(-1px);box-shadow:0 9px 20px rgba(17,24,39,.18)}
 .search-submit:active{transform:translateY(0)}
 .suggestions{
-  position:absolute;z-index:20;left:0;right:0;top:65px;display:none;text-align:left;
+  position:fixed;z-index:60;display:none;text-align:left;
   background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:18px;
   box-shadow:0 22px 70px rgba(16,24,40,.14);padding:10px;backdrop-filter:blur(22px);
-  max-height:min(460px,50dvh);overflow-y:auto;overscroll-behavior:contain;
+  max-height:320px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;
 }
 .suggestions.open{display:block;animation:dropIn .16s ease both}
 @keyframes dropIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -645,6 +645,61 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   margin-left:auto;padding:2px 5px;border-radius:999px;background:var(--blue-soft);color:var(--blue);
   font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.05em
 }
+
+/* Compact layout and viewport-contained search suggestions. */
+.suggestions.open{animation:none}
+.suggestions-head{font-size:10px;padding:7px 10px 5px}
+.suggestion{padding:7px 9px;min-height:42px}
+.suggestion-icon{width:26px;height:26px;flex-basis:26px;font-size:13px}
+.suggestions-more{min-height:42px;padding:10px;font-size:12px}
+.language-picker{display:flex;align-items:center;justify-content:center;gap:4px;margin:18px auto 0;width:fit-content;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.language-picker button{min-height:36px;padding:0 14px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer}
+.language-picker button[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink)}
+.footer{font-size:11px;padding:16px 0 24px;max-width:720px;margin:auto}
+@media(max-width:680px){
+  .shell{width:calc(100% - 28px)}
+  .topbar{min-height:60px}.brand-mark{width:32px;height:32px;border-radius:11px}.wordmark{font-size:17px}
+  .icon-button{width:40px;height:40px}
+  .hero{padding:30px 0 18px}.hero h1{font-size:clamp(32px,9vw,42px);line-height:1.08;max-width:350px;margin-bottom:14px}
+  .eyebrow{font-size:9px;letter-spacing:.035em;margin-bottom:16px;padding:6px 9px}
+  .hero-sub{font-size:13px;line-height:1.55;max-width:340px;margin-bottom:22px}
+  body.has-results .hero{padding:8px 0 14px}
+  .search-panel{grid-template-columns:26px minmax(0,1fr) auto auto;padding:4px;border-radius:16px;gap:2px}
+  .search-panel input{min-width:0;padding:9px 0}.search-submit{height:44px;padding:0 12px;font-size:13px}
+  .clear-search{width:32px;height:44px}.search-icon svg{width:18px}
+  .search-controls{gap:8px;margin-top:10px}
+  .mode-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;width:100%;padding:3px;background:var(--surface-soft);border-radius:12px}
+  .mode-button{min-width:0;min-height:40px;padding:6px 2px;font-size:11px;border:0;border-radius:9px;background:transparent;white-space:nowrap}
+  .search-options{justify-content:flex-end;gap:8px}.freshness-select{min-height:36px;font-size:11px}
+  .pipeline-strip{display:none}
+  .results-layout{gap:18px;padding:0 0 22px}.results-head{min-height:0;margin-bottom:10px;gap:8px;align-items:center}
+  .status{font-size:12px;line-height:1.45}.summary{font-size:11px}.results-toolbar select{max-width:110px;font-size:11px;padding:8px}
+  .results-stack{gap:10px}.result{padding:13px;border-radius:15px}.result:hover{transform:none}
+  .result-topline{margin-bottom:9px}.rank-label,.score-label{font-size:9px}
+  .result-head{grid-template-columns:34px minmax(0,1fr);gap:9px}.favicon-wrap{width:34px;height:34px;border-radius:10px}.favicon{width:22px;height:22px}
+  .result h3,.featured-official h3{font-size:16px;line-height:1.35}.url{font-size:11px}
+  .desc{margin-top:10px;font-size:13px;line-height:1.5}
+  .result-meta-row{gap:5px;margin-top:10px}.nova-status,.rank-signal{font-size:10px;padding:5px 7px}
+  .result-actions{margin-top:10px;padding-top:7px;gap:4px;flex-wrap:wrap;align-items:center}
+  .result-action-left{gap:2px 10px;flex:1 1 100%;justify-content:space-between}
+  .text-action,.domain-pref-button{min-height:40px;font-size:11px;padding:6px 0}
+  .open-action{min-height:40px;margin-left:auto;font-size:12px}
+  .featured-official{padding:0}.featured-body{padding:13px}.featured-band{padding:9px 13px}
+  .featured-actions{margin-top:12px;gap:7px}.primary-action,.secondary-action{min-height:40px;padding:10px 12px;font-size:12px}
+  .featured-official .result-actions>.open-action{display:none}
+  .insight-card{padding:14px;border-radius:15px}.company-logo{width:38px;height:38px}.company-head{grid-template-columns:38px minmax(0,1fr)}
+  .company-links.premium-links{grid-template-columns:repeat(2,minmax(0,1fr))}.company-link{min-height:40px;font-size:11px}
+  .company-actions{grid-template-columns:1fr 1fr}.company-name{font-size:17px}
+  .modal{padding:10px}.dialog{max-height:calc(100dvh - 20px);padding:15px;border-radius:18px}
+  .close-button{width:40px;height:40px;flex-basis:40px}.dialog-title{font-size:17px}
+  .org-logo{width:40px;height:40px;flex-basis:40px}.org-copy h2{font-size:18px}
+  .org-profile-links,.org-profile-links.premium-links{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .org-actions{gap:7px}.org-profile-link{padding:10px;font-size:11px}
+  .suggestions{padding:6px;border-radius:14px}.suggestion{min-height:44px;font-size:13px}
+  .suggestion-fill,.suggestion-delete{width:44px;height:44px;flex-basis:44px}
+  .footer{font-size:10px;line-height:1.5;padding:10px 8px 20px}.language-picker{margin-top:14px}.language-picker button{min-height:40px}
+}
+
 </style>
 </head>
 <body>
@@ -756,7 +811,9 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
     </aside>
   </main>
 
-  <footer class="footer">NOVA показывает состояние и доступные подтверждения на момент проверки. Веб-сайты могут измениться после неё.</footer>
+  <footer class="footer"><span>NOVA показывает состояние и доступные подтверждения на момент проверки. Веб-сайты могут измениться после неё.</span>
+    <nav class="language-picker" aria-label="Язык интерфейса"><button type="button" data-language="ru" lang="ru" aria-pressed="true">Русский</button><button type="button" data-language="en" lang="en" aria-pressed="false">English</button></nav>
+  </footer>
 </div>
 
 <div id="verifyModal" class="modal" role="dialog" aria-labelledby="verifyTitle" aria-hidden="true">
@@ -1003,13 +1060,36 @@ function showSuggestions(force=false){
   if(!html)html='<div class="suggestions-head">Попробуйте</div>'+DEFAULT_FREQUENT.slice(0,8).map((x,i)=>suggestionButton(x,i,false)).join('');
   suggestions.innerHTML=html;
   suggestions.classList.add('open');
+  positionSuggestions();
 }
+function positionSuggestions(){
+  if(!suggestions.classList.contains('open'))return;
+  const rect=form.getBoundingClientRect();
+  const viewport=window.visualViewport;
+  const viewportTop=viewport?.offsetTop||0;
+  const viewportBottom=viewportTop+(viewport?.height||window.innerHeight);
+  const below=Math.max(0,viewportBottom-rect.bottom-16);
+  const above=Math.max(0,rect.top-viewportTop-16);
+  const upwards=below<160&&above>below;
+  const height=Math.min(320,upwards?above:below);
+  suggestions.style.left=rect.left+'px';
+  suggestions.style.width=rect.width+'px';
+  suggestions.style.maxHeight=height+'px';
+  suggestions.style.top=(upwards?Math.max(viewportTop+8,rect.top-height-6):rect.bottom+6)+'px';
+}
+window.addEventListener('resize',positionSuggestions);
+window.addEventListener('scroll',positionSuggestions,{passive:true});
+window.visualViewport?.addEventListener('resize',positionSuggestions);
+window.visualViewport?.addEventListener('scroll',positionSuggestions);
 function hideSuggestions(){
   suggestionsArmed=false;
   activeSuggestionIndex=-1;
   suggestions.classList.remove('open');
 }
 suggestions.addEventListener('click',e=>{
+  // A re-render removes the event target. Do not let the outside-click handler
+  // mistake that detached button for a click outside the search field.
+  e.stopPropagation();
   const fill=e.target.closest('[data-fill-query]');
   if(fill){
     e.preventDefault();
@@ -1034,11 +1114,19 @@ suggestions.addEventListener('click',e=>{
       localStorage.setItem('novaHistory',JSON.stringify(history));
       suggestionsArmed=true;
       showSuggestions(true);
+      suggestions.querySelector('.suggestion')?.focus({preventScroll:true});
     }
     return;
   }
-  if(e.target.id==='showMoreHistory'){showAllHistory=true;suggestionsArmed=true;showSuggestions(true);return}
-  if(e.target.id==='showLessHistory'){showAllHistory=false;suggestionsArmed=true;showSuggestions(true);return}
+  const toggle=e.target.closest('#showMoreHistory,#showLessHistory');
+  if(toggle){
+    e.preventDefault();
+    showAllHistory=toggle.id==='showMoreHistory';
+    suggestionsArmed=true;
+    showSuggestions(true);
+    suggestions.querySelector('#showMoreHistory,#showLessHistory')?.focus({preventScroll:true});
+    return;
+  }
   const button=e.target.closest('.suggestion');
   if(!button)return;
   q.value=button.dataset.query||'';
@@ -1688,5 +1776,734 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideSuggestions()});
 </script>
+
+<script>
+// UI-only localization. Source values are retained so switching is reversible.
+(function(){
+  const messages={
+  "Search with an independent verification layer": [
+    "Поиск с независимой проверкой",
+    "Search with independent verification"
+  ],
+  "Ищите.": [
+    "Ищите.",
+    "Search."
+  ],
+  "Сверяйте.": [
+    "Сверяйте.",
+    "Verify."
+  ],
+  "Решайте.": [
+    "Решайте.",
+    "Decide."
+  ],
+  "NOVA берёт веб-результаты, ранжирует их собственным слоем и отдельно показывает техническую проверку и признаки официальности.": [
+    "Веб-поиск с проверкой сайтов и официальных источников.",
+    "Search the web with site checks and official-source signals."
+  ],
+  "Web": [
+    "Веб",
+    "Web"
+  ],
+  "Verified": [
+    "Проверенные",
+    "Verified"
+  ],
+  "Discussions": [
+    "Обсуждения",
+    "Discussions"
+  ],
+  "Exact": [
+    "Точно",
+    "Exact"
+  ],
+  "Verification": [
+    "Проверка",
+    "Verification"
+  ],
+  "Officiality": [
+    "Официальность",
+    "Officiality"
+  ],
+  "Web discovery": [
+    "Поиск в интернете",
+    "Web discovery"
+  ],
+  "official": [
+    "официальных",
+    "official"
+  ],
+  "Company Profile": [
+    "Профиль компании",
+    "Company profile"
+  ],
+  "NOVA Layer": [
+    "Проверка NOVA",
+    "NOVA Layer"
+  ],
+  "LIVE": [
+    "Сейчас",
+    "Live"
+  ],
+  "сервис активен": [
+    "сервис активен",
+    "service online"
+  ],
+  "Найти": [
+    "Найти",
+    "Search"
+  ],
+  "Введите запрос": [
+    "Введите запрос",
+    "Enter a query"
+  ],
+  "Поисковый запрос": [
+    "Поисковый запрос",
+    "Search query"
+  ],
+  "Очистить поиск": [
+    "Очистить поиск",
+    "Clear search"
+  ],
+  "Сменить тему": [
+    "Сменить тему",
+    "Switch theme"
+  ],
+  "Режим поиска": [
+    "Режим поиска",
+    "Search mode"
+  ],
+  "Свежесть результатов": [
+    "Свежесть результатов",
+    "Result freshness"
+  ],
+  "За всё время": [
+    "За всё время",
+    "Any time"
+  ],
+  "24 часа": [
+    "24 часа",
+    "24 hours"
+  ],
+  "Неделя": [
+    "Неделя",
+    "Past week"
+  ],
+  "Месяц": [
+    "Месяц",
+    "Past month"
+  ],
+  "Год": [
+    "Год",
+    "Past year"
+  ],
+  "Сбросить домены": [
+    "Сбросить домены",
+    "Reset domains"
+  ],
+  "Быстрый переход: !w · !yt · !gh": [
+    "Быстрый переход: !w · !yt · !gh",
+    "Quick shortcuts: !w · !yt · !gh"
+  ],
+  "Начните поиск — NOVA покажет веб-выдачу и слой проверки.": [
+    "Начните поиск — NOVA покажет веб-выдачу и слой проверки.",
+    "Start a search to see web results and verification details."
+  ],
+  "Сортировка": [
+    "Сортировка",
+    "Sort by"
+  ],
+  "Сортировка результатов": [
+    "Сортировка результатов",
+    "Sort results"
+  ],
+  "По названию": [
+    "По названию",
+    "Title"
+  ],
+  "результатов": [
+    "результатов",
+    "results"
+  ],
+  "ответ": [
+    "ответ",
+    "response"
+  ],
+  "проверено": [
+    "проверено",
+    "verified"
+  ],
+  "Как строится выдача": [
+    "Как строится выдача",
+    "How results are built"
+  ],
+  "Получаем независимый набор веб-результатов.": [
+    "Получаем независимый набор веб-результатов.",
+    "Discover an independent set of web results."
+  ],
+  "Фраза, домен, покрытие запроса и разнообразие источников.": [
+    "Фраза, домен, покрытие запроса и разнообразие источников.",
+    "Query, domain, relevance and source diversity."
+  ],
+  "DNS, HTTPS, HTTP и безопасная цепочка редиректов.": [
+    "DNS, HTTPS, HTTP и безопасная цепочка редиректов.",
+    "DNS, HTTPS, HTTP and a safe redirect chain."
+  ],
+  "Реестр NOVA и внешние независимые сигналы.": [
+    "Реестр NOVA и внешние независимые сигналы.",
+    "NOVA registry and independent external signals."
+  ],
+  "Прозрачность.": [
+    "Прозрачность.",
+    "Transparency."
+  ],
+  "NOVA не считает техническую проверку гарантией безопасности и отдельно показывает, чем подтверждается официальный статус.": [
+    "NOVA не считает техническую проверку гарантией безопасности и отдельно показывает, чем подтверждается официальный статус.",
+    "Technical checks are not a safety guarantee. NOVA separately explains the evidence for official status."
+  ],
+  "NOVA показывает состояние и доступные подтверждения на момент проверки. Веб-сайты могут измениться после неё.": [
+    "NOVA показывает состояние и доступные подтверждения на момент проверки. Веб-сайты могут измениться после неё.",
+    "NOVA shows the state and available evidence at the time of verification. Websites may change afterwards."
+  ],
+  "Язык интерфейса": [
+    "Язык интерфейса",
+    "Interface language"
+  ],
+  "Подсказки из веба": [
+    "Подсказки из веба",
+    "Web suggestions"
+  ],
+  "История": [
+    "История",
+    "History"
+  ],
+  "Популярное у вас": [
+    "Популярное у вас",
+    "Popular with you"
+  ],
+  "Попробуйте": [
+    "Попробуйте",
+    "Try a search"
+  ],
+  "Показать всю историю": [
+    "Показать всю историю",
+    "Show all history"
+  ],
+  "Свернуть историю": [
+    "Свернуть историю",
+    "Collapse history"
+  ],
+  "Удалить из истории": [
+    "Удалить из истории",
+    "Remove from history"
+  ],
+  "Подставить запрос в поисковую строку": [
+    "Подставить запрос в поисковую строку",
+    "Fill search field"
+  ],
+  "Подставить в поисковую строку": [
+    "Подставить в поисковую строку",
+    "Fill search field"
+  ],
+  "Профиль организации": [
+    "Профиль организации",
+    "Organization profile"
+  ],
+  "Профиль": [
+    "Профиль",
+    "Profile"
+  ],
+  "Проверка NOVA": [
+    "Проверка NOVA",
+    "NOVA verification"
+  ],
+  "Открыть проверку": [
+    "Открыть проверку",
+    "View verification"
+  ],
+  "Открыть сайт ↗": [
+    "Открыть сайт ↗",
+    "Visit website ↗"
+  ],
+  "Открыть ↗": [
+    "Открыть ↗",
+    "Open ↗"
+  ],
+  "Сайт ↗": [
+    "Сайт ↗",
+    "Website ↗"
+  ],
+  "Открыть официальный сайт ↗": [
+    "Открыть официальный сайт ↗",
+    "Visit official website ↗"
+  ],
+  "↑ Выше у меня": [
+    "↑ Выше у меня",
+    "↑ Boost for me"
+  ],
+  "↑ Поднято": [
+    "↑ Поднято",
+    "↑ Boosted"
+  ],
+  "Скрыть домен": [
+    "Скрыть домен",
+    "Hide domain"
+  ],
+  "Официальный результат": [
+    "Официальный результат",
+    "Official result"
+  ],
+  "Официальный домен": [
+    "Официальный домен",
+    "Official domain"
+  ],
+  "Техпроверка пройдена": [
+    "Техпроверка пройдена",
+    "Technical checks passed"
+  ],
+  "Есть замечания": [
+    "Есть замечания",
+    "Issues found"
+  ],
+  "Официальность не подтверждена": [
+    "Официальность не подтверждена",
+    "Official status unconfirmed"
+  ],
+  "Официальность: реестр NOVA": [
+    "Официальность: реестр NOVA",
+    "Official status: NOVA registry"
+  ],
+  "Подтверждено NOVA": [
+    "Подтверждено NOVA",
+    "Confirmed by NOVA"
+  ],
+  "Технический слой": [
+    "Технический слой",
+    "Technical checks"
+  ],
+  "Официальность": [
+    "Официальность",
+    "Official status"
+  ],
+  "Техническая проверка": [
+    "Техническая проверка",
+    "Technical verification"
+  ],
+  "Статус": [
+    "Статус",
+    "Status"
+  ],
+  "Организация": [
+    "Организация",
+    "Organization"
+  ],
+  "Метод": [
+    "Метод",
+    "Method"
+  ],
+  "Результат": [
+    "Результат",
+    "Result"
+  ],
+  "Проверено": [
+    "Проверено",
+    "Checked"
+  ],
+  "Пройден": [
+    "Пройден",
+    "Passed"
+  ],
+  "Да": [
+    "Да",
+    "Yes"
+  ],
+  "Нет": [
+    "Нет",
+    "No"
+  ],
+  "Конечный домен": [
+    "Конечный домен",
+    "Final domain"
+  ],
+  "Редиректы": [
+    "Редиректы",
+    "Redirects"
+  ],
+  "Основания": [
+    "Основания",
+    "Evidence"
+  ],
+  "Закрыть": [
+    "Закрыть",
+    "Close"
+  ],
+  "Проверка отражает состояние сайта в конкретный момент времени. NOVA не делает выводов о намерениях владельца и не заменяет вашу собственную оценку риска.": [
+    "Проверка отражает состояние сайта в конкретный момент времени. NOVA не делает выводов о намерениях владельца и не заменяет вашу собственную оценку риска.",
+    "Checks reflect a website at a specific moment. NOVA does not assess its owner's intentions or replace your own risk assessment."
+  ],
+  "Категория": [
+    "Категория",
+    "Category"
+  ],
+  "Контроль домена": [
+    "Контроль домена",
+    "Domain control"
+  ],
+  "Не подтверждён владельцем": [
+    "Не подтверждён владельцем",
+    "Not verified by owner"
+  ],
+  "Контроль домена подтверждён": [
+    "Контроль домена подтверждён",
+    "Domain control verified"
+  ],
+  "Источник записи": [
+    "Источник записи",
+    "Record source"
+  ],
+  "Последняя техпроверка": [
+    "Последняя техпроверка",
+    "Last technical check"
+  ],
+  "Технический результат": [
+    "Технический результат",
+    "Technical result"
+  ],
+  "Политика ранжирования": [
+    "Политика ранжирования",
+    "Ranking policy"
+  ],
+  "Профиль компании и его тариф не влияют на органический NOVA Rank.": [
+    "Профиль компании и его тариф не влияют на органический NOVA Rank.",
+    "Company profiles and plans do not affect organic NOVA Rank."
+  ],
+  "Курируемый профиль NOVA": [
+    "Курируемый профиль NOVA",
+    "NOVA curated profile"
+  ],
+  "Курируемый реестр NOVA": [
+    "Курируемый реестр NOVA",
+    "NOVA curated registry"
+  ],
+  "Ключевые разделы": [
+    "Ключевые разделы",
+    "Key sections"
+  ],
+  "Официальный раздел": [
+    "Официальный раздел",
+    "Official section"
+  ],
+  "Подтвердить домен": [
+    "Подтвердить домен",
+    "Verify domain"
+  ],
+  "Я представляю компанию": [
+    "Я представляю компанию",
+    "I represent this company"
+  ],
+  "Подтвердить контроль домена": [
+    "Подтвердить контроль домена",
+    "Verify domain control"
+  ],
+  "NOVA Owner Verification": [
+    "Подтверждение владельца NOVA",
+    "NOVA Owner Verification"
+  ],
+  "Для домена": [
+    "Для домена",
+    "For domain"
+  ],
+  "Создать challenge": [
+    "Создать challenge",
+    "Create challenge"
+  ],
+  "NOVA выдаст одноразовый token на 24 часа. Его нужно разместить на вашем домене.": [
+    "NOVA выдаст одноразовый token на 24 часа. Его нужно разместить на вашем домене.",
+    "NOVA will issue a one-time token valid for 24 hours. Place it on your domain."
+  ],
+  "Profile Plus улучшает представление компании, но никогда не повышает органический NOVA Rank.": [
+    "Profile Plus улучшает представление компании, но никогда не повышает органический NOVA Rank.",
+    "Profile Plus improves company presentation but never boosts organic NOVA Rank."
+  ],
+  "Загрузка данных профиля…": [
+    "Загрузка данных профиля…",
+    "Loading profile…"
+  ],
+  "Профиль организации временно недоступен.": [
+    "Профиль организации временно недоступен.",
+    "Organization profile is temporarily unavailable."
+  ],
+  "Поиск завершён · слой NOVA обновлён": [
+    "Поиск завершён · слой NOVA обновлён",
+    "Search complete · NOVA checks updated"
+  ],
+  "Результаты готовы · NOVA завершает проверки": [
+    "Результаты готовы · NOVA завершает проверки",
+    "Results ready · NOVA is finishing checks"
+  ],
+  "Поиск не завершён": [
+    "Поиск не завершён",
+    "Search incomplete"
+  ],
+  "Не удалось выполнить поиск": [
+    "Не удалось выполнить поиск",
+    "Search failed"
+  ],
+  "NOVA собирает и ранжирует выдачу": [
+    "NOVA собирает и ранжирует выдачу",
+    "NOVA is finding and ranking results"
+  ],
+  "Ищем подтверждённые официальные результаты": [
+    "Ищем подтверждённые официальные результаты",
+    "Searching for verified official results"
+  ],
+  "Ищем обсуждения и ответы сообщества": [
+    "Ищем обсуждения и ответы сообщества",
+    "Searching for community discussions and answers"
+  ],
+  "Ищем точную формулировку": [
+    "Ищем точную формулировку",
+    "Searching for the exact phrase"
+  ],
+  "Показаны только результаты с подтверждением официальности": [
+    "Показаны только результаты с подтверждением официальности",
+    "Showing only results with confirmed official status"
+  ],
+  "Подтверждённых результатов пока не найдено": [
+    "Подтверждённых результатов пока не найдено",
+    "No verified results found yet"
+  ],
+  "Обсуждения и ответы сообщества": [
+    "Обсуждения и ответы сообщества",
+    "Community discussions and answers"
+  ],
+  "Подходящих обсуждений пока не найдено": [
+    "Подходящих обсуждений пока не найдено",
+    "No matching discussions found"
+  ],
+  "Проверяем…": [
+    "Проверяем…",
+    "Checking…"
+  ],
+  "Проверить ещё раз": [
+    "Проверить ещё раз",
+    "Check again"
+  ],
+  "Точная фраза": [
+    "Точная фраза",
+    "Exact phrase"
+  ],
+  "Совпадение URL": [
+    "Совпадение URL",
+    "URL match"
+  ],
+  "Главная страница": [
+    "Главная страница",
+    "Homepage"
+  ],
+  "источник": [
+    "источник",
+    "source"
+  ],
+  "релевантность": [
+    "релевантность",
+    "relevance"
+  ],
+  "техпроверка": [
+    "техпроверка",
+    "technical checks"
+  ],
+  "подтверждение": [
+    "подтверждение",
+    "evidence"
+  ],
+  "Verify": [
+    "Verify",
+    "Check"
+  ],
+  "Документация": [
+    "Документация",
+    "Documentation"
+  ],
+  "О компании": [
+    "О компании",
+    "About"
+  ],
+  "Карьера": [
+    "Карьера",
+    "Careers"
+  ],
+  "Исследования": [
+    "Исследования",
+    "Research"
+  ],
+  "Разработчикам": [
+    "Разработчикам",
+    "Developers"
+  ],
+  "Проверка ожидается": [
+    "Проверка ожидается",
+    "Verification pending"
+  ],
+  "Проверка заблокирована": [
+    "Проверка заблокирована",
+    "Verification blocked"
+  ],
+  "Проверка пройдена": [
+    "Проверка пройдена",
+    "Checks passed"
+  ],
+  "Ожидается": [
+    "Ожидается",
+    "Pending"
+  ],
+  "Не подтверждено": [
+    "Не подтверждено",
+    "Unconfirmed"
+  ],
+  "Подтверждено внешним источником": [
+    "Подтверждено внешним источником",
+    "Confirmed by an external source"
+  ],
+  "Нет данных": [
+    "Нет данных",
+    "No data"
+  ],
+  "Независимое подтверждение не найдено.": [
+    "Независимое подтверждение не найдено.",
+    "No independent evidence found."
+  ],
+  "Подходит вашему запросу": [
+    "Подходит вашему запросу",
+    "Matches your query"
+  ],
+  "по запросу": [
+    "по запросу",
+    "query match"
+  ],
+  "NOVA исправила запрос на": [
+    "NOVA исправила запрос на",
+    "NOVA corrected the query to"
+  ],
+  "Искать исходный вариант:": [
+    "Искать исходный вариант:",
+    "Search the original query:"
+  ],
+  "Ничего не найдено": [
+    "Ничего не найдено",
+    "No results found"
+  ],
+  "Попробуйте другой запрос": [
+    "Попробуйте другой запрос",
+    "Try another query"
+  ],
+  "Поддержка": [
+    "Поддержка",
+    "Support"
+  ],
+  "Тарифы": [
+    "Тарифы",
+    "Pricing"
+  ],
+  "Продукты": [
+    "Продукты",
+    "Products"
+  ],
+  "Контакты": [
+    "Контакты",
+    "Contact"
+  ],
+  "Новости": [
+    "Новости",
+    "News"
+  ],
+  "Скачать": [
+    "Скачать",
+    "Download"
+  ],
+  "Магазин": [
+    "Магазин",
+    "Store"
+  ],
+  "Вакансии": [
+    "Вакансии",
+    "Jobs"
+  ],
+  "Официальный домен, зарегистрированный в реестре NOVA.": [
+    "Официальный домен, зарегистрированный в реестре NOVA.",
+    "Official domain registered in the NOVA registry."
+  ],
+  "Billing": [
+    "Подписка",
+    "Billing"
+  ],
+  "NOVA Profile": [
+    "Профиль NOVA",
+    "NOVA Profile"
+  ],
+  "score": [
+    "оценка",
+    "score"
+  ]
+};
+  const originals=new WeakMap();
+  let language='ru';
+  try{language=localStorage.getItem('novaLanguage')==='en'?'en':'ru'}catch(_){}
+  const excluded='script,style,.suggestion-query,.desc,.result h3,.url,#orgModalTitle,#orgDomain,#orgTagline,#orgDescription,#verifySubtitle,#claimDomain,.company-name,.company-description,.company-tagline,.brief-passage p';
+  function translate(value){
+    const key=value.trim();
+    const entry=messages[key];
+    if(entry)return value.replace(key,entry[language==='en'?1:0]);
+    if(/^\d+ результатов · /.test(key))return value.replace('результатов',language==='en'?'results':'результатов').replace(/ · (Web|Verified|Discussions|Exact)/,(_,mode)=>' · '+messages[mode][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
+    if(language==='en'){
+      if(/^Сбросить домены \(\d+\)$/.test(key))return value.replace('Сбросить домены','Reset domains');
+      if(/^Ещё \d+ с домена /.test(key))return value.replace('Ещё ','More: ').replace(' с домена ',' from ');
+      if(/^\d+(\.\d+)?(мс|с)$/.test(key))return value.replace('мс','ms').replace(/с$/,'s');
+    }
+    return value;
+  }
+  function update(node,attribute){
+    const value=attribute?node.getAttribute(attribute):node.nodeValue;
+    if(!value)return;
+    let record=originals.get(node);if(!record){record={};originals.set(node,record)}
+    const key=attribute||'text';
+    if(!record[key]||record[key].output!==value)record[key]={source:value,output:value};
+    const output=translate(record[key].source);record[key].output=output;
+    if(output!==value){if(attribute)node.setAttribute(attribute,output);else node.nodeValue=output}
+  }
+  function visit(root){
+    if(root.nodeType===3){if(!root.parentElement?.closest(excluded))update(root);return}
+    if(root.nodeType!==1||root.matches(excluded)||root.closest('[data-language]'))return;
+    ['aria-label','placeholder','title'].forEach(attr=>{if(root.hasAttribute(attr))update(root,attr)});
+    for(const child of root.childNodes)visit(child);
+  }
+  const observer=new MutationObserver(records=>{
+    observer.disconnect();
+    for(const record of records){
+      if(record.type==='childList')record.addedNodes.forEach(visit);
+      else if(record.type==='attributes')visit(record.target);
+      else visit(record.target);
+    }
+    observe();
+  });
+  function observe(){observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','placeholder','title']})}
+  function apply(){
+    observer.disconnect();
+    document.documentElement.lang=language;
+    document.title=language==='en'?'NOVA — search with verification':'NOVA — поиск с проверкой';
+    visit(document.body);
+    document.querySelectorAll('[data-language]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.language===language)));
+    observe();
+    if(typeof positionSuggestions==='function')positionSuggestions();
+  }
+  document.querySelectorAll('[data-language]').forEach(button=>button.addEventListener('click',()=>{
+    language=button.dataset.language;
+    try{localStorage.setItem('novaLanguage',language)}catch(_){}
+    apply();
+  }));
+  apply();
+})();
+</script>
+
 </body>
 </html>
