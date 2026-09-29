@@ -723,6 +723,61 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .shortcut:hover{color:var(--blue);border-color:var(--blue)}
 @media(forced-colors:active){.suggestions,.dialog,.company-card{scrollbar-color:auto}}
 
+
+/* Content first: secondary diagnostics stay available without filling every card. */
+.result-details{margin-top:14px;border-top:1px solid var(--line)}
+.result-details>summary,.profile-details>summary,.company-management>summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;cursor:pointer;color:var(--muted);font-size:11px;font-weight:700;list-style:none}
+summary::-webkit-details-marker{display:none}
+.result-details[open]>summary span{transform:rotate(180deg)}
+.result-details .result-actions{margin-top:8px}.result-details .result-meta-row{margin-top:0}
+.profile-details{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:16px 0}
+.profile-details>summary:after,.company-management>summary:after{content:'+';font-size:17px}
+.profile-details[open]>summary:after,.company-management[open]>summary:after{content:'−'}
+.company-management{margin-top:12px;border-top:1px solid var(--line)}
+.company-management .company-actions{margin-top:0}
+.profile-search{margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--surface-solid)}
+.profile-search label{display:block;margin-bottom:8px;font-size:11px;font-weight:800}
+.profile-search>div{display:flex;gap:6px}
+.profile-search input{min-width:0;width:100%;border:0;background:var(--surface-soft);color:var(--text);border-radius:8px;padding:10px;font:inherit;font-size:13px}
+.profile-search button{flex:0 0 40px;border:0;border-radius:8px;background:var(--primary);color:var(--primary-ink);font-size:20px;cursor:pointer}
+.profile-search small{display:block;margin-top:7px;color:var(--subtle);font-size:9px}
+.premium-profile .dialog{border-color:color-mix(in srgb,var(--company-accent) 35%,var(--line));background:linear-gradient(150deg,color-mix(in srgb,var(--company-accent) 5%,var(--surface-solid)),var(--surface-solid) 45%)}
+.premium-profile .org-section-link{min-height:76px}.premium-profile .org-section-icon{background:color-mix(in srgb,var(--company-accent) 8%,var(--surface-solid))}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.result h3,.company-name,.org-copy h2{overflow-wrap:anywhere}
+@media(max-width:680px){
+  body{background:var(--bg)}body:before,body:after{display:none}
+  .shell{width:calc(100% - 24px)}.topbar{min-height:56px}.brand-mark{width:29px;height:29px;border-radius:9px}.wordmark{font-size:16px}
+  .hero{padding:24px 0 16px}.hero h1{font-size:34px;letter-spacing:-.045em;max-width:310px;margin-bottom:12px}.eyebrow{margin-bottom:12px;font-size:9px}
+  .hero-sub{font-size:13px;max-width:280px;margin-bottom:20px;line-height:1.5}
+  .search-panel{border-radius:14px;box-shadow:0 4px 18px rgba(20,35,60,.05)}
+  .search-controls{gap:6px;margin-top:7px}.mode-tabs{background:transparent;padding:0;border-bottom:1px solid var(--line);border-radius:0;gap:0}
+  .mode-button{min-height:40px;border-radius:0;font-size:10px}.mode-button.active{background:transparent;color:var(--blue);box-shadow:inset 0 -2px var(--blue)}
+  .search-options{width:auto;margin-left:auto}.freshness-select{min-height:32px;padding:5px 24px 5px 8px;font-size:10px;border-color:transparent;background:transparent}
+  .results-head{margin-bottom:8px}.status{font-size:11px}.summary{font-size:10px}.results-toolbar select{font-size:10px;max-width:94px;border-color:transparent;background:transparent}
+  .results-stack{gap:0;border-top:1px solid var(--line)}
+  .result{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 2px;background:transparent;box-shadow:none}
+  .result-topline{display:none}.result-head{grid-template-columns:26px minmax(0,1fr);gap:8px}.favicon-wrap{width:26px;height:26px;border:0;border-radius:7px}.favicon{width:20px;height:20px}
+  .result h3,.featured-official h3{font-size:16px;line-height:1.35;letter-spacing:-.015em}.url{font-size:10px;margin-top:3px}
+  .desc{font-size:13px;line-height:1.5;margin-top:9px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  .result-details{margin-top:6px;border:0}.result-details>summary{min-height:36px;font-size:10px;justify-content:flex-start;gap:7px}
+  .result-details .result-actions{margin-top:4px}.result-action-left{justify-content:flex-start;gap:12px}.nova-status,.rank-signal{font-size:9px;padding:4px 6px}
+  .featured-official{padding:0 0 4px;background:transparent;box-shadow:none;border-radius:0}
+  .dark .featured-official{background:transparent}.featured-band{padding:10px 0 8px;background:transparent;border:0}.featured-label{font-size:9px}.featured-body{padding:0 2px}
+  .featured-actions{margin-top:10px;display:grid;grid-template-columns:1fr 1fr}.primary-action,.secondary-action{min-height:40px;padding:8px;font-size:11px;border-radius:10px}
+  .other-results-toggle{margin:3px 0 8px;min-height:40px}.other-results{padding-left:10px;border-left:2px solid var(--line)}
+  .insights{gap:10px}.insights>.insight-card:not(.company-card){display:none}
+  .company-card{max-height:none;overflow:visible;padding:16px;border-radius:16px;scrollbar-gutter:auto}
+  .premium-company-card .company-logo{width:38px;height:38px;border-radius:10px}.premium-company-card .company-logo img{width:28px;height:28px}.premium-company-card .company-head{grid-template-columns:38px minmax(0,1fr)}
+  .premium-company-card .company-name{font-size:17px}.premium-company-card .company-tagline{margin-top:10px;font-size:12px}
+  .company-links{margin-top:7px}.company-link{min-height:40px;font-size:10px}.profile-search input{font-size:16px}.profile-demo-note{font-size:10px}
+  .modal{padding:8px}.dialog{max-height:calc(100dvh - 16px);padding:16px;border-radius:16px}.dialog-head{margin-bottom:12px}.org-description{font-size:12px}
+  .org-section-link,.premium-profile .org-section-link{min-height:64px;padding:9px;grid-template-columns:minmax(0,1fr) auto;gap:4px;border-radius:11px}.org-section-icon{display:none}.org-section-name{font-size:12px}.org-section-meta{font-size:9px;line-height:1.3}
+  .org-grid{font-size:11px}.profile-details{margin:12px 0}.org-actions{grid-template-columns:1fr 1fr}.org-actions #orgOpen{grid-column:1/-1}
+  .brief-card{box-shadow:none;padding:12px}.brief-passages{gap:6px}.brief-passage{padding:8px}
+  body:not(.has-results) .results-layout{display:none}.footer{font-size:10px;max-width:320px;padding-top:10px}.language-picker{margin-top:10px}
+}
+
 </style>
 </head>
 <body>
@@ -743,7 +798,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
       <div class="hero-intro">
         <div class="eyebrow">Search with an independent verification layer</div>
         <h1>Ищите. <span class="accent">Сверяйте.</span> Решайте.</h1>
-        <p class="hero-sub">NOVA берёт веб-результаты, ранжирует их собственным слоем и отдельно показывает техническую проверку и признаки официальности.</p>
+        <p class="hero-sub">Найдите нужный сайт. Проверьте источник. Перейдите к делу.</p>
       </div>
 
       <div class="search-wrap">
@@ -865,8 +920,9 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
     </div>
     <div id="orgDescription" class="org-description"></div>
     <div id="orgProfileLinks" class="org-profile-links"></div>
-    <div id="orgGrid" class="org-grid"></div>
-    <div class="verify-section"><h4>Основания</h4><ul id="orgEvidence" class="org-evidence"></ul></div>
+    <div id="orgTools"></div>
+    <details class="profile-details"><summary>Данные и проверка</summary><div id="orgGrid" class="org-grid"></div>
+    <div class="verify-section"><h4>Основания</h4><ul id="orgEvidence" class="org-evidence"></ul></div></details>
     <div class="org-actions">
       <a id="orgOpen" class="primary-action" target="_blank" rel="noopener noreferrer">Открыть официальный сайт ↗</a>
       <button id="orgCheck" class="secondary-action" type="button">Открыть проверку</button>
@@ -920,12 +976,20 @@ const claimDomainEl=document.querySelector('#claimDomain');
 const claimBody=document.querySelector('#claimBody');
 const claimStart=document.querySelector('#claimStart');
 
-let history=JSON.parse(localStorage.getItem('novaHistory')||'[]');
-let queryStats=JSON.parse(localStorage.getItem('novaQueryStats')||'{}');
-let domainPrefs=JSON.parse(localStorage.getItem('novaDomainPrefs')||'{}');
+function readStored(key,fallback){
+  try{
+    const value=JSON.parse(localStorage.getItem(key));
+    if(Array.isArray(fallback))return Array.isArray(value)?value.filter(item=>typeof item==='string').slice(0,100):fallback;
+    return value&&typeof value==='object'&&!Array.isArray(value)?value:fallback;
+  }catch(_){return fallback}
+}
+function storeValue(key,value){try{localStorage.setItem(key,value)}catch(_){}}
+let history=readStored('novaHistory',[]);
+let queryStats=readStored('novaQueryStats',{});
+let domainPrefs=readStored('novaDomainPrefs',{});
 let showAllHistory=false;
 let currentResults=[];
-let ownershipTokens=JSON.parse(localStorage.getItem('novaOwnershipTokens')||'{}');
+let ownershipTokens=readStored('novaOwnershipTokens',{});
 let pollTimer=null;
 let lastElapsed=null;
 let companyPanelRequest=0;
@@ -992,7 +1056,7 @@ function setDomainPreference(domain,value){
   const key=String(domain||'').toLowerCase();
   if(!key)return;
   if(value==='normal')delete domainPrefs[key];else domainPrefs[key]=value;
-  localStorage.setItem('novaDomainPrefs',JSON.stringify(domainPrefs));
+  storeValue('novaDomainPrefs',JSON.stringify(domainPrefs));
   updatePrefReset();
   renderResults();
 }
@@ -1046,8 +1110,8 @@ function scheduleRemoteSuggestions(){
 function saveHistory(x){
   history=[x,...history.filter(v=>v.toLowerCase()!==x.toLowerCase())].slice(0,60);
   queryStats[x]=(queryStats[x]||0)+1;
-  localStorage.setItem('novaHistory',JSON.stringify(history));
-  localStorage.setItem('novaQueryStats',JSON.stringify(queryStats));
+  storeValue('novaHistory',JSON.stringify(history));
+  storeValue('novaQueryStats',JSON.stringify(queryStats));
 }
 function frequentQueries(){
   const seen=new Set(history.map(x=>x.toLowerCase()));
@@ -1136,7 +1200,7 @@ suggestions.addEventListener('click',e=>{
     const value=del.dataset.deleteQuery||'';
     if(value){
       history=history.filter(v=>v!==value);
-      localStorage.setItem('novaHistory',JSON.stringify(history));
+      storeValue('novaHistory',JSON.stringify(history));
       suggestionsArmed=true;
       showSuggestions(true);
       suggestions.querySelector('.suggestion')?.focus({preventScroll:true});
@@ -1194,7 +1258,7 @@ function resultCore(x,index){
   return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>'+rankText+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
     '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domain||x.url)+'</div></div></div>'+
     '<div class="desc">'+escapeHtml(x.description||'Сниппет для этого результата недоступен.')+'</div>'+
-    '<div class="result-meta-row">'+officialityMarkup(x)+statusMarkup(x)+personal+signalMarkup(x)+'</div>';
+    (personal?'<div class="result-meta-row">'+personal+'</div>':'');
 }
 function renderCard(x,featured=false,index=0){
   const article=document.createElement('article');
@@ -1202,7 +1266,7 @@ function renderCard(x,featured=false,index=0){
   const domain=domainOf(x.url);
   const pref=domainPreference(domain);
   const boostLabel=pref==='boost'?'Вернуть обычный порядок':'↑ Выше у меня';
-  const prefActions='<div class="result-actions"><div class="result-action-left"><button class="text-action verify-toggle" type="button">Проверка NOVA</button><button class="domain-pref-button" type="button" data-domain-pref="boost">'+boostLabel+'</button><button class="domain-pref-button" type="button" data-domain-pref="blocked">Скрыть домен</button></div><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div>';
+  const prefActions='<details class="result-details" data-result-url="'+escapeHtml(x.url)+'"><summary>Проверка и настройки <span>⌄</span></summary><div class="result-meta-row">'+officialityMarkup(x)+statusMarkup(x)+signalMarkup(x)+'</div><div class="result-actions"><div class="result-action-left"><button class="text-action verify-toggle" type="button">Проверка NOVA</button><button class="domain-pref-button" type="button" data-domain-pref="boost">'+boostLabel+'</button><button class="domain-pref-button" type="button" data-domain-pref="blocked">Скрыть домен</button></div><a class="open-action" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div></details>';
   if(featured){
     article.className='result featured-official';
     article.innerHTML='<div class="featured-band"><div class="featured-label">'+(official.status==='OWNER_VERIFIED'?'Владелец домена подтверждён':'Официальный результат')+'</div><div class="featured-confidence">'+escapeHtml(official.organization||domain)+'</div></div>'+
@@ -1248,6 +1312,7 @@ function displayedResults(){
   return list;
 }
 function renderResults(){
+  const expanded=new Set([...results.querySelectorAll('details[open]')].map(el=>el.dataset.resultUrl));
   const list=displayedResults();
   updateCompanyPanel(list[0]||null);
   results.innerHTML='';
@@ -1290,6 +1355,7 @@ function renderResults(){
       }
     });
   }
+  results.querySelectorAll('details[data-result-url]').forEach(el=>{el.open=expanded.has(el.dataset.resultUrl)});
   updateMetrics();
 }
 function showSkeletons(){
@@ -1415,11 +1481,37 @@ function linkIntentTerms(key){
 }
 function linkMatchesQuery(key,query){
   const value=String(query||'').toLowerCase();
-  return linkIntentTerms(key).some(term=>value.includes(term));
+  return linkIntentTerms(key).some(term=>new RegExp('(?:^|[^\\p{L}\\p{N}])'+term+(/[а-яё]/i.test(term)?'':'(?:$|[^\\p{L}\\p{N}])'),'iu').test(value));
+}
+function safeProfileLinks(links){
+  return Object.entries(links||{}).filter(([key,value])=>{
+    try{const url=new URL(value);return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password}catch(_){return false}
+  });
+}
+function hasProfilePlus(p){return p.profile_tier==='premium_demo'||['active','trialing'].includes(p.billing_status)}
+function profileSearchMarkup(p){
+  if(!hasProfilePlus(p))return '';
+  return '<form class="profile-search" data-site-search="'+escapeHtml(p.domain)+'"><label>Найти на этом сайте</label><div><input type="search" required maxlength="200" aria-label="Запрос по сайту" placeholder="Товар, услуга или вопрос" autocomplete="off"><button type="submit" aria-label="Искать на сайте">→</button></div><small>Поиск NOVA по этому домену</small></form>';
+}
+function bindProfileSearch(root){
+  root.querySelectorAll('[data-site-search]').forEach(search=>{
+    search.onsubmit=e=>{
+      e.preventDefault();
+      const value=search.querySelector('input').value.trim();
+      const domain=domainOf('https://'+search.dataset.siteSearch);
+      if(!value||!domain)return;
+      while(modalStack.length)closeModal(modalStack.at(-1).modal);
+      q.value='site:'+domain+' '+value.replace(/\bsite:\S+/gi,'').trim();
+      activeMode='web';
+      document.querySelectorAll('#modeTabs [data-mode]').forEach(button=>button.classList.toggle('active',button.dataset.mode===activeMode));
+      updateClearButton();form.requestSubmit();
+      form.scrollIntoView({block:'start',behavior:'smooth'});
+    };
+  });
 }
 function profileLinksMarkup(links,limit=5){
   const query=q?.value||'';
-  return Object.entries(links||{})
+  return safeProfileLinks(links)
     .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
     .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
     .slice(0,limit)
@@ -1429,7 +1521,7 @@ function profileLinksMarkup(links,limit=5){
 }
 function orgProfileLinksMarkup(links,limit=8){
   const query=q?.value||'';
-  return Object.entries(links||{})
+  return safeProfileLinks(links)
     .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
     .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
     .slice(0,limit)
@@ -1488,20 +1580,22 @@ async function loadOrganizationProfile(domain){
 }
 async function updateCompanyPanel(top=displayedResults()[0]){
   const request=++companyPanelRequest;
-  companyPanel.hidden=true;
-  companyPanel.innerHTML='';
-  if(!top||!isOfficialStatus(top.verification?.officiality?.status))return;
-  const domain=domainOf(top.url);
+  const domain=top?domainOf(top.url):'';
+  if(!top||!isOfficialStatus(top.verification?.officiality?.status)){companyPanel.hidden=true;companyPanel.innerHTML='';return}
+  if(companyPanel.dataset?.domain!==domain){companyPanel.hidden=true;companyPanel.innerHTML=''}
   try{
     const p=await loadOrganizationProfile(domain);
     if(request!==companyPanelRequest||domainOf(p.url||('https://'+p.domain))!==domain)return;
-    const billing=await loadBillingStatus(domain);
-    if(request!==companyPanelRequest)return;
+    const billing=p;
+    const {last_check,...presentation}=p;
+    const renderKey=JSON.stringify([domain,q.value,presentation]);
+    if(companyPanel.dataset?.renderKey===renderKey&&!companyPanel.hidden)return;
+    if(companyPanel.dataset){companyPanel.dataset.domain=domain;companyPanel.dataset.renderKey=renderKey}
     companyPanel.hidden=false;
     companyPanel.style.setProperty('--company-accent',safeAccent(p.profile_accent));
     const owner=p.owner_verification==='DOMAIN_CONTROL';
     const plus=billing&&['active','trialing'].includes(billing.billing_status);
-    const premiumVisual=plus||p.profile_tier==='premium'||p.profile_tier==='premium_demo';
+    const premiumVisual=hasProfilePlus(p);
     const isDemo=p.profile_tier==='premium_demo';
     companyPanel.classList.toggle('premium-company-card',premiumVisual);
     const links=profileLinksMarkup(p.links,premiumVisual?6:4);
@@ -1512,11 +1606,12 @@ async function updateCompanyPanel(top=displayedResults()[0]){
       '<span class="company-trust">'+(owner?'Контроль домена подтверждён':'Курируемый реестр NOVA')+'</span>'+
       profileVisualBadge(p,billing)+
       (p.tagline?'<div class="company-tagline">'+escapeHtml(p.tagline)+'</div>':'')+
-      (p.description?'<div class="company-description">'+escapeHtml(p.description)+'</div>':'')+
+      profileSearchMarkup(p)+
       (links?'<div class="company-sections-title">Ключевые разделы</div><div class="company-links '+(premiumVisual?'premium-links':'')+'">'+links+'</div>':'')+
-      (isDemo?'<div class="profile-demo-note">Демо показывает, что покупает компания: более выразительную карточку и быстрые официальные разделы. Доверие и позиция в поиске остаются независимыми.</div>':'')+
-      '<div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button>'+(owner?'<button class="company-secondary" type="button" data-billing>'+(plus?'Управлять Profile Plus':'Подключить Profile Plus')+'</button>':'')+'</div>'+
-      '<div class="company-policy">Profile Plus улучшает представление компании, но никогда не повышает органический NOVA Rank.</div>';
+      (isDemo?'<div class="profile-demo-note">Демо Profile Plus · расширенные разделы и поиск по сайту. Не означает платную подписку бренда.</div>':'')+
+      '<details class="company-management"><summary>Профиль и управление</summary><div class="company-actions"><button class="company-primary" type="button" data-company-profile>Профиль</button><a class="company-secondary" href="'+escapeHtml(p.url||top.url)+'" target="_blank" rel="noopener noreferrer">Сайт ↗</a><button class="company-secondary" type="button" data-company-claim>'+(owner?'Статус владельца':'Подтвердить домен')+'</button>'+(owner?'<button class="company-secondary" type="button" data-billing>'+(plus?'Управлять Profile Plus':'Подключить Profile Plus')+'</button>':'')+'</div>'+
+      '<div class="company-policy">Оформление профиля не влияет на место в поиске.</div></details>';
+    bindProfileSearch(companyPanel);
     companyPanel.querySelector('[data-company-profile]').onclick=()=>openOrganizationProfile(top);
     companyPanel.querySelector('[data-company-claim]').onclick=()=>openClaim(domain);
     const billingButton=companyPanel.querySelector('[data-billing]');
@@ -1534,6 +1629,10 @@ async function openOrganizationProfile(x){
   document.querySelector('#orgTagline').textContent='';
   document.querySelector('#orgDescription').textContent='Загрузка данных профиля…';
   document.querySelector('#orgProfileLinks').innerHTML='';
+  document.querySelector('#orgTools').innerHTML='';
+  document.querySelector('#orgTrustBadge').textContent='Профиль NOVA';
+  modal.querySelector('.profile-details').open=false;
+  modal.classList.remove('premium-profile');
   document.querySelector('#orgGrid').innerHTML='';
   document.querySelector('#orgEvidence').innerHTML='';
   document.querySelector('#orgOpen').href=x.url;
@@ -1550,15 +1649,19 @@ async function openOrganizationProfile(x){
     document.querySelector('#orgTagline').textContent=p.tagline||'';
     document.querySelector('#orgTrustBadge').textContent=owner?'Контроль домена подтверждён':'Курируемый профиль NOVA';
     document.querySelector('#orgDescription').textContent=p.description||'Официальный домен, зарегистрированный в реестре NOVA.';
-    const premiumVisual=p.profile_tier==='premium'||p.profile_tier==='premium_demo'||['active','trialing'].includes(p.billing_status);
-    document.querySelector('#orgProfileLinks').classList.remove('premium-links');
+    const premiumVisual=hasProfilePlus(p);
+    modal.classList.toggle('premium-profile',premiumVisual);
+    modal.style.setProperty('--company-accent',safeAccent(p.profile_accent));
+    document.querySelector('#orgTools').innerHTML=profileSearchMarkup(p);
+    bindProfileSearch(modal);
+    document.querySelector('#orgProfileLinks').classList.toggle('premium-links',premiumVisual);
     document.querySelector('#orgProfileLinks').innerHTML=orgProfileLinksMarkup(p.links,premiumVisual?8:6);
     document.querySelector('#orgGrid').innerHTML=
       '<span>Организация</span><span>'+escapeHtml(p.organization)+'</span>'+
       '<span>Официальный домен</span><span>'+escapeHtml(p.domain)+'</span>'+
       '<span>Категория</span><span>'+escapeHtml(p.category||'—')+'</span>'+
       '<span>Профиль</span><span>'+escapeHtml(p.profile_tier==='premium_demo'?'Profile Plus Demo':p.profile_tier==='premium'?'Profile Plus':p.profile_tier||'standard')+'</span>'+
-      '<span>Billing</span><span>'+escapeHtml(p.billing_status||'inactive')+'</span>'+
+
       '<span>Контроль домена</span><span>'+escapeHtml(owner?'Подтверждён':'Не подтверждён владельцем')+'</span>'+
       '<span>Источник записи</span><span>'+escapeHtml(p.method||'—')+'</span>'+
       '<span>Последняя техпроверка</span><span>'+escapeHtml(lc.checked_at||'Пока не проводилась')+'</span>'+
@@ -1609,7 +1712,7 @@ async function verifyClaim(){
       return;
     }
     ownershipTokens[claimContext.domain]=claimContext.token;
-    localStorage.setItem('novaOwnershipTokens',JSON.stringify(ownershipTokens));
+    storeValue('novaOwnershipTokens',JSON.stringify(ownershipTokens));
     claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Управление Profile Plus разрешено на этом устройстве.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div><div class="claim-actions"><button class="primary-action" type="button" data-start-plus>Подключить Profile Plus</button></div>';
     const plusButton=claimBody.querySelector('[data-start-plus]');
     if(plusButton)plusButton.onclick=()=>startProfilePlus(claimContext.domain);
@@ -1660,7 +1763,7 @@ document.querySelector('#searchShortcut').onclick=()=>{q.focus({preventScroll:tr
 sort.onchange=renderResults;
 modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
 freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
-resetPrefs.onclick=()=>{domainPrefs={};localStorage.setItem('novaDomainPrefs','{}');updatePrefReset();renderResults()};
+resetPrefs.onclick=()=>{domainPrefs={};storeValue('novaDomainPrefs','{}');updatePrefReset();renderResults()};
 updatePrefReset();
 updateClearButton();
 hideSuggestions();
@@ -1670,11 +1773,11 @@ if(billingReturn==='success'){
   setTimeout(()=>{window.history.replaceState(null,'',location.pathname);},1200);
 }
 
-const savedTheme=localStorage.getItem(THEME_KEY);
+let savedTheme=null;try{savedTheme=localStorage.getItem(THEME_KEY)}catch(_){}
 if(savedTheme==='dark'||(!savedTheme&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.body.classList.add('dark');
 document.querySelector('#theme').onclick=()=>{
   document.body.classList.toggle('dark');
-  localStorage.setItem(THEME_KEY,document.body.classList.contains('dark')?'dark':'light');
+  storeValue(THEME_KEY,document.body.classList.contains('dark')?'dark':'light');
 };
 
 function searchRequestUrl(query){
@@ -1781,7 +1884,7 @@ document.addEventListener('keydown',e=>{
       if(topModal.id==='orgModal')closeOrganizationProfile();
       else closeModal(topModal);
     }else if(e.key==='Tab'){
-      const focusable=[...topModal.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')].filter(el=>el.getClientRects().length);
+      const focusable=[...topModal.querySelectorAll('button:not([disabled]),summary,a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]')].filter(el=>el.getClientRects().length);
       const first=focusable[0],last=focusable.at(-1);
       if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
       else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
@@ -1809,7 +1912,7 @@ document.addEventListener('keydown',e=>{
     else if(document.querySelector('#orgModal').classList.contains('open'))closeOrganizationProfile();
     else hideSuggestions();
   }
-  if(e.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){
+  if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!document.activeElement.isContentEditable&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){
     e.preventDefault();suggestionsArmed=true;q.focus({preventScroll:true});showSuggestions(true);
   }
 });
@@ -1820,6 +1923,18 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
 // UI-only localization. Source values are retained so switching is reversible.
 (function(){
   const messages={
+  "Найдите нужный сайт. Проверьте источник. Перейдите к делу.": ["Найдите нужный сайт. Проверьте источник. Перейдите к делу.", "Find the right site. Check the source. Get things done."],
+  "Проверка и настройки": ["Проверка и настройки", "Verification and preferences"],
+  "Данные и проверка": ["Данные и проверка", "Details and verification"],
+  "Профиль и управление": ["Профиль и управление", "Profile and management"],
+  "Найти на этом сайте": ["Найти на этом сайте", "Search this site"],
+  "Запрос по сайту": ["Запрос по сайту", "Site search query"],
+  "Товар, услуга или вопрос": ["Товар, услуга или вопрос", "Product, service or question"],
+  "Искать на сайте": ["Искать на сайте", "Search site"],
+  "Поиск NOVA по этому домену": ["Поиск NOVA по этому домену", "NOVA search within this domain"],
+  "Демо Profile Plus · расширенные разделы и поиск по сайту. Не означает платную подписку бренда.": ["Демо Profile Plus · расширенные разделы и поиск по сайту. Не означает платную подписку бренда.", "Profile Plus demo · more sections and site search. This does not imply a paid brand subscription."],
+  "Оформление профиля не влияет на место в поиске.": ["Оформление профиля не влияет на место в поиске.", "Profile design does not affect search ranking."],
+
   "Search with an independent verification layer": [
     "Поиск с независимой проверкой",
     "Search with independent verification"
@@ -2589,7 +2704,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
   }
   document.querySelectorAll('[data-language]').forEach(button=>button.addEventListener('click',()=>{
     language=button.dataset.language;
-    try{localStorage.setItem('novaLanguage',language)}catch(_){}
+    try{storeValue('novaLanguage',language)}catch(_){}
     apply();
   }));
   apply();

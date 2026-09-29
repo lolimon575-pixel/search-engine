@@ -113,7 +113,8 @@ test('all inline scripts parse',()=>{
 
 function companyHarness(){
   const panel={hidden:false,innerHTML:'old company',style:{setProperty(){}},classList:{toggle(){}},querySelector:()=>({})};
-  const ctx={companyPanel:panel,companyPanelRequest:0,currentResults:[],sort:{value:'nova'},
+  const ctx={companyPanel:panel,companyPanelRequest:0,currentResults:[],sort:{value:'nova'},q:{value:''},
+    hasProfilePlus:()=>false,profileSearchMarkup:()=>'',bindProfileSearch(){},
     applyDomainPreferences:rows=>rows.filter(x=>!x.blocked),
     isOfficialStatus:s=>s==='CONFIRMED',domainOf:url=>new URL(url).hostname.replace(/^www\./,''),
     loadOrganizationProfile:async domain=>({domain,url:'https://'+domain,organization:domain}),loadBillingStatus:async()=>null,
@@ -165,4 +166,51 @@ test('a slow earlier search cannot overwrite a newer search and its company sele
   waiting[1]({ok:true,json:async()=>({})});await recent;
   waiting[0]({ok:true,json:async()=>({})});await old;
   assert.deepEqual(applied,['авто ру']);
+});
+
+function profileHelpers(){
+  const ctx={URL,escapeHtml:String,q:{value:''},linkLabel:key=>key,linkIcon:()=>'',modalStack:[]};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function linkIntentTerms('),html.indexOf('async function loadBillingStatus(')),ctx);
+  return ctx;
+}
+test('section recommendations match words rather than accidental substrings',()=>{
+  const h=profileHelpers();
+  assert.equal(h.linkMatchesQuery('app','apple'),false);
+  assert.equal(h.linkMatchesQuery('cars','careers'),false);
+  assert.equal(h.linkMatchesQuery('app','download app'),true);
+  assert.equal(h.linkMatchesQuery('cars','автомобили'),true);
+});
+test('profile links reject executable URLs and embedded credentials',()=>{
+  const h=profileHelpers();
+  const markup=h.profileLinksMarkup({shop:'https://example.com/shop',bad:'javascript:alert(1)',other:'https://user:pass@example.com'});
+  assert.match(markup,/https:\/\/example.com\/shop/);
+  assert.doesNotMatch(markup,/javascript:|user:pass/);
+});
+test('Plus tools require an active subscription or an explicitly labelled demo',()=>{
+  const h=profileHelpers();
+  assert.equal(h.profileSearchMarkup({profile_tier:'premium',billing_status:'canceled'}),'');
+  assert.match(h.profileSearchMarkup({domain:'puma.com',profile_tier:'premium_demo'}),/data-site-search="puma.com"/);
+  assert.match(h.profileSearchMarkup({domain:'example.com',billing_status:'active'}),/data-site-search/);
+});
+test('site search submits a domain scoped query in web mode',()=>{
+  const h=profileHelpers();let submitted=0;
+  const search={dataset:{siteSearch:'example.com'},querySelector:()=>({value:' shoes site:other.com '})};
+  Object.assign(h,{domainOf:url=>new URL(url).hostname,activeMode:'verified',document:{querySelectorAll:()=>[]},updateClearButton(){},form:{requestSubmit(){submitted++},scrollIntoView(){}}});
+  h.bindProfileSearch({querySelectorAll:()=>[search]});search.onsubmit({preventDefault(){}});
+  assert.equal(h.q.value,'site:example.com shoes');assert.equal(h.activeMode,'web');assert.equal(submitted,1);
+});
+test('public company profile remains available without a billing status request',async()=>{
+  const h=companyHarness();h.currentResults=[companyResult('auto.ru')];
+  h.loadBillingStatus=async()=>{throw Error('unavailable')};
+  await h.updateCompanyPanel();assert.equal(h.companyPanel.hidden,false);
+});
+
+test('damaged or unavailable browser storage never prevents startup',()=>{
+  const ctx={localStorage:{getItem:()=>'{broken',setItem:()=>{throw Error('quota')}}};vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function readStored('),html.indexOf("let history=readStored")),ctx);
+  assert.equal(ctx.readStored('history',[]).length,0);
+  ctx.localStorage.getItem=()=>'{"unexpected":true}';assert.equal(ctx.readStored('history',[]).length,0);
+  ctx.localStorage.getItem=()=>{throw Error('denied')};assert.equal(ctx.readStored('history',[]).length,0);
+  assert.doesNotThrow(()=>ctx.storeValue('history','[]'));
 });
