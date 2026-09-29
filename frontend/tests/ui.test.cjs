@@ -40,18 +40,26 @@ test('three nested dialogs close in reverse order without activating background'
   h.ctx.closeModal(h.claim);assert.equal(h.verify.attrs['aria-modal'],'true');assert.equal(h.org.inert,true);
   h.ctx.closeModal(h.verify);assert.equal(h.org.attrs['aria-modal'],'true');
 });
-test('show all history renders more than eight entries and preserves popular queries',()=>{
+test('expanded history hides popular queries; collapsed suggestions have at most ten rows',()=>{
   const suggestions={innerHTML:'',style:{},classList:{add(){},contains(){return true}}};
   const ctx={suggestions,suggestionsArmed:true,activeSuggestionIndex:-1,showAllHistory:false,
     history:Array.from({length:12},(_,i)=>'query '+i),q:{value:''},remoteSuggestions:[],
-    frequentQueries:()=>['popular'],escapeHtml:s=>s,DEFAULT_FREQUENT:[],
+    frequentQueries:()=>['popular','another popular','third popular'],escapeHtml:s=>s,DEFAULT_FREQUENT:[],
     window:{innerHeight:800,addEventListener(){}},form:{getBoundingClientRect:()=>({left:20,width:400,top:300,bottom:350})}};
   vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function suggestionButton('),html.indexOf('function hideSuggestions(){')),ctx);
-  ctx.showSuggestions(true);assert.equal((suggestions.innerHTML.match(/data-delete-query=/g)||[]).length,8);
-  assert.match(suggestions.innerHTML,/data-query="popular"/);
+  ctx.showSuggestions(true);assert.equal((suggestions.innerHTML.match(/data-delete-query=/g)||[]).length,10);
+  assert.doesNotMatch(suggestions.innerHTML,/data-query="popular"/);
   ctx.showAllHistory=true;ctx.showSuggestions(true);
   assert.equal((suggestions.innerHTML.match(/data-delete-query=/g)||[]).length,12);
   assert.match(suggestions.innerHTML,/showLessHistory/);
+  assert.doesNotMatch(suggestions.innerHTML,/Популярное у вас|Подсказки из веба/);
+  ctx.showAllHistory=false;ctx.history=ctx.history.slice(0,8);ctx.showSuggestions(true);
+  assert.equal((suggestions.innerHTML.match(/class="suggestion-row"/g)||[]).length,10);
+  assert.match(suggestions.innerHTML,/data-query="popular"/);
+  ctx.remoteSuggestions=['web one','web two','web three'];ctx.showSuggestions(true);
+  assert.equal((suggestions.innerHTML.match(/class="suggestion-row"/g)||[]).length,10);
+  ctx.showAllHistory=true;ctx.showSuggestions(true);
+  assert.doesNotMatch(suggestions.innerHTML,/Популярное у вас|Подсказки из веба/);
 });
 
 test('dropdown stays inside the viewport, including an on-screen keyboard',()=>{
@@ -101,4 +109,60 @@ test('language changes are reversible and retain dynamic counts',()=>{
 
 test('all inline scripts parse',()=>{
   for(const match of html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);
+});
+
+function companyHarness(){
+  const panel={hidden:false,innerHTML:'old company',style:{setProperty(){}},classList:{toggle(){}},querySelector:()=>({})};
+  const ctx={companyPanel:panel,companyPanelRequest:0,currentResults:[],sort:{value:'nova'},
+    applyDomainPreferences:rows=>rows.filter(x=>!x.blocked),
+    isOfficialStatus:s=>s==='CONFIRMED',domainOf:url=>new URL(url).hostname.replace(/^www\./,''),
+    loadOrganizationProfile:async domain=>({domain,url:'https://'+domain,organization:domain}),loadBillingStatus:async()=>null,
+    safeAccent:()=>'',profileLinksMarkup:()=>'',escapeHtml:String,faviconOf:()=>'',profileVisualBadge:()=>''};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function displayedResults(){'),html.indexOf('function renderResults(){')),ctx);
+  vm.runInContext(html.slice(html.indexOf('async function updateCompanyPanel('),html.indexOf('async function openOrganizationProfile(')),ctx);
+  return ctx;
+}
+const companyResult=(domain,official=true)=>({url:'https://'+domain,title:domain,verification:{officiality:{status:official?'CONFIRMED':'UNKNOWN'}}});
+test('a later registered company never substitutes for an unregistered first result',async()=>{
+  const h=companyHarness();let calls=0;h.loadOrganizationProfile=async()=>{calls++;};
+  h.currentResults=[companyResult('auto.ru',false),companyResult('avito.ru')];
+  await h.updateCompanyPanel();assert.equal(calls,0);assert.equal(h.companyPanel.hidden,true);
+  assert.equal(h.companyPanel.innerHTML,'');
+});
+test('profile follows the first visible result after sorting and hiding domains',async()=>{
+  const h=companyHarness();h.currentResults=[companyResult('avito.ru'),companyResult('auto.ru')];
+  h.sort.value='title';await h.updateCompanyPanel();assert.match(h.companyPanel.innerHTML,/auto\.ru/);
+  h.currentResults[1].blocked=true;await h.updateCompanyPanel();assert.match(h.companyPanel.innerHTML,/avito\.ru/);
+});
+test('late profile responses cannot revive a panel after its first result changed',async()=>{
+  const h=companyHarness();let release;h.currentResults=[companyResult('avito.ru')];
+  h.loadOrganizationProfile=()=>new Promise(resolve=>{release=resolve});
+  const pending=h.updateCompanyPanel();h.currentResults=[companyResult('auto.ru',false)];
+  await h.updateCompanyPanel();release({domain:'avito.ru',url:'https://avito.ru',organization:'Avito'});await pending;
+  assert.equal(h.companyPanel.hidden,true);assert.equal(h.companyPanel.innerHTML,'');
+});
+test('a profile for a different domain is rejected',async()=>{
+  const h=companyHarness();h.currentResults=[companyResult('auto.ru')];
+  h.loadOrganizationProfile=async()=>({domain:'avito.ru',url:'https://avito.ru'});
+  await h.updateCompanyPanel();assert.equal(h.companyPanel.hidden,true);
+});
+
+test('a slow earlier search cannot overwrite a newer search and its company selection',async()=>{
+  const waiting=[],applied=[];
+  const element=()=>({classList:{add(){},remove(){}},textContent:'',innerHTML:''});
+  const ctx={form:{},q:{value:'avito'},searchGeneration:0,companyPanelRequest:0,
+    handleBang:()=>false,saveHistory(){},clearTimeout(){},suggestTimer:null,suggestionsArmed:false,hideSuggestions(){},
+    document:{body:element()},status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
+    briefCard:element(),metricCount:element(),metricTime:element(),metricVerified:element(),metricOfficial:element(),
+    showSkeletons(){},pollTimer:null,performance:{now:()=>0},searchRequestUrl:x=>x,
+    fetch:()=>new Promise(resolve=>waiting.push(resolve)),showCorrection(){},currentResults:[],
+    applyResponse:(data,query)=>applied.push(query),results:element(),escapeHtml:String};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('form.onsubmit=async'),html.indexOf("document.addEventListener('keydown',e=>")),ctx);
+  const old=ctx.form.onsubmit({preventDefault(){}});ctx.q.value='авто ру';
+  const recent=ctx.form.onsubmit({preventDefault(){}});
+  waiting[1]({ok:true,json:async()=>({})});await recent;
+  waiting[0]({ok:true,json:async()=>({})});await old;
+  assert.deepEqual(applied,['авто ру']);
 });

@@ -700,6 +700,29 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   .footer{font-size:10px;line-height:1.5;padding:10px 8px 20px}.language-picker{margin-top:14px}.language-picker button{min-height:40px}
 }
 
+
+/* Consistent, quiet scrollbars inside floating panels, in both themes. */
+.suggestions,.dialog,.company-card{
+  scrollbar-width:thin;
+  scrollbar-color:color-mix(in srgb,var(--muted) 36%,transparent) transparent;
+  scrollbar-gutter:stable;
+}
+.suggestions:hover,.dialog:hover,.company-card:hover{
+  scrollbar-color:color-mix(in srgb,var(--muted) 58%,transparent) transparent;
+}
+.suggestions::-webkit-scrollbar,.dialog::-webkit-scrollbar,.company-card::-webkit-scrollbar{width:8px;height:8px}
+.suggestions::-webkit-scrollbar-track,.dialog::-webkit-scrollbar-track,.company-card::-webkit-scrollbar-track{background:transparent;margin-block:14px}
+.suggestions::-webkit-scrollbar-thumb,.dialog::-webkit-scrollbar-thumb,.company-card::-webkit-scrollbar-thumb{
+  border:2px solid transparent;border-radius:20px;background-color:color-mix(in srgb,var(--muted) 36%,transparent);background-clip:padding-box;
+}
+.suggestions::-webkit-scrollbar-thumb:hover,.dialog::-webkit-scrollbar-thumb:hover,.company-card::-webkit-scrollbar-thumb:hover{background-color:var(--muted)}
+.suggestions::-webkit-scrollbar-button,.dialog::-webkit-scrollbar-button,.company-card::-webkit-scrollbar-button{display:none;width:0;height:0}
+.suggestions::-webkit-scrollbar-corner,.dialog::-webkit-scrollbar-corner,.company-card::-webkit-scrollbar-corner{background:transparent}
+.company-card{max-height:min(680px,80dvh);overflow-y:auto;overscroll-behavior:contain}
+.shortcut{cursor:pointer;min-width:30px}.shortcut kbd{font:inherit}
+.shortcut:hover{color:var(--blue);border-color:var(--blue)}
+@media(forced-colors:active){.suggestions,.dialog,.company-card{scrollbar-color:auto}}
+
 </style>
 </head>
 <body>
@@ -728,8 +751,8 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
           <span class="search-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="m21 21-4.35-4.35m2.1-5.15a7.25 7.25 0 1 1-14.5 0 7.25 7.25 0 0 1 14.5 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </span>
-          <input id="q" autocomplete="off" placeholder="Введите запрос" aria-label="Поисковый запрос">
-          <span class="shortcut">/</span>
+          <input id="q" autocomplete="off" placeholder="Введите запрос" aria-label="Поисковый запрос" aria-keyshortcuts="/">
+          <button class="shortcut" id="searchShortcut" type="button" title="Нажмите /, чтобы перейти к поиску" aria-label="Перейти к поиску (/)"><kbd>/</kbd></button>
           <button class="clear-search" id="clearSearch" type="button" aria-label="Очистить поиск">×</button>
           <button class="search-submit" type="submit">Найти</button>
         </form>
@@ -905,6 +928,8 @@ let currentResults=[];
 let ownershipTokens=JSON.parse(localStorage.getItem('novaOwnershipTokens')||'{}');
 let pollTimer=null;
 let lastElapsed=null;
+let companyPanelRequest=0;
+let searchGeneration=0;
 let activeMode='web';
 let remoteSuggestions=[];
 let suggestTimer=null;
@@ -944,7 +969,7 @@ function linkLabel(key){return ({
   cars:'Авто',attractions:'Развлечения',games:'Игры',services:'Сервисы',business:'Бизнесу',
   personal:'Частным клиентам',investments:'Инвестиции',sellers:'Продавцам',employers:'Работодателям',
   maps:'Карты',news:'Новости',subscription:'Подписка',app:'Приложение',legal:'Правовая информация',
-  tariffs:'Тарифы',offices:'Офисы',contacts:'Контакты'
+  tariffs:'Тарифы',offices:'Офисы',contacts:'Контакты',catalog:'Каталог',offers:'Акции',travel:'Путешествия',hotels:'Отели'
 }[key]||key)}
 function linkIcon(key){return ({
   shop:'▣',store:'▣',products:'◆',product:'◆',pricing:'€',docs:'⌘',developer:'⌘',developers:'⌘',
@@ -1039,25 +1064,25 @@ function suggestionButton(x,i,canDelete=false){
 function showSuggestions(force=false){
   if(!force&&!suggestionsArmed)return;
   activeSuggestionIndex=-1;
-  const visibleHistory=showAllHistory?history:history.slice(0,8);
+  const visibleHistory=showAllHistory?history:history.slice(0,10);
   const frequent=frequentQueries();
 
   let html='';
   const queryNow=q.value.trim().toLowerCase();
-  const remote=remoteSuggestions.filter(x=>x&&x.toLowerCase()!==queryNow).slice(0,6);
+  const remote=showAllHistory?[]:remoteSuggestions.filter(x=>x&&x.toLowerCase()!==queryNow).slice(0,Math.min(6,10-visibleHistory.length));
   if(remote.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">Подсказки из веба</div>'+remote.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
   if(visibleHistory.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">История</div>'+visibleHistory.map((x,i)=>suggestionButton(x,i,true)).join('')+'</div>';
   }
-  const freqVisible=frequent.slice(0,4);
-  if(freqVisible.length&&!remote.length){
+  const freqVisible=showAllHistory?[]:frequent.slice(0,Math.max(0,10-visibleHistory.length-remote.length));
+  if(freqVisible.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">Популярное у вас</div>'+freqVisible.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
-  if(history.length>8&&!showAllHistory)html+='<button class="suggestions-more" type="button" id="showMoreHistory">Показать всю историю</button>';
-  if(showAllHistory&&history.length>8)html+='<button class="suggestions-more" type="button" id="showLessHistory">Свернуть историю</button>';
-  if(!html)html='<div class="suggestions-head">Попробуйте</div>'+DEFAULT_FREQUENT.slice(0,8).map((x,i)=>suggestionButton(x,i,false)).join('');
+  if(history.length>10&&!showAllHistory)html+='<button class="suggestions-more" type="button" id="showMoreHistory">Показать всю историю</button>';
+  if(showAllHistory&&history.length>10)html+='<button class="suggestions-more" type="button" id="showLessHistory">Свернуть историю</button>';
+  if(!html)html='<div class="suggestions-head">Попробуйте</div>'+DEFAULT_FREQUENT.slice(0,10).map((x,i)=>suggestionButton(x,i,false)).join('');
   suggestions.innerHTML=html;
   suggestions.classList.add('open');
   positionSuggestions();
@@ -1217,9 +1242,14 @@ function updateMetrics(){
   metricVerified.textContent=currentResults.length?verified+'/'+currentResults.length:'—';
   metricOfficial.textContent=currentResults.length?official:'—';
 }
-function renderResults(){
-  let list=applyDomainPreferences([...currentResults]);
+function displayedResults(){
+  const list=applyDomainPreferences([...currentResults]);
   if(sort.value==='title')list.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||''),'ru'));
+  return list;
+}
+function renderResults(){
+  const list=displayedResults();
+  updateCompanyPanel(list[0]||null);
   results.innerHTML='';
   if(!list.length){
     results.innerHTML='<div class="empty-state"><div class="empty-icon">⌕</div><h3>Ничего не найдено</h3><p>Попробуйте изменить формулировку запроса или использовать меньше уточняющих слов.</p></div>';
@@ -1456,13 +1486,17 @@ async function loadOrganizationProfile(domain){
   if(!r.ok||!d.found)throw Error('profile not found');
   return d.profile;
 }
-async function updateCompanyPanel(){
-  const top=currentResults.find(x=>isOfficialStatus(x.verification?.officiality?.status));
-  if(!top){companyPanel.hidden=true;companyPanel.innerHTML='';return}
+async function updateCompanyPanel(top=displayedResults()[0]){
+  const request=++companyPanelRequest;
+  companyPanel.hidden=true;
+  companyPanel.innerHTML='';
+  if(!top||!isOfficialStatus(top.verification?.officiality?.status))return;
   const domain=domainOf(top.url);
   try{
     const p=await loadOrganizationProfile(domain);
+    if(request!==companyPanelRequest||domainOf(p.url||('https://'+p.domain))!==domain)return;
     const billing=await loadBillingStatus(domain);
+    if(request!==companyPanelRequest)return;
     companyPanel.hidden=false;
     companyPanel.style.setProperty('--company-accent',safeAccent(p.profile_accent));
     const owner=p.owner_verification==='DOMAIN_CONTROL';
@@ -1488,7 +1522,7 @@ async function updateCompanyPanel(){
     const billingButton=companyPanel.querySelector('[data-billing]');
     if(billingButton)billingButton.onclick=()=>plus?openBillingPortal(domain):startProfilePlus(domain);
   }catch(e){
-    companyPanel.hidden=true;
+    if(request===companyPanelRequest)companyPanel.hidden=true;
   }
 }
 async function openOrganizationProfile(x){
@@ -1622,6 +1656,7 @@ q.addEventListener('blur',()=>{
     if(!document.activeElement?.closest?.('#suggestions'))hideSuggestions();
   },120);
 });
+document.querySelector('#searchShortcut').onclick=()=>{q.focus({preventScroll:true});suggestionsArmed=true;showSuggestions(true)};
 sort.onchange=renderResults;
 modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
 freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
@@ -1661,7 +1696,6 @@ function applyResponse(data,query,elapsed,refresh=false){
   renderBrief(data.brief||null);
   if(!refresh)lastElapsed=elapsed;
   renderResults();
-  updateCompanyPanel();
   const pending=currentResults.some(needsVerification)&&activeMode!=='verified';
   status.classList.toggle('searching',pending);
   if(activeMode==='verified'){
@@ -1676,12 +1710,12 @@ function applyResponse(data,query,elapsed,refresh=false){
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
-async function refreshVerification(query){
+async function refreshVerification(query,generation=searchGeneration){
   try{
     const r=await fetch(searchRequestUrl(query));
     if(!r.ok)return;
     const data=await r.json();
-    if(q.value.trim().toLowerCase()!==query.toLowerCase())return;
+    if(generation!==searchGeneration||q.value.trim().toLowerCase()!==query.toLowerCase())return;
     applyResponse(data,query,lastElapsed,true);
     if(!currentResults.some(needsVerification)&&pollTimer){
       clearInterval(pollTimer);
@@ -1694,6 +1728,8 @@ form.onsubmit=async e=>{
   const originalQuery=q.value.trim();
   if(!originalQuery)return;
   if(handleBang(originalQuery))return;
+  const generation=++searchGeneration;
+  companyPanelRequest++;
   saveHistory(originalQuery);
   clearTimeout(suggestTimer);
   suggestionsArmed=false;
@@ -1712,6 +1748,7 @@ form.onsubmit=async e=>{
     const started=performance.now();
     const r=await fetch(searchRequestUrl(originalQuery));
     const data=await r.json();
+    if(generation!==searchGeneration)return;
     if(!r.ok)throw Error(data.detail||'Ошибка поиска');
     const elapsed=performance.now()-started;
     showCorrection(originalQuery,data.corrected_query);
@@ -1721,11 +1758,13 @@ form.onsubmit=async e=>{
       let attempts=0;
       pollTimer=setInterval(async()=>{
         attempts++;
-        await refreshVerification(activeQuery);
+        await refreshVerification(activeQuery,generation);
+        if(generation!==searchGeneration)return;
         if(attempts>=12&&pollTimer){clearInterval(pollTimer);pollTimer=null;status.classList.remove('searching')}
       },850);
     }
   }catch(err){
+    if(generation!==searchGeneration)return;
     status.classList.remove('searching');
     status.textContent='Поиск не завершён';
     summary.textContent='';
@@ -2452,6 +2491,50 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
   "мы проверяем именно технический контроль. Это сильнее одного платежа, но не является юридической проверкой компании. Платный профиль в будущем будет доступен только после этого шага и отдельной identity/billing-проверки. Органический рейтинг не продаётся.": [
     "мы проверяем именно технический контроль. Это сильнее одного платежа, но не является юридической проверкой компании. Платный профиль в будущем будет доступен только после этого шага и отдельной identity/billing-проверки. Органический рейтинг не продаётся.",
     "we verify technical control, not the legal identity of the company. A paid profile requires domain control and separate identity and billing checks. Organic ranking cannot be purchased."
+  ],
+  "Нажмите /, чтобы перейти к поиску": [
+    "Нажмите /, чтобы перейти к поиску",
+    "Press / to focus search"
+  ],
+  "Перейти к поиску (/)": [
+    "Перейти к поиску (/)",
+    "Focus search (/)"
+  ],
+  "Каталог": [
+    "Каталог",
+    "Catalog"
+  ],
+  "Акции": [
+    "Акции",
+    "Offers"
+  ],
+  "Путешествия": [
+    "Путешествия",
+    "Travel"
+  ],
+  "Отели": [
+    "Отели",
+    "Hotels"
+  ],
+  "Авто": [
+    "Авто",
+    "Cars"
+  ],
+  "Автомобили": [
+    "Автомобили",
+    "Cars"
+  ],
+  "Авиабилеты": [
+    "Авиабилеты",
+    "Flights"
+  ],
+  "Сообщество": [
+    "Сообщество",
+    "Community"
+  ],
+  "Продукт": [
+    "Продукт",
+    "Product"
   ]
 };
   const originals=new WeakMap();

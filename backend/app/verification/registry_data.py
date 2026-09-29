@@ -136,3 +136,23 @@ REGISTRY = {
 # the card work when search results land on regional commerce or corporate subdomains.
 REGISTRY["eu.puma.com"] = REGISTRY["puma.com"]
 REGISTRY["about.puma.com"] = REGISTRY["puma.com"]
+
+# Verified against the services' own public pages on 2026-09-30.
+# Source URLs are retained for review; membership grants no ranking bonus.
+ADDITIONAL_PROFILES = {
+    "auto.ru": profile("Авто.ру", "Automotive", "Поиск и продажа автомобилей", "Автомобильные объявления и каталог моделей.", "#db3727", {"cars": "https://auto.ru/cars/used/", "catalog": "https://auto.ru/catalog/cars/", "support": "https://auto.ru/support/autoru/ru/for-cars-sellers"}),
+    "drom.ru": profile("Дром", "Automotive", "Автомобили, каталог и новости", "Объявления о продаже автомобилей и информация для автовладельцев.", "#c62828", {"cars": "https://auto.drom.ru/", "catalog": "https://www.drom.ru/catalog/", "news": "https://news.drom.ru/"}),
+    "domclick.ru": profile("Домклик", "Real Estate", "Поиск и сделки с недвижимостью", "Сервис поиска, покупки, продажи и аренды недвижимости.", "#1e9d61", {"product": "https://domclick.ru/", "news": "https://blog.domclick.ru/", "careers": "https://career.domclick.ru/"}),
+    "dns-shop.ru": profile("DNS", "Retail", "Цифровая и бытовая техника", "Магазин электроники и бытовой техники.", "#f27c21", {"shop": "https://www.dns-shop.ru/", "community": "https://club.dns-shop.ru/"}),
+    "citilink.ru": profile("Ситилинк", "Retail", "Электроника и бытовая техника", "Интернет-магазин техники и электроники.", "#ed6b23", {"shop": "https://www.citilink.ru/", "catalog": "https://www.citilink.ru/catalog", "offers": "https://www.citilink.ru/actions/"}),
+    "mvideo.ru": profile("М.Видео", "Retail", "Техника, электроника и товары для дома", "Интернет-магазин и маркетплейс М.Видео.", "#e31235", {"shop": "https://www.mvideo.ru/"}),
+    "tutu.ru": profile("Туту", "Travel", "Билеты, отели и путешествия", "Поиск авиационных, железнодорожных и автобусных билетов и отелей.", "#2874d0", {"travel": "https://www.tutu.ru/"}),
+    "aviasales.ru": profile("Авиасейлс", "Travel", "Поиск авиабилетов", "Сервис поиска и сравнения предложений авиабилетов.", "#0c73fe", {"flights": "https://www.aviasales.ru/"}),
+    "ostrovok.ru": profile("Островок", "Travel", "Поиск и бронирование отелей", "Сервис бронирования отелей и другого размещения.", "#4b6bdc", {"hotels": "https://ostrovok.ru/"}),
+    "habr.com": profile("Хабр", "Technology Media", "Технологии и профессиональное сообщество", "Публикации и обсуждения о технологиях и разработке.", "#4d7e96", {"community": "https://habr.com/"}),
+}
+for _domain, _item in ADDITIONAL_PROFILES.items():
+    _item["source_url"] = next(iter(_item["links"].values()))
+    REGISTRY[_domain] = _item
+# Only this observed official subdomain is added; no wildcard trust for subdomains.
+REGISTRY["auto.drom.ru"] = REGISTRY["drom.ru"]

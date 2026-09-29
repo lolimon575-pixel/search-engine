@@ -62,3 +62,23 @@ def test_new_russian_profiles_have_useful_key_sections():
     assert len(REGISTRY["rbc.ru"]["links"]) >= 3
     assert len(REGISTRY["gazprombank.ru"]["links"]) >= 4
     assert len(REGISTRY["yota.ru"]["links"]) >= 4
+
+
+def test_new_profiles_have_reviewable_sources_and_distinct_car_brands():
+    from app.verification.registry_data import ADDITIONAL_PROFILES
+    from urllib.parse import urlsplit
+    assert len(ADDITIONAL_PROFILES) == 10
+    for domain, item in ADDITIONAL_PROFILES.items():
+        source_host = urlsplit(item['source_url']).hostname.removeprefix('www.')
+        assert source_host == domain or source_host.endswith('.' + domain)
+        assert item['profile_tier'] == 'showcase'
+    assert REGISTRY['auto.ru']['organization'] == 'Авто.ру'
+    assert REGISTRY['auto.ru'] is not REGISTRY['avito.ru']
+    assert REGISTRY['auto.drom.ru'] is REGISTRY['drom.ru']
+
+
+def test_new_domain_profiles_do_not_match_lookalike_domains(monkeypatch):
+    from app.verification import officiality
+    monkeypatch.setattr(officiality, 'get_site', lambda host: None)
+    assert officiality.get_organization_profile('auto.ru')['organization'] == 'Авто.ру'
+    assert officiality.get_organization_profile('auto.ru.example.org') is None
