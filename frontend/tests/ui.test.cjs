@@ -287,3 +287,25 @@ test('site search uses a selected official host and rejects an empty scoped quer
   assert.match(markup,/value="shop.example.com" selected/);
   assert.match(markup,/value="help.example.com"/);
 });
+
+function editorHarness(response){
+  const editor={elements:Object.fromEntries(['tagline','description','accent','primary_label','primary_url'].map(name=>[name,{value:name==='accent'?'#365fb7':''}]))};
+  const status={textContent:''},save={disabled:false};let closed=0,refreshed=0;
+  const ctx={editorProfile:{domain:'example.com'},ownershipTokens:{'example.com':'owner'},
+    document:{querySelector:s=>s==='#profileEditorForm'?editor:s==='#profileEditorStatus'?status:s==='#profileEditorSave'?save:s==='#profileEditorLinks'?{children:[]}:{}},
+    fetch:async()=>response,closeModal(){closed++},closeOrganizationProfile(){closed++},async updateCompanyPanel(){refreshed++}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf("document.querySelector('#profileEditorForm').onsubmit="),html.indexOf('function openClaim(')),ctx);
+  return {editor,status,save,closed:()=>closed,refreshed:()=>refreshed};
+}
+test('profile editor remains open after malformed or unconfirmed successful responses',async()=>{
+  for(const response of [{ok:true,json:async()=>{throw Error('Unexpected token <')}},{ok:true,json:async()=>({})},{ok:false,json:async()=>({detail:'Subscription inactive'})}]){
+    const h=editorHarness(response);await h.editor.onsubmit({preventDefault(){},currentTarget:h.editor});
+    assert.equal(h.closed(),0);assert.equal(h.refreshed(),0);assert.equal(h.save.disabled,false);
+    assert.ok(h.status.textContent);assert.doesNotMatch(h.status.textContent,/Unexpected token/);
+  }
+});
+test('confirmed profile save closes the editor and reloads the public company card',async()=>{
+  const h=editorHarness({ok:true,json:async()=>({saved:true,domain:'example.com'})});
+  await h.editor.onsubmit({preventDefault(){},currentTarget:h.editor});
+  assert.equal(h.closed(),2);assert.equal(h.refreshed(),1);assert.equal(h.save.disabled,false);
+});

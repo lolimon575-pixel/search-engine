@@ -1849,7 +1849,7 @@ document.querySelector('#profileEditorForm').onsubmit=async e=>{
   save.disabled=true;status.textContent='Сохраняем карточку…';
   try{
     const response=await fetch('/api/organization/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data=await response.json().catch(()=>({detail:'Не удалось сохранить карточку. Попробуйте позже.'}));if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Проверьте поля карточки.');
+    const data=await response.json().catch(()=>({detail:'Не удалось сохранить карточку. Попробуйте позже.'}));if(!response.ok||data?.saved!==true)throw Error(typeof data?.detail==='string'?data.detail:'Не удалось сохранить карточку. Попробуйте позже.');
     closeModal(document.querySelector('#profileEditorModal'));closeOrganizationProfile();await updateCompanyPanel();
   }catch(error){status.textContent=error.message||'Не удалось сохранить карточку.'}finally{save.disabled=false}
 };
