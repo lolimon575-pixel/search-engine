@@ -150,11 +150,11 @@ test('a profile for a different domain is rejected',async()=>{
 });
 
 test('a slow earlier search cannot overwrite a newer search and its company selection',async()=>{
-  const waiting=[],applied=[];
+  const waiting=[],applied=[],retry={};
   const element=()=>({classList:{add(){},remove(){}},textContent:'',innerHTML:''});
   const ctx={form:{},q:{value:'avito'},searchGeneration:0,companyPanelRequest:0,
     handleBang:()=>false,saveHistory(){},clearTimeout(){},suggestTimer:null,suggestionsArmed:false,hideSuggestions(){},
-    document:{body:element()},status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
+    document:{body:element(),querySelector:()=>retry},needsVerification:()=>false,status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
     briefCard:element(),metricCount:element(),metricTime:element(),metricVerified:element(),metricOfficial:element(),
     showSkeletons(){},pollTimer:null,performance:{now:()=>0},searchRequestUrl:x=>x,
     fetch:()=>new Promise(resolve=>waiting.push(resolve)),showCorrection(){},currentResults:[],
@@ -166,6 +166,11 @@ test('a slow earlier search cannot overwrite a newer search and its company sele
   waiting[1]({ok:true,json:async()=>({})});await recent;
   waiting[0]({ok:true,json:async()=>({})});await old;
   assert.deepEqual(applied,['авто ру']);
+  const failed=ctx.form.onsubmit({preventDefault(){}});
+  waiting[2]({ok:false,json:async()=>{throw Error('Unexpected token <')}});await failed;
+  assert.match(ctx.results.innerHTML,/Сервис временно недоступен/);
+  assert.doesNotMatch(ctx.results.innerHTML,/Unexpected token/);
+  let retried=false;ctx.form.requestSubmit=()=>{retried=true};retry.onclick();assert.equal(retried,true);
 });
 
 function profileHelpers(){
