@@ -86,6 +86,7 @@ def ensure_schema():
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS profile_accent TEXT")
             cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS owner_verification TEXT NOT NULL DEFAULT 'unverified'")
             cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS ownership_verified_at TIMESTAMPTZ")
+            cur.execute("ALTER TABLE official_sites ADD COLUMN IF NOT EXISTS profile_settings JSONB NOT NULL DEFAULT '{}'::jsonb")
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT")
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT")
             cur.execute("ALTER TABLE organizations ADD COLUMN IF NOT EXISTS billing_status TEXT NOT NULL DEFAULT 'inactive'")
@@ -190,6 +191,24 @@ def get_site(domain):
             """, (row["id"],))
             row["last_check"] = cur.fetchone()
             return row
+
+
+def update_profile_settings(domain, settings):
+    if not enabled():
+        return False
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE official_sites s SET profile_settings=%s::jsonb, updated_at=NOW()
+                WHERE s.domain=%s AND s.registry_status='active'
+                  AND s.owner_verification='DOMAIN_CONTROL'
+                  AND EXISTS (SELECT 1 FROM organizations o WHERE o.id=s.organization_id
+                              AND o.billing_status IN ('active','trialing'))
+                RETURNING s.id
+            """, (json.dumps(settings, ensure_ascii=False), normalize_domain(domain)))
+            saved = cur.fetchone() is not None
+        conn.commit()
+    return saved
 
 
 def save_check(domain, verification):

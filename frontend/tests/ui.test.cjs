@@ -74,7 +74,7 @@ test('dropdown stays inside the viewport, including an on-screen keyboard',()=>{
   ctx.window.visualViewport={offsetTop:0,height:470};
   ctx.positionSuggestions();
   assert.equal(ctx.suggestions.style.maxHeight,'320px');
-  assert.equal(ctx.suggestions.style.top,'74px');
+  assert.equal(ctx.suggestions.style.top,'auto');assert.equal(ctx.suggestions.style.bottom,'306px');
 });
 
 test('expanding and collapsing history keeps focus inside and stops outside-click dismissal',()=>{
@@ -114,7 +114,7 @@ test('all inline scripts parse',()=>{
 function companyHarness(){
   const panel={hidden:false,innerHTML:'old company',style:{setProperty(){}},classList:{toggle(){}},querySelector:()=>({})};
   const ctx={companyPanel:panel,companyPanelRequest:0,currentResults:[],sort:{value:'nova'},q:{value:''},
-    hasProfilePlus:()=>false,profileSearchMarkup:()=>'',bindProfileSearch(){},
+    hasProfilePlus:()=>false,profileSearchMarkup:()=>'',profileActionMarkup:()=>'',profilePlusValueMarkup:()=>'',placeCompanyPanel(){},bindProfileSearch(){},
     applyDomainPreferences:rows=>rows.filter(x=>!x.blocked),
     isOfficialStatus:s=>s==='CONFIRMED',domainOf:url=>new URL(url).hostname.replace(/^www\./,''),
     loadOrganizationProfile:async domain=>({domain,url:'https://'+domain,organization:domain}),loadBillingStatus:async()=>null,
@@ -150,9 +150,9 @@ test('a profile for a different domain is rejected',async()=>{
 });
 
 test('a slow earlier search cannot overwrite a newer search and its company selection',async()=>{
-  const waiting=[],applied=[],retry={};
+  const waiting=[],applied=[],retry={};let blurred=0;
   const element=()=>({classList:{add(){},remove(){}},textContent:'',innerHTML:''});
-  const ctx={form:{},q:{value:'avito'},searchGeneration:0,companyPanelRequest:0,
+  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,
     handleBang:()=>false,saveHistory(){},clearTimeout(){},suggestTimer:null,suggestionsArmed:false,hideSuggestions(){},
     document:{body:element(),querySelector:()=>retry},needsVerification:()=>false,status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
     briefCard:element(),metricCount:element(),metricTime:element(),metricVerified:element(),metricOfficial:element(),
@@ -166,6 +166,7 @@ test('a slow earlier search cannot overwrite a newer search and its company sele
   waiting[1]({ok:true,json:async()=>({})});await recent;
   waiting[0]({ok:true,json:async()=>({})});await old;
   assert.deepEqual(applied,['авто ру']);
+  assert.equal(blurred,2);
   const failed=ctx.form.onsubmit({preventDefault(){}});
   waiting[2]({ok:false,json:async()=>{throw Error('Unexpected token <')}});await failed;
   assert.match(ctx.results.innerHTML,/Сервис временно недоступен/);
@@ -174,8 +175,9 @@ test('a slow earlier search cannot overwrite a newer search and its company sele
 });
 
 function profileHelpers(){
-  const ctx={URL,escapeHtml:String,q:{value:''},linkLabel:key=>key,linkIcon:()=>'',modalStack:[]};
+  const ctx={URL,escapeHtml:String,q:{value:''},linkIcon:()=>'',modalStack:[],freshnessSelect:{value:'m'}};
   vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function domainOf('),html.indexOf('function domainPreference(')),ctx);
   vm.runInContext(html.slice(html.indexOf('function linkIntentTerms('),html.indexOf('async function loadBillingStatus(')),ctx);
   return ctx;
 }
@@ -200,10 +202,11 @@ test('Plus tools require an active subscription or an explicitly labelled demo',
 });
 test('site search submits a domain scoped query in web mode',()=>{
   const h=profileHelpers();let submitted=0;
-  const search={dataset:{siteSearch:'example.com'},querySelector:()=>({value:' shoes site:other.com '})};
+  const search={dataset:{siteSearch:'example.com'},querySelector:s=>s==='input'?{value:' shoes site:other.com '}:null};
   Object.assign(h,{domainOf:url=>new URL(url).hostname,activeMode:'verified',document:{querySelectorAll:()=>[]},updateClearButton(){},form:{requestSubmit(){submitted++},scrollIntoView(){}}});
   h.bindProfileSearch({querySelectorAll:()=>[search]});search.onsubmit({preventDefault(){}});
   assert.equal(h.q.value,'site:example.com shoes');assert.equal(h.activeMode,'web');assert.equal(submitted,1);
+  assert.equal(h.freshnessSelect.value,'');
 });
 test('public company profile remains available without a billing status request',async()=>{
   const h=companyHarness();h.currentResults=[companyResult('auto.ru')];
@@ -218,4 +221,69 @@ test('damaged or unavailable browser storage never prevents startup',()=>{
   ctx.localStorage.getItem=()=>'{"unexpected":true}';assert.equal(ctx.readStored('history',[]).length,0);
   ctx.localStorage.getItem=()=>{throw Error('denied')};assert.equal(ctx.readStored('history',[]).length,0);
   assert.doesNotThrow(()=>ctx.storeValue('history','[]'));
+});
+
+test('company sections stay expanded during mobile result refresh and switch layout on resize',()=>{
+  const tools={open:true},panel={dataset:{},parentElement:null,querySelector:()=>tools};
+  const target=()=>({prepend(node){node.parentElement=this}}),slot=target(),aside=target();
+  let mobile=true;
+  const ctx={companyPanel:panel,window:{matchMedia:()=>({matches:mobile})},document:{querySelector:s=>s==='#mobileCompanySlot'?slot:aside}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function placeCompanyPanel('),html.indexOf('let viewportReference=null;')),ctx);
+  ctx.placeCompanyPanel();assert.equal(panel.parentElement,slot);assert.equal(tools.open,false);
+  tools.open=true;aside.prepend(panel);ctx.placeCompanyPanel();
+  assert.equal(panel.parentElement,slot);assert.equal(tools.open,true);
+  mobile=false;ctx.placeCompanyPanel();assert.equal(panel.parentElement,aside);assert.equal(tools.open,true);
+  mobile=true;ctx.placeCompanyPanel();assert.equal(tools.open,false);
+  tools.open=true;ctx.placeCompanyPanel(true);assert.equal(tools.open,false);
+});
+
+test('the visual viewport tracks keyboard height without mistaking zoom for a keyboard',()=>{
+  const properties={},classes=new Set();let positions=0;
+  const ctx={window:{innerHeight:800,innerWidth:390,visualViewport:{height:460,offsetTop:24,scale:1}},
+    positionSuggestions(){positions++},document:{activeElement:{matches:()=>true},
+      documentElement:{style:{setProperty:(name,value)=>properties[name]=value}},
+      body:{classList:{toggle:(name,enabled)=>enabled?classes.add(name):classes.delete(name)}}}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('let viewportReference=null;'),html.indexOf('function profileLinksMarkup(')),ctx);
+  ctx.updateViewportLayout();assert.equal(classes.has('keyboard-open'),true);
+  assert.equal(properties['--visual-height'],'460px');assert.equal(properties['--visual-top'],'24px');
+  ctx.window.innerHeight=460;ctx.updateViewportLayout();assert.equal(classes.has('keyboard-open'),true);
+  ctx.window.innerHeight=800;
+  ctx.window.visualViewport.scale=2;ctx.updateViewportLayout();assert.equal(classes.has('keyboard-open'),false);
+  ctx.window.visualViewport={height:460,offsetTop:0,scale:1};ctx.document.activeElement.matches=()=>false;
+  ctx.updateViewportLayout();assert.equal(classes.has('keyboard-open'),false);
+  delete ctx.window.visualViewport;ctx.updateViewportLayout();assert.equal(properties['--visual-height'],'800px');
+  assert.equal(positions,5);
+});
+
+test('dropdown hides when no usable space remains and reappears when the keyboard closes',()=>{
+  const ctx={suggestions:{style:{},classList:{contains:()=>true}},
+    form:{getBoundingClientRect:()=>({left:12,width:296,top:10,bottom:60})},
+    window:{innerHeight:700,addEventListener(){},visualViewport:{offsetTop:0,height:70,addEventListener(){}}}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function positionSuggestions('),html.indexOf('function hideSuggestions(')),ctx);
+  ctx.positionSuggestions();assert.equal(ctx.suggestions.style.display,'none');
+  ctx.window.visualViewport.height=700;ctx.positionSuggestions();assert.equal(ctx.suggestions.style.display,'');
+  assert.equal(ctx.suggestions.style.top,'66px');assert.equal(ctx.suggestions.style.bottom,'auto');
+});
+
+test('Plus selects the requested section, preserves a custom primary action, and recognizes edited labels',()=>{
+  const h=profileHelpers(),p={billing_status:'active',links:{shop:'https://example.com/shop',careers:'https://example.com/jobs'},primary_action:{label:'Request a quote',url:'https://example.com/quote'}};
+  assert.equal(h.profileAction(p,'example вакансии').url,'https://example.com/jobs');
+  assert.equal(h.profileAction(p,'example').label,'Request a quote');
+  delete p.primary_action;p.links={'Карьера':'https://example.com/jobs','Магазин':'https://example.com/shop','Кроссовки':'https://example.com/shoes'};
+  assert.equal(h.profileAction(p,'example').url,'https://example.com/shop');
+  assert.equal(h.profileAction(p,'example работа').url,'https://example.com/jobs');
+  assert.equal(h.profileAction(p,'example кроссовки').url,'https://example.com/shoes');
+  p.billing_status='canceled';assert.equal(h.profileAction(p,'example вакансии'),null);
+});
+
+test('site search uses a selected official host and rejects an empty scoped query',()=>{
+  const h=profileHelpers();let submitted=0,value='catalog';
+  const search={dataset:{siteSearch:'example.com'},querySelector:s=>s==='input'?{value}:{value:'shop.example.com'}};
+  Object.assign(h,{activeMode:'exact',document:{querySelectorAll:()=>[]},updateClearButton(){},form:{requestSubmit(){submitted++},scrollIntoView(){}}});
+  h.bindProfileSearch({querySelectorAll:()=>[search]});search.onsubmit({preventDefault(){}});
+  assert.equal(h.q.value,'site:shop.example.com catalog');assert.equal(h.freshnessSelect.value,'');
+  value='site:other.com';search.onsubmit({preventDefault(){}});assert.equal(submitted,1);
+  const markup=h.profileSearchMarkup({domain:'example.com',billing_status:'active',primary_action:{label:'Catalog',url:'https://shop.example.com/catalog'},links:{help:'https://help.example.com/'}});
+  assert.match(markup,/value="shop.example.com" selected/);
+  assert.match(markup,/value="help.example.com"/);
 });

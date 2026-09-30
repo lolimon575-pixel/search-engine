@@ -2,6 +2,7 @@ from urllib.parse import urlsplit
 
 from app.registry_db import get_site, normalize_domain
 from app.verification.registry_data import REGISTRY
+from app.profile_settings import apply_profile_settings
 
 
 def base_domain(host):
@@ -103,7 +104,7 @@ def get_organization_profile(domain):
 
     if row:
         owner_verified = row.get("owner_verification") == "DOMAIN_CONTROL"
-        return {
+        return apply_profile_settings({
             "id": row["organization_id"],
             "site_id": row["id"],
             "organization": row["organization"],
@@ -128,7 +129,7 @@ def get_organization_profile(domain):
             "trust_level": "domain_control_verified" if owner_verified else "curated_registry",
             "premium_eligible": owner_verified,
             "ranking_policy": "Профиль компании и его тариф не влияют на органический NOVA Rank.",
-        }
+        }, row.get("profile_settings"))
 
     item = REGISTRY.get(host)
     if not item:

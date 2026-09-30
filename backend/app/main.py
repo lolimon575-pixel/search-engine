@@ -1,4 +1,5 @@
 from pathlib import Path
+import asyncio
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -8,6 +9,7 @@ from pydantic import BaseModel
 
 from app.ownership import create_challenge, ownership_status, verify_challenge
 from app.billing import billing_status, create_checkout, create_portal, handle_webhook
+from app.profile_settings import ProfileSettingsRequest, save_profile_settings
 from app.registry_db import ensure_schema, get_site, get_stats, seed_registry
 from app.verification.ledger import VerificationLedger
 from app.verification.officiality import REGISTRY, get_organization_profile
@@ -141,6 +143,18 @@ async def organization_profile(domain: str = Query("", max_length=253)):
     host = (urlsplit(raw).hostname or "").lower().strip().rstrip(".")
     profile = get_organization_profile(host)
     return {"found": bool(profile), "domain": host, "profile": profile}
+
+
+@app.post("/api/organization/profile")
+async def organization_update(body: ProfileSettingsRequest):
+    try:
+        return await asyncio.to_thread(save_profile_settings, body)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=503, detail="Не удалось сохранить карточку. Попробуйте позже.")
 
 
 @app.post("/api/ownership/challenge")
