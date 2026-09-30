@@ -1857,7 +1857,7 @@ form.onsubmit=async e=>{
   try{
     const started=performance.now();
     const r=await fetch(searchRequestUrl(originalQuery));
-    const data=await r.json();
+    let data;try{data=await r.json()}catch(_){throw Error('Сервис временно недоступен. Повторите поиск через несколько секунд.')}
     if(generation!==searchGeneration)return;
     if(!r.ok)throw Error(data.detail||'Ошибка поиска');
     const elapsed=performance.now()-started;
@@ -1880,7 +1880,8 @@ form.onsubmit=async e=>{
     summary.textContent='';
     companyPanel.hidden=true;
     briefCard.innerHTML='';
-    results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p></div>';
+    results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p><button class="primary-action" type="button" id="retrySearch">Повторить поиск</button></div>';
+    document.querySelector('#retrySearch').onclick=()=>form.requestSubmit();
   }
 };
 document.addEventListener('keydown',e=>{
@@ -1930,6 +1931,9 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
 // UI-only localization. Source values are retained so switching is reversible.
 (function(){
   const messages={
+  "Сервис временно недоступен. Повторите поиск через несколько секунд.": ["Сервис временно недоступен. Повторите поиск через несколько секунд.", "The service is temporarily unavailable. Try again in a few seconds."],
+  "Повторить поиск": ["Повторить поиск", "Retry search"],
+
   "Инвесторам": ["Инвесторам", "Investors"],
   "Enterprise": ["Для компаний", "Enterprise"],
   "Cloud": ["Облако", "Cloud"],
