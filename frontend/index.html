@@ -1313,6 +1313,7 @@ function displayedResults(){
 }
 function renderResults(){
   const expanded=new Set([...results.querySelectorAll('details[open]')].map(el=>el.dataset.resultUrl));
+  const expandedGroups=new Set([...results.querySelectorAll('.other-results-toggle.open')].map(el=>el.dataset.domain));
   const list=displayedResults();
   updateCompanyPanel(list[0]||null);
   results.innerHTML='';
@@ -1331,11 +1332,14 @@ function renderResults(){
       if(group.length>1){
         const toggle=document.createElement('button');
         toggle.className='other-results-toggle';
+        toggle.dataset.domain=domainOf(first.item.url);
+        toggle.setAttribute('aria-expanded','false');
         toggle.innerHTML='<span>Ещё '+(group.length-1)+' с домена '+escapeHtml(domainOf(first.item.url))+'</span><span class="arrow">⌄</span>';
         const box=document.createElement('div');
         box.className='other-results';
         group.slice(1).forEach(row=>box.appendChild(renderCard(row.item,false,row.index+1)));
-        toggle.onclick=()=>{const open=box.classList.toggle('open');toggle.classList.toggle('open',open)};
+        if(expandedGroups.has(toggle.dataset.domain)){box.classList.add('open');toggle.classList.add('open');toggle.setAttribute('aria-expanded','true')}
+        toggle.onclick=()=>{const open=box.classList.toggle('open');toggle.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open))};
         results.append(toggle,box);
       }
     });
@@ -1346,11 +1350,14 @@ function renderResults(){
       if(group.length>1){
         const toggle=document.createElement('button');
         toggle.className='other-results-toggle';
+        toggle.dataset.domain=domainOf(first.item.url);
+        toggle.setAttribute('aria-expanded','false');
         toggle.innerHTML='<span>Ещё '+(group.length-1)+' с домена '+escapeHtml(domainOf(first.item.url))+'</span><span class="arrow">⌄</span>';
         const box=document.createElement('div');
         box.className='other-results';
         group.slice(1).forEach(row=>box.appendChild(renderCard(row.item,false,row.index)));
-        toggle.onclick=()=>{const open=box.classList.toggle('open');toggle.classList.toggle('open',open)};
+        if(expandedGroups.has(toggle.dataset.domain)){box.classList.add('open');toggle.classList.add('open');toggle.setAttribute('aria-expanded','true')}
+        toggle.onclick=()=>{const open=box.classList.toggle('open');toggle.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open))};
         results.append(toggle,box);
       }
     });
@@ -1568,7 +1575,7 @@ function billingBadgeMarkup(status){
   return '<span class="billing-badge '+cls+'">'+label+'</span>';
 }
 function profileVisualBadge(p,billing){
-  if(p?.profile_tier==='premium_demo')return '<span class="billing-badge">Profile Plus Demo</span>';
+  if(p?.profile_tier==='premium_demo')return '';
   return billingBadgeMarkup(billing);
 }
 
@@ -1601,7 +1608,7 @@ async function updateCompanyPanel(top=displayedResults()[0]){
     const links=profileLinksMarkup(p.links,premiumVisual?6:4);
     companyPanel.innerHTML=
       (premiumVisual?'<div class="premium-kicker"><strong>Profile Plus</strong><span>'+(isDemo?'DEMO':'PREMIUM')+'</span></div>':'')+
-      '<div class="insight-title">Company Profile <span class="mini">'+escapeHtml((p.profile_badge||'NOVA').toUpperCase())+'</span></div>'+
+      (premiumVisual?'':'<div class="insight-title">Company Profile <span class="mini">NOVA</span></div>')+
       '<div class="company-head"><div class="company-logo"><img src="'+escapeHtml(faviconOf(p.url||top.url))+'" alt=""></div><div><div class="company-name">'+escapeHtml(p.organization)+'</div><div class="company-domain">'+escapeHtml(p.domain)+'</div></div></div>'+
       '<span class="company-trust">'+(owner?'Контроль домена подтверждён':'Курируемый реестр NOVA')+'</span>'+
       profileVisualBadge(p,billing)+
@@ -1923,6 +1930,10 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
 // UI-only localization. Source values are retained so switching is reversible.
 (function(){
   const messages={
+  "Running": ["Бег", "Running"],
+  "Football": ["Футбол", "Football"],
+  "Sustainability": ["Устойчивое развитие", "Sustainability"],
+
   "Найдите нужный сайт. Проверьте источник. Перейдите к делу.": ["Найдите нужный сайт. Проверьте источник. Перейдите к делу.", "Find the right site. Check the source. Get things done."],
   "Проверка и настройки": ["Проверка и настройки", "Verification and preferences"],
   "Данные и проверка": ["Данные и проверка", "Details and verification"],
