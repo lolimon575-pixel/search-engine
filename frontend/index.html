@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5f7fb">
+<meta name="theme-color" content="#f6f7f9">
 <title>NOVA — поиск с проверкой</title>
 <style>
 :root{
   color-scheme:light;
-  --bg:#f5f7fb;
+  --bg:#f6f7f9;
   --surface:rgba(255,255,255,.86);
   --surface-solid:#fff;
-  --surface-soft:#f0f3f8;
+  --surface-soft:#eef1f5;
   --text:#111827;
   --muted:#667085;
-  --subtle:#98a2b3;
+  --subtle:#707d90;
   --line:#e2e7ef;
   --line-strong:#d4dbe6;
   --primary:#111827;
   --primary-ink:#fff;
-  --blue:#2563eb;
+  --blue:#365fb7;
   --blue-soft:#eaf1ff;
   --green:#087f5b;
-  --green-soft:#e7f7f1;
+  --green-soft:#edf6f2;
   --amber:#a15c05;
   --amber-soft:#fff3d6;
   --red:#b42318;
@@ -778,6 +778,44 @@ summary::-webkit-details-marker{display:none}
   body:not(.has-results) .results-layout{display:none}.footer{font-size:10px;max-width:320px;padding-top:10px}.language-picker{margin-top:10px}
 }
 
+
+/* Stable home composition across languages, with a persistent bottom language control. */
+body{background:radial-gradient(ellipse at 20% 0%,rgba(66,104,154,.045),transparent 55%),var(--bg)}
+body:before{display:none}
+.hero-line{display:block;white-space:nowrap}
+.hero h1 .accent{background:none;color:#386d82}
+.dark .hero h1 .accent{color:#8bc5d0}
+.eyebrow:before{background:#56849c}
+.search-panel{box-shadow:0 8px 30px rgba(26,45,75,.045)}
+.company-card.premium-company-card{box-shadow:var(--shadow-soft)}
+.company-card.premium-company-card:before{width:3px}
+body:not(.has-results) .shell{min-height:100svh;padding-bottom:145px}
+body:not(.has-results) .footer{
+  position:fixed;z-index:30;left:50%;bottom:0;transform:translateX(-50%);
+  width:min(720px,calc(100% - 24px));max-width:none;margin:0;
+  padding:18px 12px calc(16px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(to bottom,transparent,var(--bg) 22%);
+}
+body:not(.has-results) .footer>span{display:block;max-width:630px;margin:auto;text-wrap:balance}
+.language-picker{display:grid;grid-template-columns:1fr 1fr;width:208px;gap:4px;margin-top:12px;background:var(--surface-solid);box-shadow:0 2px 10px rgba(26,45,75,.025)}
+.language-picker button{min-height:40px;padding:0 12px}
+body:not(.has-results) .hero h1{line-height:1.06}
+body:not(.has-results) .results-layout{padding-bottom:20px}
+@media(max-width:680px){
+  .hero h1{font-size:clamp(28px,8.5vw,34px)}
+  body:not(.has-results) .hero-sub{min-height:3em;margin-bottom:20px}
+  body:not(.has-results) .shell{padding-bottom:145px}
+  body:not(.has-results) .footer{font-size:10px;padding-top:18px}
+  body:not(.has-results) .footer>span{max-width:320px}
+}
+@media(max-height:560px){
+  body:not(.has-results) .footer>span{display:none}
+  body:not(.has-results) .footer{padding-top:8px}
+  body:not(.has-results) .language-picker{margin-top:0}
+  body:not(.has-results) .shell{padding-bottom:90px}
+  body:not(.has-results) .hero{padding-top:16px}
+}
+
 </style>
 </head>
 <body>
@@ -797,7 +835,7 @@ summary::-webkit-details-marker{display:none}
     <div class="hero-inner">
       <div class="hero-intro">
         <div class="eyebrow">Search with an independent verification layer</div>
-        <h1>Ищите. <span class="accent">Сверяйте.</span> Решайте.</h1>
+        <h1><span class="hero-line">Ищите. <span class="accent">Сверяйте.</span></span><span class="hero-line">Решайте.</span></h1>
         <p class="hero-sub">Найдите нужный сайт. Проверьте источник. Перейдите к делу.</p>
       </div>
 
