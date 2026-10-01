@@ -5,10 +5,15 @@ import threading
 
 
 class VerificationLedger:
+    _locks = {}
+    _locks_guard = threading.Lock()
+
     def __init__(self, path=None):
         self.path = Path(path or Path(__file__).resolve().parents[3] / "data" / "verification_ledger.jsonl")
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.lock = threading.Lock()
+        # Search and health checks use separate instances of the same ledger.
+        with self._locks_guard:
+            self.lock = self._locks.setdefault(self.path.resolve(), threading.Lock())
 
     def append(self, record):
         with self.lock:
@@ -36,6 +41,10 @@ class VerificationLedger:
             return digest
 
     def verify_chain(self):
+        with self.lock:
+            return self._verify_chain()
+
+    def _verify_chain(self):
         if not self.path.exists():
             return {"ok": True, "records": 0}
 
@@ -45,7 +54,12 @@ class VerificationLedger:
             for line in f:
                 if not line.strip():
                     continue
-                item = json.loads(line)
+                try:
+                    item = json.loads(line)
+                except (ValueError, UnicodeError):
+                    return {"ok": False, "records": records, "error": "invalid record"}
+                if not isinstance(item, dict):
+                    return {"ok": False, "records": records, "error": "invalid record"}
                 record = item.get("record", {})
                 prev = item.get("previous_hash", "")
                 if prev != previous:

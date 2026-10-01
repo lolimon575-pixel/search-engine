@@ -111,12 +111,13 @@ a{color:inherit}
 }
 .search-wrap{position:relative;z-index:40;width:min(820px,100%);margin:0 auto}
 .search-panel{
-  position:relative;z-index:30;display:grid;grid-template-columns:44px minmax(0,1fr) auto auto auto;
+  position:relative;z-index:30;display:grid;grid-template-columns:var(--search-icon-width,44px) minmax(0,1fr) auto;
   align-items:center;gap:4px;padding:7px;border:1px solid var(--line-strong);border-radius:22px;
   background:rgba(255,255,255,.9);box-shadow:var(--shadow);backdrop-filter:blur(20px);
   transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
 }
 .search-panel:focus-within{border-color:rgba(37,99,235,.48);box-shadow:0 22px 70px rgba(37,99,235,.13)}
+.search-panel:has(.clear-search.visible){grid-template-columns:var(--search-icon-width,44px) minmax(0,1fr) auto auto}
 .search-icon{display:grid;place-items:center;color:var(--subtle)}
 .search-icon svg{width:20px;height:20px}
 .search-panel input{
@@ -124,10 +125,6 @@ a{color:inherit}
   padding:11px 6px;font-size:17px;font-weight:550;
 }
 .search-panel input::placeholder{color:var(--subtle);font-weight:500}
-.shortcut{
-  color:var(--subtle);font-size:11px;font-weight:700;border:1px solid var(--line);
-  background:var(--surface-soft);border-radius:8px;padding:5px 7px;
-}
 .clear-search{
   width:38px;height:38px;border:0;background:transparent;color:var(--subtle);border-radius:10px;
   cursor:pointer;display:none;font-size:21px;line-height:1
@@ -560,8 +557,8 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   .topbar{min-height:66px}
   .brand-copy{gap:6px}.version{display:none}.live-pill{display:none}
   .hero{padding:52px 0 28px}.hero h1{font-size:46px}.hero-sub{font-size:14px;margin-bottom:22px}
-  .search-panel{grid-template-columns:36px minmax(0,1fr) auto auto;border-radius:18px;padding:5px}
-  .shortcut{display:none}.search-panel input{font-size:16px;padding:10px 2px}.search-submit{height:42px;padding:0 14px;border-radius:12px}
+  .search-panel{--search-icon-width:36px;border-radius:18px;padding:5px}
+  .search-panel input{font-size:16px;padding:10px 2px}.search-submit{height:42px;padding:0 14px;border-radius:12px}
   .suggestions{top:59px;border-radius:16px}
   .pipeline-strip{gap:2px}.pipeline-arrow{display:none}
   .results-layout{padding-bottom:52px}.results-head{align-items:center}
@@ -664,7 +661,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   .eyebrow{font-size:9px;letter-spacing:.035em;margin-bottom:16px;padding:6px 9px}
   .hero-sub{font-size:13px;line-height:1.55;max-width:340px;margin-bottom:22px}
   body.has-results .hero{padding:8px 0 14px}
-  .search-panel{grid-template-columns:26px minmax(0,1fr) auto auto;padding:4px;border-radius:16px;gap:2px}
+  .search-panel{--search-icon-width:26px;padding:4px;border-radius:16px;gap:2px}
   .search-panel input{min-width:0;padding:9px 0}.search-submit{height:44px;padding:0 12px;font-size:13px}
   .clear-search{width:32px;height:44px}.search-icon svg{width:18px}
   .search-controls{gap:8px;margin-top:10px}
@@ -719,8 +716,6 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .suggestions::-webkit-scrollbar-button,.dialog::-webkit-scrollbar-button,.company-card::-webkit-scrollbar-button{display:none;width:0;height:0}
 .suggestions::-webkit-scrollbar-corner,.dialog::-webkit-scrollbar-corner,.company-card::-webkit-scrollbar-corner{background:transparent}
 .company-card{max-height:min(680px,80dvh);overflow-y:auto;overscroll-behavior:contain}
-.shortcut{cursor:pointer;min-width:30px}.shortcut kbd{font:inherit}
-.shortcut:hover{color:var(--blue);border-color:var(--blue)}
 @media(forced-colors:active){.suggestions,.dialog,.company-card{scrollbar-color:auto}}
 
 
@@ -834,6 +829,12 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
 .editor-two{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:12px}.profile-editor fieldset{border:1px solid var(--line);padding:12px;border-radius:12px;min-width:0}.profile-editor legend{font-size:12px;font-weight:800}
 .profile-editor fieldset p,#profileEditorStatus{font-size:11px;line-height:1.5;color:var(--muted)}
 .editor-link-row{display:grid;grid-template-columns:1fr 1.5fr 38px;gap:6px;margin-bottom:8px}.editor-link-row button{border:0;background:var(--surface-soft);color:var(--text);border-radius:9px;font-size:18px;cursor:pointer}
+#q::-webkit-search-cancel-button,#q::-webkit-search-decoration{display:none}
+.editor-preview>summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:750;color:var(--text)}
+.editor-preview>summary:after{content:"+";margin-left:auto;font-size:16px}.editor-preview[open]>summary:after{content:"−"}.editor-preview>p{font-size:11px;line-height:1.5;color:var(--muted);margin:0 0 12px}
+.editor-preview-card{border:1px solid var(--line);border-left:3px solid var(--preview-accent,var(--blue));border-radius:12px;padding:14px;background:var(--surface-solid);overflow-wrap:anywhere}
+.editor-preview-card strong{font-size:16px}.editor-preview-domain{font-size:10px;color:var(--muted);margin:4px 0 10px}.editor-preview-copy{font-size:12px;line-height:1.5;margin:8px 0;color:var(--muted)}
+.editor-preview-action{display:flex;justify-content:space-between;gap:8px;padding:12px;margin-top:12px;border-radius:9px;background:var(--primary);color:var(--primary-ink);font-size:13px;font-weight:750}.editor-preview-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.editor-preview-links span{font-size:11px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-soft)}
 @media(max-width:680px){
   .mobile-company-slot{display:block}
   .mobile-company-slot .company-card{margin-top:12px;border:1px solid var(--line);padding:13px;border-radius:13px;background:var(--surface-solid)}
@@ -878,8 +879,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
           <span class="search-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="m21 21-4.35-4.35m2.1-5.15a7.25 7.25 0 1 1-14.5 0 7.25 7.25 0 0 1 14.5 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </span>
-          <input id="q" autocomplete="off" placeholder="Введите запрос" aria-label="Поисковый запрос" aria-keyshortcuts="/">
-          <button class="shortcut" id="searchShortcut" type="button" title="Нажмите /, чтобы перейти к поиску" aria-label="Перейти к поиску (/)"><kbd>/</kbd></button>
+          <input id="q" type="search" enterkeyhint="search" maxlength="300" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Введите запрос" aria-label="Поисковый запрос" aria-keyshortcuts="/">
           <button class="clear-search" id="clearSearch" type="button" aria-label="Очистить поиск">×</button>
           <button class="search-submit" type="submit">Найти</button>
         </form>
@@ -1029,6 +1029,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
     <div class="editor-two"><label>Название основного действия<input name="primary_label" maxlength="40" placeholder="Например, открыть каталог"></label><label>Цвет акцента<input name="accent" type="color" value="#365fb7"></label></div>
     <label>Ссылка основного действия<input name="primary_url" type="url" placeholder="https://" maxlength="1000"></label>
     <fieldset><legend>Разделы карточки</legend><p>До 8 ссылок на ваш домен и официальные разделы.</p><div id="profileEditorLinks"></div><button type="button" class="secondary-action" id="profileEditorAdd">Добавить раздел</button></fieldset>
+    <details class="editor-preview" id="profileEditorPreviewToggle"><summary>Предпросмотр карточки</summary><p>Базовый вид карточки. Действие может меняться по запросу посетителя.</p><div class="editor-preview-card" id="profileEditorPreview"></div></details>
     <p id="profileEditorStatus" role="status" aria-live="polite"></p><button class="primary-action" id="profileEditorSave" type="submit">Сохранить карточку</button>
   </form></div>
 </div>
@@ -1076,6 +1077,7 @@ let pollTimer=null;
 let lastElapsed=null;
 let companyPanelRequest=0;
 let searchGeneration=0;
+let resultsContext={query:'',mode:'web',freshness:''};
 let currentCompanyProfile=null;
 let activeMode='web';
 let remoteSuggestions=[];
@@ -1187,7 +1189,7 @@ async function fetchRemoteSuggestions(value){
 function scheduleRemoteSuggestions(){
   clearTimeout(suggestTimer);
   const value=q.value.trim();
-  if(value.length<2){remoteSuggestions=[];showSuggestions();return}
+  if(value.length<2||value.length>120){remoteSuggestions=[];showSuggestions();return}
   suggestTimer=setTimeout(()=>fetchRemoteSuggestions(value),180);
 }
 function saveHistory(x){
@@ -1229,7 +1231,8 @@ function showSuggestions(force=false){
     html+='<div class="suggestion-section"><div class="suggestions-head">Популярное у вас</div>'+freqVisible.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
   if(matchingHistory.length>10&&!showAllHistory)html+='<button class="suggestions-more" type="button" id="showMoreHistory">Показать всю историю</button>';
-  if(showAllHistory&&history.length>10)html+='<button class="suggestions-more" type="button" id="showLessHistory">Свернуть историю</button>';
+  if(showAllHistory)html+='<button class="suggestions-more" type="button" id="showLessHistory">Свернуть историю</button>';
+  if(showAllHistory&&!history.length)html='<div class="suggestions-head">История пока пуста</div>'+html;
   if(!html)html='<div class="suggestions-head">Попробуйте</div>'+DEFAULT_FREQUENT.slice(0,10).map((x,i)=>suggestionButton(x,i,false)).join('');
   suggestions.innerHTML=html;
   suggestions.classList.add('open');
@@ -1399,11 +1402,14 @@ function displayedResults(){
   return list;
 }
 function renderResults(){
+  const focused=companyPanel.contains(document.activeElement)?document.activeElement:null;
+  const selection=focused&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
+  const companyScroll=companyPanel.scrollTop;
   const expanded=new Set([...results.querySelectorAll('details[open]')].map(el=>el.dataset.resultUrl));
   const expandedGroups=new Set([...results.querySelectorAll('.other-results-toggle.open')].map(el=>el.dataset.domain));
   const list=displayedResults();
   updateCompanyPanel(list[0]||null);
-  document.querySelector('#insights').prepend(companyPanel);
+  if(results.contains(companyPanel))document.querySelector('#insights').prepend(companyPanel);
   results.innerHTML='';
   if(!list.length){
     results.innerHTML='<div class="empty-state"><div class="empty-icon">⌕</div><h3>Ничего не найдено</h3><p>Попробуйте изменить формулировку запроса или использовать меньше уточняющих слов.</p></div>';
@@ -1451,11 +1457,13 @@ function renderResults(){
     });
   }
   placeCompanyPanel();
+  companyPanel.scrollTop=companyScroll;
+  if(focused?.isConnected){focused.focus({preventScroll:true});if(selection)try{focused.setSelectionRange(...selection)}catch(_){}}
   results.querySelectorAll('details[data-result-url]').forEach(el=>{el.open=expanded.has(el.dataset.resultUrl)});
   updateMetrics();
 }
 function showSkeletons(){
-  document.querySelector('#insights').prepend(companyPanel);
+  if(results.contains(companyPanel))document.querySelector('#insights').prepend(companyPanel);
   results.innerHTML='';
   for(let i=0;i<3;i++){
     const card=document.createElement('div');
@@ -1533,6 +1541,7 @@ function openVerification(x){
 function closeVerification(){
   closeModal(document.querySelector('#verifyModal'));
 }
+function resultsQuery(){return resultsContext.query||q?.value||''}
 function linkIntentTerms(key){
   const intents={
     careers:['career','careers','job','jobs','ваканс','работ'],
@@ -1592,7 +1601,7 @@ function safeProfileLinks(links){
 }
 function hasProfilePlus(p){return p.profile_tier==='premium_demo'||['active','trialing'].includes(p.billing_status)}
 function profilePlusValueMarkup(){return '<div class="profile-plus-value"><strong>Что даёт Profile Plus</strong><p>Основное действие для посетителя, до 8 официальных разделов, поиск по сайтам компании и настройка оформления владельцем.</p></div>'}
-function profileAction(p,query=q?.value||''){
+function profileAction(p,query=resultsQuery()){
   if(!hasProfilePlus(p))return null;
   const links=safeProfileLinks(p.links);
   const match=links.find(([key])=>linkMatchesQuery(key,query));
@@ -1654,7 +1663,7 @@ function updateViewportLayout(){
   positionSuggestions();
 }
 function profileLinksMarkup(links,limit=5){
-  const query=q?.value||'';
+  const query=resultsQuery();
   return safeProfileLinks(links)
     .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
     .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
@@ -1664,7 +1673,7 @@ function profileLinksMarkup(links,limit=5){
     ).join('');
 }
 function orgProfileLinksMarkup(links,limit=8){
-  const query=q?.value||'';
+  const query=resultsQuery();
   return safeProfileLinks(links)
     .map(([key,url],index)=>({key,url,index,match:linkMatchesQuery(key,query)}))
     .sort((a,b)=>(b.match-a.match)||(a.index-b.index))
@@ -1732,7 +1741,7 @@ async function updateCompanyPanel(top=displayedResults()[0]){
     if(request!==companyPanelRequest||domainOf(p.url||('https://'+p.domain))!==domain)return;
     const billing=p;currentCompanyProfile=p;
     const {last_check,...presentation}=p;
-    const renderKey=JSON.stringify([domain,q.value,presentation]);
+    const renderKey=JSON.stringify([domain,resultsQuery(),presentation]);
     if(companyPanel.dataset?.renderKey===renderKey&&!companyPanel.hidden)return;
     if(companyPanel.dataset){companyPanel.dataset.domain=domain;companyPanel.dataset.renderKey=renderKey}
     companyPanel.hidden=false;
@@ -1820,38 +1829,57 @@ async function openOrganizationProfile(x){
     if(request===profileRequest&&modal.classList.contains('open'))document.querySelector('#orgDescription').textContent='Профиль организации временно недоступен.';
   }
 }
-let editorProfile=null;
+let editorProfile=null,editorSession=0;
 function editorLinkRow(label='',url=''){
   const row=document.createElement('div');row.className='editor-link-row';
   row.innerHTML='<input name="link_label" aria-label="Название раздела" maxlength="40" required value="'+escapeHtml(label)+'"><input name="link_url" type="url" aria-label="Ссылка раздела" maxlength="1000" required value="'+escapeHtml(url)+'"><button type="button" aria-label="Удалить раздел">×</button>';
-  row.querySelector('button').onclick=()=>{row.remove();syncEditorAdd()};return row;
+  row.querySelector('button').onclick=()=>{row.remove();syncEditorAdd();updateEditorPreview()};return row;
 }
 function syncEditorAdd(){document.querySelector('#profileEditorAdd').disabled=document.querySelector('#profileEditorLinks').children.length>=8}
+function editorDraft(editor=document.querySelector('#profileEditorForm')){
+  return {tagline:editor.elements.tagline.value,description:editor.elements.description.value,accent:editor.elements.accent.value,primary_label:editor.elements.primary_label.value,primary_url:editor.elements.primary_url.value,
+    links:[...document.querySelector('#profileEditorLinks').children].map(row=>({label:row.querySelector('[name="link_label"]').value,url:row.querySelector('[name="link_url"]').value}))};
+}
+function updateEditorPreview(){
+  if(!editorProfile)return;
+  const draft=editorDraft(),preview=document.querySelector('#profileEditorPreview');
+  const links=Object.fromEntries(draft.links.filter(link=>link.label.trim()).map(link=>[link.label.trim(),link.url]));
+  const action=profileAction({...editorProfile,links,primary_action:{label:draft.primary_label.trim(),url:draft.primary_url.trim()}},'');
+  preview.style.setProperty('--preview-accent',safeAccent(draft.accent));
+  preview.innerHTML='<strong data-profile-content>'+escapeHtml(editorProfile.organization||editorProfile.domain)+'</strong><div class="editor-preview-domain" data-profile-content>'+escapeHtml(editorProfile.domain)+'</div>'+
+    (draft.tagline?'<p class="editor-preview-copy" data-profile-content>'+escapeHtml(draft.tagline)+'</p>':'')+
+    (draft.description?'<p class="editor-preview-copy" data-profile-content>'+escapeHtml(draft.description)+'</p>':'')+
+    (action?'<div class="editor-preview-action"><span data-profile-content>'+escapeHtml(action.label)+'</span><span aria-hidden="true">↗</span></div>':'')+
+    '<div class="editor-preview-links">'+safeProfileLinks(links).map(([label])=>'<span data-profile-content>'+escapeHtml(label)+'</span>').join('')+'</div>';
+}
+function closeProfileEditor(){editorSession++;document.querySelector('#profileEditorSave').disabled=false;closeModal(document.querySelector('#profileEditorModal'))}
 function openProfileEditor(p){
   if(!ownershipTokens[p.domain]){openClaim(p.domain);return}
-  editorProfile=p;const editor=document.querySelector('#profileEditorForm');
+  editorSession++;editorProfile=p;const editor=document.querySelector('#profileEditorForm');
   document.querySelector('#profileEditorDomain').textContent=p.domain;
   editor.elements.tagline.value=p.tagline||'';editor.elements.description.value=p.description||'';
   editor.elements.accent.value=safeAccent(p.profile_accent);
   editor.elements.primary_label.value=p.primary_action?.label||'';editor.elements.primary_url.value=p.primary_action?.url||'';
   const box=document.querySelector('#profileEditorLinks');box.innerHTML='';
   safeProfileLinks(p.links).slice(0,8).forEach(([key,url])=>box.appendChild(editorLinkRow(linkLabel(key),url)));
-  document.querySelector('#profileEditorStatus').textContent='';syncEditorAdd();openModal(document.querySelector('#profileEditorModal'));
+  document.querySelector('#profileEditorStatus').textContent='';document.querySelector('#profileEditorSave').disabled=false;
+  document.querySelector('#profileEditorPreviewToggle').open=false;syncEditorAdd();updateEditorPreview();openModal(document.querySelector('#profileEditorModal'));
 }
-document.querySelector('#profileEditorClose').onclick=()=>closeModal(document.querySelector('#profileEditorModal'));
-document.querySelector('#profileEditorModal').onclick=e=>{if(e.target.id==='profileEditorModal')closeModal(e.target)};
-document.querySelector('#profileEditorAdd').onclick=()=>{const box=document.querySelector('#profileEditorLinks');if(box.children.length>=8)return;const row=editorLinkRow();box.appendChild(row);syncEditorAdd();row.querySelector('input').focus()};
+document.querySelector('#profileEditorClose').onclick=closeProfileEditor;
+document.querySelector('#profileEditorModal').onclick=e=>{if(e.target.id==='profileEditorModal')closeProfileEditor()};
+document.querySelector('#profileEditorAdd').onclick=()=>{const box=document.querySelector('#profileEditorLinks');if(box.children.length>=8)return;const row=editorLinkRow();box.appendChild(row);syncEditorAdd();updateEditorPreview();row.querySelector('input').focus()};
+document.querySelector('#profileEditorForm').oninput=updateEditorPreview;
 document.querySelector('#profileEditorForm').onsubmit=async e=>{
   e.preventDefault();const editor=e.currentTarget,status=document.querySelector('#profileEditorStatus'),save=document.querySelector('#profileEditorSave');
-  const p=editorProfile;if(!p)return;
-  const body={domain:p.domain,ownership_token:ownershipTokens[p.domain],tagline:editor.elements.tagline.value,description:editor.elements.description.value,accent:editor.elements.accent.value,primary_label:editor.elements.primary_label.value,primary_url:editor.elements.primary_url.value,
-    links:[...document.querySelector('#profileEditorLinks').children].map(row=>({label:row.querySelector('[name="link_label"]').value,url:row.querySelector('[name="link_url"]').value}))};
+  const p=editorProfile,session=editorSession,modal=document.querySelector('#profileEditorModal');if(!p||save.disabled)return;
+  const body={domain:p.domain,ownership_token:ownershipTokens[p.domain],...editorDraft(editor)};
   save.disabled=true;status.textContent='Сохраняем карточку…';
   try{
     const response=await fetch('/api/organization/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json().catch(()=>({detail:'Не удалось сохранить карточку. Попробуйте позже.'}));if(!response.ok||data?.saved!==true)throw Error(typeof data?.detail==='string'?data.detail:'Не удалось сохранить карточку. Попробуйте позже.');
-    closeModal(document.querySelector('#profileEditorModal'));closeOrganizationProfile();await updateCompanyPanel();
-  }catch(error){status.textContent=error.message||'Не удалось сохранить карточку.'}finally{save.disabled=false}
+    if(session!==editorSession||!modal.classList.contains('open'))return;
+    closeProfileEditor();closeOrganizationProfile();await updateCompanyPanel();
+  }catch(error){if(session===editorSession&&modal.classList.contains('open'))status.textContent=error.message||'Не удалось сохранить карточку.'}finally{if(session===editorSession)save.disabled=false}
 };
 
 function openClaim(domain){
@@ -1862,44 +1890,51 @@ function openClaim(domain){
   openModal(claimModal);
 }
 async function startClaim(){
+  const context=claimContext;
   claimBody.innerHTML='<div class="claim-status">Создаём challenge…</div>';
   try{
-    const r=await fetch('/api/ownership/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain})});
+    const r=await fetch('/api/ownership/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:context.domain})});
     const d=await r.json();
+    if(context!==claimContext||!claimModal.classList.contains('open'))return;
     if(!r.ok)throw Error(d.detail||'Не удалось создать challenge');
-    claimContext.token=d.token;
+    context.token=d.token;
     claimBody.innerHTML=
       '<div class="claim-status">1. Создайте файл по адресу:</div><div class="claim-code">'+escapeHtml(d.challenge_url)+'</div>'+
       '<div class="claim-status">2. Поместите в него только этот token:</div><div class="claim-code" id="claimTokenCode">'+escapeHtml(d.token)+'</div>'+
       '<div class="claim-actions"><button class="secondary-action" type="button" data-copy-token>Копировать token</button><button class="primary-action" type="button" data-verify-claim>Проверить домен</button></div>'+
       '<div class="claim-status">Подтверждение домена открывает управление профилем. Оформление карточки не влияет на место в поиске.</div>';
-    claimBody.querySelector('[data-copy-token]').onclick=async()=>{try{await navigator.clipboard.writeText(claimContext.token)}catch(e){}};
+    claimBody.querySelector('[data-copy-token]').onclick=async()=>{try{await navigator.clipboard.writeText(context.token)}catch(e){}};
     claimBody.querySelector('[data-verify-claim]').onclick=verifyClaim;
   }catch(e){
+    if(context!==claimContext||!claimModal.classList.contains('open'))return;
     claimBody.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Challenge не создан</h3><p>'+escapeHtml(e.message)+'</p></div>';
   }
 }
 async function verifyClaim(){
+  const context=claimContext;
   const button=claimBody.querySelector('[data-verify-claim]');
   if(button){button.disabled=true;button.textContent='Проверяем…'}
   try{
-    const r=await fetch('/api/ownership/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:claimContext.domain,token:claimContext.token})});
+    const r=await fetch('/api/ownership/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:context.domain,token:context.token})});
     const d=await r.json();
     if(!r.ok)throw Error(d.detail||'Проверка недоступна');
     if(!d.verified){
+      if(context!==claimContext||!claimModal.classList.contains('open'))return;
       if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
       const old=claimBody.querySelector('.claim-status:last-child');
       const message={proof_not_reachable:'Файл пока не доступен по HTTPS.',proof_mismatch:'Содержимое файла не совпадает с token.',expired:'Challenge истёк. Создайте новый.'}[d.status]||'Подтверждение пока не прошло.';
       if(old)old.textContent=message;
       return;
     }
-    ownershipTokens[claimContext.domain]=claimContext.token;
+    ownershipTokens[context.domain]=context.token;
     storeValue('novaOwnershipTokens',JSON.stringify(ownershipTokens));
+    if(context!==claimContext||!claimModal.classList.contains('open'))return;
     claimBody.innerHTML='<div class="claim-success">✓ Контроль домена подтверждён. Управление Profile Plus разрешено на этом устройстве.</div><div class="claim-status">'+escapeHtml(d.assurance||'')+'</div>'+profilePlusValueMarkup()+'<div class="claim-actions"><button class="primary-action" type="button" data-start-plus>Подключить Profile Plus</button></div>';
     const plusButton=claimBody.querySelector('[data-start-plus]');
-    if(plusButton)plusButton.onclick=()=>startProfilePlus(claimContext.domain);
+    if(plusButton)plusButton.onclick=()=>startProfilePlus(context.domain);
     await updateCompanyPanel();
   }catch(e){
+    if(context!==claimContext||!claimModal.classList.contains('open'))return;
     if(button){button.disabled=false;button.textContent='Проверить ещё раз'}
   }
 }
@@ -1915,7 +1950,7 @@ document.querySelector('#orgModal').onclick=e=>{if(e.target.id==='orgModal')clos
 document.querySelector('#claimClose').onclick=closeClaim;
 claimModal.onclick=e=>{if(e.target.id==='claimModal')closeClaim()};
 
-window.addEventListener('resize',placeCompanyPanel);
+window.addEventListener('resize',()=>placeCompanyPanel());
 window.addEventListener('resize',updateViewportLayout);
 window.visualViewport?.addEventListener('resize',updateViewportLayout);
 window.visualViewport?.addEventListener('scroll',updateViewportLayout);
@@ -1950,7 +1985,6 @@ q.addEventListener('blur',()=>{
     if(!document.activeElement?.closest?.('#suggestions'))hideSuggestions();
   },120);
 });
-document.querySelector('#searchShortcut').onclick=()=>{q.focus({preventScroll:true});suggestionsArmed=true;showSuggestions(true)};
 sort.onchange=renderResults;
 modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
 freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
@@ -1971,9 +2005,9 @@ document.querySelector('#theme').onclick=()=>{
   storeValue(THEME_KEY,document.body.classList.contains('dark')?'dark':'light');
 };
 
-function searchRequestUrl(query){
-  const params=new URLSearchParams({q:query,mode:activeMode});
-  if(freshnessSelect.value)params.set('freshness',freshnessSelect.value);
+function searchRequestUrl(query,context={mode:activeMode,freshness:freshnessSelect.value}){
+  const params=new URLSearchParams({q:query,mode:context.mode});
+  if(context.freshness)params.set('freshness',context.freshness);
   return '/api/search?'+params.toString();
 }
 
@@ -1982,40 +2016,52 @@ function renderBrief(brief){
   briefCard.innerHTML='<section class="brief-card"><div class="brief-head"><div class="brief-title">'+escapeHtml(brief.title||'NOVA Brief')+'</div><div class="brief-label">extractive · источники видимы</div></div><div class="brief-passages">'+brief.passages.map(p=>'<div class="brief-passage"><p>'+escapeHtml(p.text)+'</p><a class="brief-source" href="'+escapeHtml(p.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(p.domain||p.title)+' ↗</a></div>').join('')+'</div><div class="brief-foot">'+escapeHtml(brief.note||'')+'</div></section>';
 }
 
-function modeLabel(){
-  return activeMode==='verified'?'Verified':activeMode==='discussions'?'Discussions':activeMode==='exact'?'Exact':'Web';
+function modeLabel(mode=activeMode){
+  return mode==='verified'?'Verified':mode==='discussions'?'Discussions':mode==='exact'?'Exact':'Web';
 }
-function applyResponse(data,query,elapsed,refresh=false){
+function applyResponse(data,query,elapsed,refresh=false,context=resultsContext){
   currentResults=data.results||[];
   renderBrief(data.brief||null);
   if(!refresh)lastElapsed=elapsed;
   renderResults();
-  const pending=currentResults.some(needsVerification)&&activeMode!=='verified';
+  const pending=currentResults.some(needsVerification)&&context.mode!=='verified';
   status.classList.toggle('searching',pending);
-  if(activeMode==='verified'){
+  if(context.mode==='verified'){
     status.textContent=currentResults.length?'Показаны только результаты с подтверждением официальности':'Подтверждённых результатов пока не найдено';
-  }else if(activeMode==='discussions'){
+  }else if(context.mode==='discussions'){
     status.textContent=currentResults.length?'Обсуждения и ответы сообщества':'Подходящих обсуждений пока не найдено';
   }else{
     status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
   }
-  const freshnessLabel=freshnessSelect.value?(' · '+freshnessSelect.options[freshnessSelect.selectedIndex].text):'';
-  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel()+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
+  const freshnessLabel=context.freshness?(' · '+({d:'24 часа',w:'Неделя',m:'Месяц',y:'Год'}[context.freshness]||'')):'';
+  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel(context.mode)+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
-async function refreshVerification(query,generation=searchGeneration){
+async function refreshVerification(query,generation=searchGeneration,context=resultsContext){
   try{
-    const r=await fetch(searchRequestUrl(query));
+    const r=await fetch(searchRequestUrl(query,context));
     if(!r.ok)return;
     const data=await r.json();
-    if(generation!==searchGeneration||q.value.trim().toLowerCase()!==query.toLowerCase())return;
-    applyResponse(data,query,lastElapsed,true);
-    if(!currentResults.some(needsVerification)&&pollTimer){
-      clearInterval(pollTimer);
-      pollTimer=null;
-    }
+    if(generation!==searchGeneration)return;
+    applyResponse(data,query,lastElapsed,true,context);
   }catch(e){}
+}
+function stopVerificationPolling(){if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}}
+function startVerificationPolling(query,generation,context){
+  let attempts=0;
+  const tick=async()=>{
+    if(generation!==searchGeneration)return;
+    pollTimer=null;
+    await refreshVerification(query,generation,context);
+    if(generation!==searchGeneration)return;
+    attempts++;
+    if(attempts<12&&currentResults.some(needsVerification))pollTimer=setTimeout(tick,1200);
+    else if(currentResults.some(needsVerification)){
+      status.classList.remove('searching');status.textContent='Результаты готовы · часть проверок ещё выполняется';
+    }
+  };
+  stopVerificationPolling();pollTimer=setTimeout(tick,1000);
 }
 form.onsubmit=async e=>{
   e.preventDefault();
@@ -2024,6 +2070,8 @@ form.onsubmit=async e=>{
   if(handleBang(originalQuery))return;
   q.blur?.();
   const generation=++searchGeneration;
+  const context={query:originalQuery,mode:activeMode,freshness:freshnessSelect.value};
+  resultsContext=context;
   companyPanelRequest++;
   saveHistory(originalQuery);
   clearTimeout(suggestTimer);
@@ -2038,26 +2086,19 @@ form.onsubmit=async e=>{
   briefCard.innerHTML='';
   metricCount.textContent='—';metricTime.textContent='—';metricVerified.textContent='—';metricOfficial.textContent='—';
   showSkeletons();
-  if(pollTimer){clearInterval(pollTimer);pollTimer=null}
+  stopVerificationPolling();
   try{
     const started=performance.now();
-    const r=await fetch(searchRequestUrl(originalQuery));
+    const r=await fetch(searchRequestUrl(originalQuery,context));
     let data;try{data=await r.json()}catch(_){throw Error('Сервис временно недоступен. Повторите поиск через несколько секунд.')}
     if(generation!==searchGeneration)return;
-    if(!r.ok)throw Error(data.detail||'Ошибка поиска');
+    if(!r.ok)throw Error(typeof data.detail==='string'?data.detail:'Не удалось выполнить поиск. Проверьте запрос и повторите попытку.');
     const elapsed=performance.now()-started;
     showCorrection(originalQuery,data.corrected_query);
     const activeQuery=data.corrected_query||originalQuery;
-    applyResponse(data,activeQuery,elapsed,false);
-    if(activeMode!=='verified'&&currentResults.some(needsVerification)){
-      let attempts=0;
-      pollTimer=setInterval(async()=>{
-        attempts++;
-        await refreshVerification(activeQuery,generation);
-        if(generation!==searchGeneration)return;
-        if(attempts>=12&&pollTimer){clearInterval(pollTimer);pollTimer=null;status.classList.remove('searching')}
-      },850);
-    }
+    context.query=activeQuery;
+    applyResponse(data,activeQuery,elapsed,false,context);
+    if(context.mode!=='verified'&&currentResults.some(needsVerification))startVerificationPolling(activeQuery,generation,context);
   }catch(err){
     if(generation!==searchGeneration)return;
     status.classList.remove('searching');
@@ -2090,9 +2131,10 @@ document.addEventListener('keydown',e=>{
       e.preventDefault();
       activeSuggestionIndex=e.key==='ArrowDown'
         ? Math.min(activeSuggestionIndex+1,rows.length-1)
-        : Math.max(activeSuggestionIndex-1,0);
+        : (activeSuggestionIndex<0?rows.length-1:Math.max(activeSuggestionIndex-1,0));
       rows.forEach((row,i)=>row.classList.toggle('active',i===activeSuggestionIndex));
       const selected=rows[activeSuggestionIndex];
+      selected?.scrollIntoView({block:'nearest'});
       if(selected?.dataset.query){
         q.value=selected.dataset.query;
         updateClearButton();
@@ -2116,6 +2158,12 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
 // UI-only localization. Source values are retained so switching is reversible.
 (function(){
   const messages={
+  "История пока пуста": ["История пока пуста", "History is empty"],
+  "Результаты готовы · часть проверок ещё выполняется": ["Результаты готовы · часть проверок ещё выполняется", "Results are ready · some checks are still in progress"],
+  "Поиск временно недоступен. Попробуйте ещё раз.": ["Поиск временно недоступен. Попробуйте ещё раз.", "Search is temporarily unavailable. Please try again."],
+  "Не удалось выполнить поиск. Проверьте запрос и повторите попытку.": ["Не удалось выполнить поиск. Проверьте запрос и повторите попытку.", "Search failed. Check your query and try again."],
+  "Предпросмотр карточки": ["Предпросмотр карточки", "Card preview"],
+  "Базовый вид карточки. Действие может меняться по запросу посетителя.": ["Базовый вид карточки. Действие может меняться по запросу посетителя.", "Default card appearance. The action can adapt to the visitor’s query."],
   "Разделы и поиск": ["Разделы и поиск", "Sections and search"],
   "Что даёт Profile Plus": ["Что даёт Profile Plus", "What Profile Plus offers"],
   "Основное действие для посетителя, до 8 официальных разделов, поиск по сайтам компании и настройка оформления владельцем.": ["Основное действие для посетителя, до 8 официальных разделов, поиск по сайтам компании и настройка оформления владельцем.", "A primary visitor action, up to 8 official sections, search within company sites, and owner-controlled presentation."],
@@ -2930,12 +2978,12 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
   const originals=new WeakMap();
   let language='ru';
   try{language=localStorage.getItem('novaLanguage')==='en'?'en':'ru'}catch(_){}
-  const excluded='script,style,.suggestion-query,.desc,.result h3,.url,#orgModalTitle,#orgDomain,#orgTagline,#orgDescription,#verifySubtitle,#claimDomain,.company-name,.company-description,.company-tagline,.brief-passage p';
+  const excluded='script,style,.suggestion-query,.desc,.result h3,.url,#orgModalTitle,#orgDomain,#orgTagline,#orgDescription,#verifySubtitle,#claimDomain,.company-name,.company-description,.company-tagline,.brief-passage p,[data-profile-content]';
   function translate(value){
     const key=value.trim();
     const entry=messages[key];
     if(entry)return value.replace(key,entry[language==='en'?1:0]);
-    if(/^\d+ результатов · /.test(key))return value.replace('результатов',language==='en'?'results':'результатов').replace(/ · (Web|Verified|Discussions|Exact)/,(_,mode)=>' · '+messages[mode][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
+    if(/^\d+ результатов · /.test(key))return value.replace('результатов',language==='en'?'results':'результатов').replace(/ · (Web|Verified|Discussions|Exact|24 часа|Неделя|Месяц|Год)(?= · |$)/g,(_,label)=>' · '+messages[label][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
     if(language==='en'){
       if(/^Сбросить домены \(\d+\)$/.test(key))return value.replace('Сбросить домены','Reset domains');
       if(/^Ещё \d+ с домена /.test(key))return value.replace('Ещё ','More: ').replace(' с домена ',' from ');

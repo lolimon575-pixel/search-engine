@@ -60,6 +60,12 @@ test('expanded history hides popular queries; collapsed suggestions have at most
   assert.equal((suggestions.innerHTML.match(/class="suggestion-row"/g)||[]).length,10);
   ctx.showAllHistory=true;ctx.showSuggestions(true);
   assert.doesNotMatch(suggestions.innerHTML,/Популярное у вас|Подсказки из веба/);
+  ctx.history=ctx.history.slice(0,1);ctx.showSuggestions(true);
+  assert.match(suggestions.innerHTML,/showLessHistory/);
+  assert.doesNotMatch(suggestions.innerHTML,/Популярное у вас|Подсказки из веба/);
+  ctx.history=[];ctx.showSuggestions(true);
+  assert.match(suggestions.innerHTML,/История пока пуста/);assert.match(suggestions.innerHTML,/showLessHistory/);
+  assert.doesNotMatch(suggestions.innerHTML,/Популярное у вас|Подсказки из веба/);
 });
 
 test('dropdown stays inside the viewport, including an on-screen keyboard',()=>{
@@ -103,6 +109,11 @@ test('language changes are reversible and retain dynamic counts',()=>{
   ctx.setLanguage('ru');ctx.update(node);assert.equal(node.nodeValue,'Найти');
   ctx.setLanguage('en');
   assert.equal(ctx.translate('10 результатов · Web · 6083 мс'),'10 results · Web · 6083 ms');
+  assert.equal(ctx.translate('10 результатов · Verified · Неделя · 6083 мс'),'10 results · Verified · Past week · 6083 ms');
+  const summaryNode={nodeValue:'10 результатов · Web · Неделя · 6083 мс'};
+  ctx.update(summaryNode);assert.equal(summaryNode.nodeValue,'10 results · Web · Past week · 6083 ms');
+  ctx.setLanguage('ru');ctx.update(summaryNode);assert.equal(summaryNode.nodeValue,'10 результатов · Веб · Неделя · 6083 мс');
+  ctx.setLanguage('en');
   assert.equal(ctx.translate('Search with an independent verification layer'),'Search with independent verification');
   ctx.setLanguage('ru');assert.equal(ctx.translate('Verified'),'Проверенные');
 });
@@ -112,13 +123,14 @@ test('all inline scripts parse',()=>{
 });
 
 function companyHarness(){
-  const panel={hidden:false,innerHTML:'old company',style:{setProperty(){}},classList:{toggle(){}},querySelector:()=>({})};
-  const ctx={companyPanel:panel,companyPanelRequest:0,currentResults:[],sort:{value:'nova'},q:{value:''},
+  const panel={hidden:false,dataset:{},innerHTML:'old company',style:{setProperty(){}},classList:{toggle(){}},querySelector:()=>({})};
+  const ctx={companyPanel:panel,companyPanelRequest:0,currentResults:[],sort:{value:'nova'},q:{value:''},resultsContext:{query:''},
     hasProfilePlus:()=>false,profileSearchMarkup:()=>'',profileActionMarkup:()=>'',profilePlusValueMarkup:()=>'',placeCompanyPanel(){},bindProfileSearch(){},
     applyDomainPreferences:rows=>rows.filter(x=>!x.blocked),
     isOfficialStatus:s=>s==='CONFIRMED',domainOf:url=>new URL(url).hostname.replace(/^www\./,''),
     loadOrganizationProfile:async domain=>({domain,url:'https://'+domain,organization:domain}),loadBillingStatus:async()=>null,
     safeAccent:()=>'',profileLinksMarkup:()=>'',escapeHtml:String,faviconOf:()=>'',profileVisualBadge:()=>''};
+  ctx.resultsQuery=()=>ctx.resultsContext.query||ctx.q.value;
   vm.createContext(ctx);
   vm.runInContext(html.slice(html.indexOf('function displayedResults(){'),html.indexOf('function renderResults(){')),ctx);
   vm.runInContext(html.slice(html.indexOf('async function updateCompanyPanel('),html.indexOf('async function openOrganizationProfile(')),ctx);
@@ -152,7 +164,7 @@ test('a profile for a different domain is rejected',async()=>{
 test('a slow earlier search cannot overwrite a newer search and its company selection',async()=>{
   const waiting=[],applied=[],retry={};let blurred=0;
   const element=()=>({classList:{add(){},remove(){}},textContent:'',innerHTML:''});
-  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,
+  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,resultsContext:{},freshnessSelect:{value:''},stopVerificationPolling(){},startVerificationPolling(){},
     handleBang:()=>false,saveHistory(){},clearTimeout(){},suggestTimer:null,suggestionsArmed:false,hideSuggestions(){},
     document:{body:element(),querySelector:()=>retry},needsVerification:()=>false,status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
     briefCard:element(),metricCount:element(),metricTime:element(),metricVerified:element(),metricOfficial:element(),
@@ -175,10 +187,10 @@ test('a slow earlier search cannot overwrite a newer search and its company sele
 });
 
 function profileHelpers(){
-  const ctx={URL,escapeHtml:String,q:{value:''},linkIcon:()=>'',modalStack:[],freshnessSelect:{value:'m'}};
+  const ctx={URL,escapeHtml:String,q:{value:''},resultsContext:{query:''},linkIcon:()=>'',modalStack:[],freshnessSelect:{value:'m'}};
   vm.createContext(ctx);
   vm.runInContext(html.slice(html.indexOf('function domainOf('),html.indexOf('function domainPreference(')),ctx);
-  vm.runInContext(html.slice(html.indexOf('function linkIntentTerms('),html.indexOf('async function loadBillingStatus(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function resultsQuery('),html.indexOf('async function loadBillingStatus(')),ctx);
   return ctx;
 }
 test('section recommendations match words rather than accidental substrings',()=>{
@@ -290,12 +302,15 @@ test('site search uses a selected official host and rejects an empty scoped quer
 
 function editorHarness(response){
   const editor={elements:Object.fromEntries(['tagline','description','accent','primary_label','primary_url'].map(name=>[name,{value:name==='accent'?'#365fb7':''}]))};
-  const status={textContent:''},save={disabled:false};let closed=0,refreshed=0;
-  const ctx={editorProfile:{domain:'example.com'},ownershipTokens:{'example.com':'owner'},
-    document:{querySelector:s=>s==='#profileEditorForm'?editor:s==='#profileEditorStatus'?status:s==='#profileEditorSave'?save:s==='#profileEditorLinks'?{children:[]}:{}},
-    fetch:async()=>response,closeModal(){closed++},closeOrganizationProfile(){closed++},async updateCompanyPanel(){refreshed++}};
-  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf("document.querySelector('#profileEditorForm').onsubmit="),html.indexOf('function openClaim(')),ctx);
-  return {editor,status,save,closed:()=>closed,refreshed:()=>refreshed};
+  const status={textContent:''},save={disabled:false},modal={open:true,classList:{contains:()=>modal.open}};let closed=0,refreshed=0;
+  const ctx={editorProfile:{domain:'example.com'},editorSession:1,ownershipTokens:{'example.com':'owner'},
+    document:{querySelector:s=>s==='#profileEditorForm'?editor:s==='#profileEditorStatus'?status:s==='#profileEditorSave'?save:s==='#profileEditorLinks'?{children:[]}:modal},
+    fetch:async()=>response,closeModal(){closed++;modal.open=false},closeOrganizationProfile(){closed++},async updateCompanyPanel(){refreshed++}};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function editorDraft('),html.indexOf('function updateEditorPreview(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function closeProfileEditor('),html.indexOf('function openProfileEditor(')),ctx);
+  vm.runInContext(html.slice(html.indexOf("document.querySelector('#profileEditorForm').onsubmit="),html.indexOf('function openClaim(')),ctx);
+  return {ctx,editor,status,save,modal,closed:()=>closed,refreshed:()=>refreshed};
 }
 test('profile editor remains open after malformed or unconfirmed successful responses',async()=>{
   for(const response of [{ok:true,json:async()=>{throw Error('Unexpected token <')}},{ok:true,json:async()=>({})},{ok:false,json:async()=>({detail:'Subscription inactive'})}]){
@@ -308,4 +323,114 @@ test('confirmed profile save closes the editor and reloads the public company ca
   const h=editorHarness({ok:true,json:async()=>({saved:true,domain:'example.com'})});
   await h.editor.onsubmit({preventDefault(){},currentTarget:h.editor});
   assert.equal(h.closed(),2);assert.equal(h.refreshed(),1);assert.equal(h.save.disabled,false);
+});
+test('an old editor save cannot close another editor or alter its pending save',async()=>{
+  let release;const h=editorHarness(null);h.ctx.fetch=()=>new Promise(resolve=>{release=resolve});
+  const saving=h.editor.onsubmit({preventDefault(){},currentTarget:h.editor});
+  h.ctx.editorSession++;h.ctx.editorProfile={domain:'other.com'};h.status.textContent='Saving other card';
+  release({ok:true,json:async()=>({saved:true,domain:'example.com'})});await saving;
+  assert.equal(h.closed(),0);assert.equal(h.refreshed(),0);assert.equal(h.save.disabled,true);
+  assert.equal(h.status.textContent,'Saving other card');
+});
+test('a closed editor does not show a late save error',async()=>{
+  let release;const h=editorHarness(null);h.ctx.fetch=()=>new Promise(resolve=>{release=resolve});
+  const saving=h.editor.onsubmit({preventDefault(){},currentTarget:h.editor});h.modal.open=false;h.status.textContent='Closed';
+  release({ok:false,json:async()=>({detail:'Server error'})});await saving;
+  assert.equal(h.status.textContent,'Closed');assert.equal(h.closed(),0);
+});
+
+test('company recommendations use the displayed query while the next query is being typed',()=>{
+  const h=profileHelpers(),p={billing_status:'active',links:{careers:'https://example.com/jobs',shop:'https://example.com/shop'}};
+  h.resultsContext.query='example вакансии';h.q.value='example магазин';
+  assert.equal(h.profileAction(p).url,'https://example.com/jobs');
+  assert.match(h.profileLinksMarkup(p.links),/recommended[^]*https:\/\/example.com\/jobs/);
+  h.resultsContext.query='example магазин';assert.equal(h.profileAction(p).url,'https://example.com/shop');
+});
+
+test('verification refresh uses the original search filters and permits editing the next query',async()=>{
+  const applied=[],requested=[];
+  const ctx={URLSearchParams,activeMode:'verified',freshnessSelect:{value:'y'},searchGeneration:2,lastElapsed:1400,
+    q:{value:'draft next query'},resultsContext:{query:'corrected',mode:'web',freshness:'w'},
+    fetch:async url=>{requested.push(url);return {ok:true,json:async()=>({results:[]})}},applyResponse:(...args)=>applied.push(args)};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function searchRequestUrl('),html.indexOf('function renderBrief(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('async function refreshVerification('),html.indexOf('function stopVerificationPolling(')),ctx);
+  await ctx.refreshVerification('corrected',2,ctx.resultsContext);
+  assert.equal(requested[0],'/api/search?q=corrected&mode=web&freshness=w');
+  assert.equal(applied.length,1);assert.equal(applied[0][1],'corrected');assert.equal(applied[0][3],true);
+  await ctx.refreshVerification('old query',1,ctx.resultsContext);assert.equal(applied.length,1);
+});
+
+test('verification polling waits for each response and leaves a newer search timer intact',async()=>{
+  const timers=new Map(),waiting=[];let id=0,calls=0;
+  const ctx={pollTimer:null,searchGeneration:1,currentResults:[{}],needsVerification:()=>true,
+    status:{classList:{remove(){}},textContent:''},setTimeout:fn=>{timers.set(++id,fn);return id},clearTimeout:timer=>timers.delete(timer),
+    refreshVerification:()=>{calls++;return new Promise(resolve=>waiting.push(resolve))}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function stopVerificationPolling('),html.indexOf('form.onsubmit=async')),ctx);
+  const fire=timer=>{const fn=timers.get(timer);timers.delete(timer);return fn()};
+  ctx.startVerificationPolling('first',1,{});const first=fire(ctx.pollTimer);
+  assert.equal(timers.size,0);assert.equal(calls,1);assert.equal(ctx.pollTimer,null);
+  waiting.shift()();await first;assert.equal(timers.size,1);
+  const second=fire(ctx.pollTimer);ctx.searchGeneration=2;ctx.startVerificationPolling('second',2,{});
+  const newTimer=ctx.pollTimer;waiting.shift()();await second;
+  assert.equal(ctx.pollTimer,newTimer);assert.equal(timers.size,1);
+  const latest=fire(newTimer);ctx.currentResults=[];waiting.shift()();await latest;assert.equal(timers.size,0);
+});
+
+test('window resize does not collapse expanded mobile company tools',()=>{
+  const tools={open:true},panel={dataset:{layout:'mobile'},querySelector:()=>tools},slot={prepend(node){node.parentElement=this}};
+  panel.parentElement=slot;let resize;
+  const ctx={companyPanel:panel,window:{matchMedia:()=>({matches:true}),addEventListener:(event,fn)=>resize=fn},document:{querySelector:()=>slot}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function placeCompanyPanel('),html.indexOf('let viewportReference=null;')),ctx);
+  vm.runInContext(html.match(/window.addEventListener\('resize',\(\)=>placeCompanyPanel\(\)\);/)[0],ctx);
+  resize({type:'resize'});assert.equal(tools.open,true);
+});
+
+test('mobile result refresh preserves company search focus, selection, scroll and expanded tools',()=>{
+  const tools={open:true},document={activeElement:null};let restored=0;
+  const input={isConnected:true,selectionStart:2,selectionEnd:7,focus(){document.activeElement=this;restored++},setSelectionRange(start,end){this.selectionStart=start;this.selectionEnd=end}};
+  document.activeElement=input;
+  const panel={dataset:{layout:'mobile'},scrollTop:56,contains:el=>el===input,querySelector:()=>tools};
+  const target=()=>({prepend(node){node.parentElement=this;document.activeElement=null}}),aside=target();let slot=target();panel.parentElement=slot;
+  document.querySelector=selector=>selector==='#insights'?aside:slot;
+  const results={querySelectorAll:()=>[],contains:node=>node.parentElement===slot,appendChild(){}};
+  const ctx={document,companyPanel:panel,results,window:{matchMedia:()=>({matches:true})},
+    displayedResults:()=>[{url:'https://example.com'}],updateCompanyPanel(){},isOfficialStatus:()=>true,renderCard(){slot=target();return {}},groupResults:()=>[],updateMetrics(){}};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function placeCompanyPanel('),html.indexOf('let viewportReference=null;')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function renderResults('),html.indexOf('function showSkeletons(')),ctx);
+  ctx.renderResults();assert.equal(document.activeElement,input);assert.equal(restored,1);assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,7);
+  assert.equal(panel.scrollTop,56);assert.equal(tools.open,true);assert.equal(panel.parentElement,slot);
+});
+
+function claimHarness(){
+  const button={disabled:false,textContent:''},body={innerHTML:'',querySelector:()=>button},modal={classList:{contains:()=>true}};
+  const ctx={claimContext:{domain:'first.com',token:'first-token'},claimBody:body,claimModal:modal,ownershipTokens:{},
+    storeValue(){},escapeHtml:String,profilePlusValueMarkup:()=>'',updateCompanyPanel:async()=>{},navigator:{clipboard:{writeText:async()=>{}}}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('async function startClaim('),html.indexOf('function closeClaim(')),ctx);
+  return ctx;
+}
+test('a challenge response cannot overwrite a different domain dialog',async()=>{
+  const h=claimHarness();let release;h.fetch=()=>new Promise(resolve=>{release=resolve});
+  const creating=h.startClaim();h.claimContext={domain:'second.com',token:''};h.claimBody.innerHTML='Second domain';
+  release({ok:true,json:async()=>({token:'token-for-first',challenge_url:'https://first.com/proof'})});await creating;
+  assert.equal(h.claimContext.token,'');assert.equal(h.claimBody.innerHTML,'Second domain');
+});
+test('a late ownership verification stores its own token without changing the next dialog',async()=>{
+  const h=claimHarness();let release;h.fetch=()=>new Promise(resolve=>{release=resolve});
+  const verifying=h.verifyClaim();h.claimContext={domain:'second.com',token:'second-token'};h.claimBody.innerHTML='Second domain';
+  release({ok:true,json:async()=>({verified:true})});await verifying;
+  assert.equal(h.ownershipTokens['first.com'],'first-token');assert.equal(h.ownershipTokens['second.com'],undefined);
+  assert.equal(h.claimBody.innerHTML,'Second domain');
+});
+
+test('editor preview escapes owner copy and excludes unsafe link actions',()=>{
+  const h=profileHelpers(),preview={style:{setProperty(){}},innerHTML:''};
+  h.editorProfile={domain:'example.com',organization:'<img onerror="x">',billing_status:'active'};
+  h.escapeHtml=value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');h.safeAccent=()=> '#365fb7';
+  h.document={querySelector:()=>preview};
+  h.editorDraft=()=>({tagline:'<script>alert(1)</script>',description:'Example',accent:'#365fb7',primary_label:'Bad',primary_url:'javascript:alert(1)',links:[{label:'Unsafe',url:'javascript:alert(1)'},{label:'Catalog',url:'https://example.com/shop'}]});
+  vm.runInContext(html.slice(html.indexOf('function updateEditorPreview('),html.indexOf('function closeProfileEditor(')),h);
+  h.updateEditorPreview();assert.match(preview.innerHTML,/&lt;script>/);assert.doesNotMatch(preview.innerHTML,/<script>|<img|javascript:|>Unsafe</);
+  assert.match(preview.innerHTML,/>Catalog</);
 });

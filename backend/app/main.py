@@ -60,7 +60,7 @@ async def home():
 
 
 @app.get("/health")
-async def health():
+def health():
     return {
         "status": "ok",
         "service": "nova-search",
@@ -74,7 +74,7 @@ async def health():
 
 
 @app.get("/api/search")
-async def search(
+def search(
     q: str = Query("", max_length=300),
     limit: int = Query(10, ge=1, le=30),
     mode: str = Query("web", pattern="^(web|verified|exact|discussions)$"),
@@ -93,6 +93,8 @@ async def search(
     corrected = None if mode == "exact" else suggest_correction(query)
     search_query = corrected or query
     results, errors = web_search.search(search_query, limit, mode=mode, freshness=freshness)
+    if not results and errors:
+        raise HTTPException(status_code=503, detail="Поиск временно недоступен. Попробуйте ещё раз.")
     brief = build_brief(search_query, results)
     return {
         "query": query,
@@ -108,39 +110,54 @@ async def search(
 
 
 @app.get("/api/suggest")
-async def suggest(q: str = Query("", max_length=120), limit: int = Query(6, ge=1, le=10)):
+def suggest(q: str = Query("", max_length=120), limit: int = Query(6, ge=1, le=10)):
     return {"query": q, "suggestions": get_suggestions(q, limit=limit)}
 
 
 @app.get("/api/verification")
-async def verification(url: str = Query(..., min_length=8, max_length=2048)):
-    return web_search.verifier.verify(url)
+def verification(url: str = Query(..., min_length=8, max_length=2048)):
+    try:
+        return web_search.verifier.verify(url)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Укажите корректный адрес сайта.")
 
 
 @app.get("/api/verification/ledger/health")
-async def ledger_health():
+def ledger_health():
     return ledger.verify_chain()
 
 
-@app.get("/api/registry/site")
-async def registry_site(domain: str = Query("", max_length=253)):
+def domain_host(domain):
     raw = domain if "://" in domain else "https://" + domain
-    host = (urlsplit(raw).hostname or "").lower().strip().rstrip(".")
+    try:
+        return (urlsplit(raw).hostname or "").lower().strip().rstrip(".")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Укажите корректный домен.")
+
+
+@app.get("/api/registry/site")
+def registry_site(domain: str = Query("", max_length=253)):
+    host = domain_host(domain)
     row = get_site(host)
     if not row:
         return {"found": False, "domain": host}
-    return {"found": True, "site": row}
+    public_fields = (
+        "id", "organization_id", "organization", "domain", "url", "category", "description",
+        "logo_url", "links", "tagline", "registry_status", "confirmation_level", "source", "source_url",
+        "created_at", "updated_at", "last_check", "owner_verification", "ownership_verified_at",
+        "profile_tier", "profile_badge", "profile_accent", "billing_status", "billing_period_end",
+    )
+    return {"found": True, "site": {key: row[key] for key in public_fields if key in row}}
 
 
 @app.get("/api/registry/stats")
-async def registry_stats():
+def registry_stats():
     return get_stats()
 
 
 @app.get("/api/organization")
-async def organization_profile(domain: str = Query("", max_length=253)):
-    raw = domain if "://" in domain else "https://" + domain
-    host = (urlsplit(raw).hostname or "").lower().strip().rstrip(".")
+def organization_profile(domain: str = Query("", max_length=253)):
+    host = domain_host(domain)
     profile = get_organization_profile(host)
     return {"found": bool(profile), "domain": host, "profile": profile}
 
@@ -158,7 +175,7 @@ async def organization_update(body: ProfileSettingsRequest):
 
 
 @app.post("/api/ownership/challenge")
-async def ownership_challenge(body: OwnershipChallengeRequest):
+def ownership_challenge(body: OwnershipChallengeRequest):
     try:
         return create_challenge(body.domain)
     except ValueError as exc:
@@ -168,7 +185,7 @@ async def ownership_challenge(body: OwnershipChallengeRequest):
 
 
 @app.post("/api/ownership/verify")
-async def ownership_verify(body: OwnershipVerifyRequest):
+def ownership_verify(body: OwnershipVerifyRequest):
     try:
         return verify_challenge(body.domain, body.token)
     except ValueError as exc:
@@ -178,12 +195,12 @@ async def ownership_verify(body: OwnershipVerifyRequest):
 
 
 @app.get("/api/ownership/status")
-async def ownership_get_status(domain: str = Query("", max_length=253)):
+def ownership_get_status(domain: str = Query("", max_length=253)):
     return ownership_status(domain)
 
 
 @app.get("/api/billing/status")
-async def profile_plus_status(domain: str = Query("", max_length=253)):
+def profile_plus_status(domain: str = Query("", max_length=253)):
     return billing_status(domain)
 
 
