@@ -84,3 +84,16 @@ def test_upstream_search_failure_is_distinct_from_an_empty_result(monkeypatch):
     empty = client.get("/api/search?q=test")
     assert empty.status_code == 200
     assert empty.json()["results"] == []
+
+
+def test_original_query_can_be_searched_without_repeating_correction(monkeypatch):
+    queried = []
+    monkeypatch.setattr(main, "suggest_correction", lambda query: "puma")
+    monkeypatch.setattr(main.web_search, "search", lambda query, *args, **kwargs: (queried.append(query) or [], []))
+    client = TestClient(main.app)
+    corrected = client.get("/api/search", params={"q": "pumma"})
+    assert corrected.json()["corrected_query"] == "puma"
+    original = client.get("/api/search", params={"q": "pumma", "autocorrect": "false"})
+    assert original.status_code == 200
+    assert original.json()["corrected_query"] is None
+    assert queried == ["puma", "pumma"]

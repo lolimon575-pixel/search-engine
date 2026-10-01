@@ -164,7 +164,7 @@ test('a profile for a different domain is rejected',async()=>{
 test('a slow earlier search cannot overwrite a newer search and its company selection',async()=>{
   const waiting=[],applied=[],retry={};let blurred=0;
   const element=()=>({classList:{add(){},remove(){}},textContent:'',innerHTML:''});
-  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,resultsContext:{},freshnessSelect:{value:''},stopVerificationPolling(){},startVerificationPolling(){},
+  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,resultsContext:{},skipNextCorrection:false,freshnessSelect:{value:''},stopVerificationPolling(){},startVerificationPolling(){},
     handleBang:()=>false,saveHistory(){},clearTimeout(){},suggestTimer:null,suggestionsArmed:false,hideSuggestions(){},
     document:{body:element(),querySelector:()=>retry},needsVerification:()=>false,status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
     briefCard:element(),metricCount:element(),metricTime:element(),metricVerified:element(),metricOfficial:element(),
@@ -359,6 +359,8 @@ test('verification refresh uses the original search filters and permits editing 
   assert.equal(requested[0],'/api/search?q=corrected&mode=web&freshness=w');
   assert.equal(applied.length,1);assert.equal(applied[0][1],'corrected');assert.equal(applied[0][3],true);
   await ctx.refreshVerification('old query',1,ctx.resultsContext);assert.equal(applied.length,1);
+  ctx.resultsContext.autocorrect=false;await ctx.refreshVerification('original',2,ctx.resultsContext);
+  assert.equal(requested[2],'/api/search?q=original&mode=web&freshness=w&autocorrect=false');
 });
 
 test('verification polling waits for each response and leaves a newer search timer intact',async()=>{
@@ -433,4 +435,15 @@ test('editor preview escapes owner copy and excludes unsafe link actions',()=>{
   vm.runInContext(html.slice(html.indexOf('function updateEditorPreview('),html.indexOf('function closeProfileEditor(')),h);
   h.updateEditorPreview();assert.match(preview.innerHTML,/&lt;script>/);assert.doesNotMatch(preview.innerHTML,/<script>|<img|javascript:|>Unsafe</);
   assert.match(preview.innerHTML,/>Catalog</);
+});
+
+test('query correction preserves the next draft and the original-query action disables correction',()=>{
+  const boxes=[],q={value:'typing next query'};let submitted=false;
+  const ctx={q,skipNextCorrection:false,updateClearButton(){},escapeHtml:String,form:{requestSubmit(){submitted=true}},
+    document:{querySelector:s=>s==='#correction'?null:{appendChild:box=>boxes.push(box)},createElement:()=>({})}};
+  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('function showCorrection('),html.indexOf('const modalStack=[];')),ctx);
+  ctx.showCorrection('pumma','puma');assert.equal(q.value,'typing next query');assert.equal(boxes.length,1);
+  boxes[0].onclick({target:{closest:selector=>selector==='[data-use-original]'}});
+  assert.equal(q.value,'pumma');assert.equal(ctx.skipNextCorrection,true);assert.equal(submitted,true);
+  ctx.skipNextCorrection=false;ctx.showCorrection('pumma','puma');assert.equal(q.value,'puma');
 });

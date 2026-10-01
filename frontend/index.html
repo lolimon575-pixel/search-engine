@@ -1078,6 +1078,7 @@ let lastElapsed=null;
 let companyPanelRequest=0;
 let searchGeneration=0;
 let resultsContext={query:'',mode:'web',freshness:''};
+let skipNextCorrection=false;
 let currentCompanyProfile=null;
 let activeMode='web';
 let remoteSuggestions=[];
@@ -1475,8 +1476,7 @@ function showSkeletons(){
 function showCorrection(originalQuery,correctedQuery){
   document.querySelector('#correction')?.remove();
   if(!correctedQuery||correctedQuery.toLowerCase()===originalQuery.toLowerCase())return;
-  q.value=correctedQuery;
-  updateClearButton();
+  if(q.value.trim().toLowerCase()===originalQuery.toLowerCase()){q.value=correctedQuery;updateClearButton()}
   const box=document.createElement('div');
   box.id='correction';
   box.className='correction';
@@ -1484,7 +1484,7 @@ function showCorrection(originalQuery,correctedQuery){
   document.querySelector('.hero-inner').appendChild(box);
   box.onclick=ev=>{
     if(ev.target.closest('[data-use-correction]')){q.value=correctedQuery;form.requestSubmit()}
-    else if(ev.target.closest('[data-use-original]')){q.value=originalQuery;form.requestSubmit()}
+    else if(ev.target.closest('[data-use-original]')){q.value=originalQuery;skipNextCorrection=true;form.requestSubmit()}
   };
 }
 const modalStack=[];
@@ -2008,6 +2008,7 @@ document.querySelector('#theme').onclick=()=>{
 function searchRequestUrl(query,context={mode:activeMode,freshness:freshnessSelect.value}){
   const params=new URLSearchParams({q:query,mode:context.mode});
   if(context.freshness)params.set('freshness',context.freshness);
+  if(context.autocorrect===false)params.set('autocorrect','false');
   return '/api/search?'+params.toString();
 }
 
@@ -2070,7 +2071,8 @@ form.onsubmit=async e=>{
   if(handleBang(originalQuery))return;
   q.blur?.();
   const generation=++searchGeneration;
-  const context={query:originalQuery,mode:activeMode,freshness:freshnessSelect.value};
+  const context={query:originalQuery,mode:activeMode,freshness:freshnessSelect.value,autocorrect:!skipNextCorrection};
+  skipNextCorrection=false;
   resultsContext=context;
   companyPanelRequest++;
   saveHistory(originalQuery);
@@ -2107,7 +2109,7 @@ form.onsubmit=async e=>{
     companyPanel.hidden=true;
     briefCard.innerHTML='';
     results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p><button class="primary-action" type="button" id="retrySearch">Повторить поиск</button></div>';
-    document.querySelector('#retrySearch').onclick=()=>form.requestSubmit();
+    document.querySelector('#retrySearch').onclick=()=>{skipNextCorrection=context.autocorrect===false&&q.value.trim()===originalQuery;form.requestSubmit()};
   }
 };
 document.addEventListener('keydown',e=>{

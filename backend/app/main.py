@@ -79,6 +79,7 @@ def search(
     limit: int = Query(10, ge=1, le=30),
     mode: str = Query("web", pattern="^(web|verified|exact|discussions)$"),
     freshness: str = Query("", pattern="^(|d|w|m|y)$"),
+    autocorrect: bool = Query(True),
 ):
     query = q.strip()
     if not query:
@@ -90,7 +91,7 @@ def search(
             "results": [],
             "errors": [],
         }
-    corrected = None if mode == "exact" else suggest_correction(query)
+    corrected = None if mode == "exact" or not autocorrect else suggest_correction(query)
     search_query = corrected or query
     results, errors = web_search.search(search_query, limit, mode=mode, freshness=freshness)
     if not results and errors:
