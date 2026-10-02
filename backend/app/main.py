@@ -13,14 +13,13 @@ from app.profile_settings import ProfileSettingsRequest, save_profile_settings
 from app.registry_db import ensure_schema, get_site, get_stats, seed_registry
 from app.verification.ledger import VerificationLedger
 from app.verification.officiality import REGISTRY, get_organization_profile
-from app.websearch.correction import get_suggestions, suggest_correction
 from app.websearch.brief import build_brief
 from app.websearch.service import WebSearchService
 
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND = ROOT / "frontend" / "index.html"
-app = FastAPI(title="NOVA Search", version="1.13.0")
+app = FastAPI(title="NOVA Search", version="1.14.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 web_search = WebSearchService()
+get_suggestions = web_search.index.suggest
 ledger = VerificationLedger()
 
 
@@ -52,6 +52,7 @@ def init_registry():
             seed_registry(REGISTRY)
     except Exception as exc:
         print("NOVA registry init:", type(exc).__name__, str(exc))
+    web_search.warm_index()
 
 
 @app.get("/", include_in_schema=False)
@@ -66,7 +67,8 @@ def health():
         "service": "nova-search",
         "version": app.version,
         "frontend": FRONTEND.is_file(),
-        "provider": "duckduckgo-html",
+        "provider": "nova-index+duckduckgo-html",
+        "index": web_search.index.stats(),
         "verification": True,
         "ledger": ledger.verify_chain(),
         "registry": get_stats(),
@@ -80,6 +82,7 @@ def search(
     mode: str = Query("web", pattern="^(web|verified|exact|discussions)$"),
     freshness: str = Query("", pattern="^(|d|w|m|y)$"),
     autocorrect: bool = Query(True),
+    engine: str = Query("auto", pattern="^(auto|index|web)$"),
 ):
     query = q.strip()
     if not query:
@@ -87,14 +90,17 @@ def search(
             "query": q,
             "mode": mode,
             "freshness": freshness,
+            "engine": engine,
             "count": 0,
             "results": [],
             "errors": [],
         }
-    corrected = None if mode == "exact" or not autocorrect else suggest_correction(query)
-    search_query = corrected or query
-    results, errors = web_search.search(search_query, limit, mode=mode, freshness=freshness)
-    if not results and errors:
+    batch = web_search.search(query, limit, mode=mode, freshness=freshness, engine=engine, autocorrect=autocorrect)
+    results, errors = batch
+    corrected = getattr(batch, "corrected_query", None)
+    search_query = getattr(batch, "searched_query", query)
+    search_pending = getattr(batch, "search_pending", False)
+    if not results and errors and not search_pending:
         raise HTTPException(status_code=503, detail="Поиск временно недоступен. Попробуйте ещё раз.")
     brief = build_brief(search_query, results)
     return {
@@ -103,6 +109,12 @@ def search(
         "searched_query": search_query,
         "mode": mode,
         "freshness": freshness,
+        "engine": engine,
+        "source": getattr(batch, "source", "web"),
+        "search_pending": search_pending,
+        "verification_pending": getattr(batch, "verification_pending", False),
+        "server_time_ms": getattr(batch, "elapsed_ms", None),
+        "index": web_search.index.stats(),
         "count": len(results),
         "results": [r.model_dump() for r in results],
         "brief": brief,
@@ -113,6 +125,11 @@ def search(
 @app.get("/api/suggest")
 def suggest(q: str = Query("", max_length=120), limit: int = Query(6, ge=1, le=10)):
     return {"query": q, "suggestions": get_suggestions(q, limit=limit)}
+
+
+@app.get("/api/index/stats")
+def index_stats():
+    return web_search.index.stats()
 
 
 @app.get("/api/verification")

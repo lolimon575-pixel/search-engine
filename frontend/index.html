@@ -433,7 +433,8 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
   padding:7px 10px;font-size:10px;font-weight:800;cursor:pointer;backdrop-filter:blur(12px)
 }
 .mode-button.active{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
-.search-options{display:flex;align-items:center;gap:8px;color:var(--subtle);font-size:10px;font-weight:700}
+.search-options{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--subtle);font-size:10px;font-weight:700}
+.source-label{font-size:9px;font-weight:750;color:var(--blue);white-space:nowrap}
 .freshness-select{
   border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;
   padding:7px 28px 7px 9px;font-size:10px;font-weight:750
@@ -441,6 +442,7 @@ body:not(.has-results) .results-head{justify-content:center;text-align:center}
 .pref-reset{
   border:0;background:transparent;color:var(--subtle);font-size:9px;font-weight:750;cursor:pointer;padding:6px 2px
 }
+.freshness-select:disabled{opacity:.5;cursor:not-allowed}
 .pref-reset:hover{color:var(--blue)}
 .bang-hint{white-space:nowrap}
 .company-card{overflow:hidden;position:relative}
@@ -893,6 +895,11 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
           <button class="mode-button" type="button" data-mode="exact">Exact</button>
         </div>
         <div class="search-options">
+          <select id="engine" class="freshness-select" aria-label="Движок поиска" title="Авто: индекс NOVA сразу, веб дополняет выдачу">
+            <option value="auto">Авто</option>
+            <option value="index">Индекс NOVA</option>
+            <option value="web">Веб</option>
+          </select>
           <span class="bang-hint">Быстрый переход: !w · !yt · !gh</span>
           <select id="freshness" class="freshness-select" aria-label="Свежесть результатов">
             <option value="">За всё время</option>
@@ -1050,6 +1057,7 @@ const metricVerified=document.querySelector('#metricVerified');
 const metricOfficial=document.querySelector('#metricOfficial');
 const briefCard=document.querySelector('#briefCard');
 const freshnessSelect=document.querySelector('#freshness');
+const engineSelect=document.querySelector('#engine');
 const modeButtons=[...document.querySelectorAll('[data-mode]')];
 const companyPanel=document.querySelector('#companyPanel');
 const resetPrefs=document.querySelector('#resetPrefs');
@@ -1077,7 +1085,7 @@ let pollTimer=null;
 let lastElapsed=null;
 let companyPanelRequest=0;
 let searchGeneration=0;
-let resultsContext={query:'',mode:'web',freshness:''};
+let resultsContext={query:'',mode:'web',freshness:'',engine:'auto'};
 let skipNextCorrection=false;
 let currentCompanyProfile=null;
 let activeMode='web';
@@ -1097,13 +1105,14 @@ const RANK_LABELS={
   exact_url:'Совпадение URL',
   full_coverage:'Полное покрытие',
   strong_coverage:'Высокая релевантность',
-  homepage:'Главная страница'
+  homepage:'Главная страница',
+  index_match:'Совпадение в индексе NOVA'
 };
 
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function domainOf(u){try{return new URL(u).hostname.replace(/^www\./,'')}catch{return''}}
 function faviconOf(u){const d=domainOf(u);return d?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(d)+'&sz=64':''}
-function needsVerification(x){return !x.verification||!x.verification.status||x.verification.status==='UNKNOWN'}
+function needsVerification(x){return typeof x.verification?.pending==='boolean'?x.verification.pending:!x.verification||!x.verification.status||x.verification.status==='UNKNOWN'}
 function isOfficialStatus(s){return ['OWNER_VERIFIED','CONFIRMED','EXTERNAL_CONFIRMED'].includes(s)}
 function safeAccent(value){return /^#[0-9a-f]{6}$/i.test(String(value||''))?value:'#2563eb'}
 function linkLabel(key){return ({
@@ -1222,7 +1231,7 @@ function showSuggestions(force=false){
   let html='';
   const remote=showAllHistory?[]:remoteSuggestions.filter(x=>x&&x.toLowerCase()!==queryNow).slice(0,Math.min(6,10-visibleHistory.length));
   if(remote.length){
-    html+='<div class="suggestion-section"><div class="suggestions-head">Подсказки из веба</div>'+remote.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
+    html+='<div class="suggestion-section"><div class="suggestions-head">Подсказки NOVA</div>'+remote.map((x,i)=>suggestionButton(x,i,false)).join('')+'</div>';
   }
   if(visibleHistory.length){
     html+='<div class="suggestion-section"><div class="suggestions-head">История</div>'+visibleHistory.map((x,i)=>suggestionButton(x,i,true)).join('')+'</div>';
@@ -1346,7 +1355,7 @@ function resultCore(x,index){
   const originalRank=novaRankOf(x)||index+1;
   const rankText=pref==='boost'?'Ваш выбор · NOVA #'+originalRank:'NOVA rank · '+originalRank;
   const personal=pref==='boost'?'<span class="nova-status domain-personal">Локально выше</span>':'';
-  return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>'+rankText+'</span><span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span></div>'+
+  return '<div class="result-topline"><span class="rank-label"><span class="rank-dot"></span>'+rankText+'</span>'+(x.provider==='nova-index'?'<span class="source-label">Индекс NOVA</span>':'<span class="score-label">score '+Number(x.score||0).toFixed(1)+'</span>')+'</div>'+
     '<div class="result-head"><div class="favicon-wrap"><img class="favicon" src="'+escapeHtml(faviconOf(x.url))+'" alt=""></div><div class="result-head-text"><h3><a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(x.title||x.url)+'</a></h3><div class="url">'+escapeHtml(domain||x.url)+'</div></div></div>'+
     '<div class="desc">'+escapeHtml(x.description||'Сниппет для этого результата недоступен.')+'</div>'+
     (personal?'<div class="result-meta-row">'+personal+'</div>':'');
@@ -1413,6 +1422,7 @@ function renderResults(){
   if(results.contains(companyPanel))document.querySelector('#insights').prepend(companyPanel);
   results.innerHTML='';
   if(!list.length){
+    if(resultsContext.searchPending||resultsContext.verificationPending){showSkeletons();updateMetrics();return}
     results.innerHTML='<div class="empty-state"><div class="empty-icon">⌕</div><h3>Ничего не найдено</h3><p>Попробуйте изменить формулировку запроса или использовать меньше уточняющих слов.</p></div>';
     updateMetrics();
     return;
@@ -1634,6 +1644,7 @@ function bindProfileSearch(root){
       while(modalStack.length)closeModal(modalStack.at(-1).modal);
       q.value='site:'+domain+' '+clean.slice(0,Math.max(1,294-domain.length));
       activeMode='web';freshnessSelect.value='';
+      if(typeof engineSelect!=='undefined'){engineSelect.value='auto';freshnessSelect.disabled=false}
       document.querySelectorAll('#modeTabs [data-mode]').forEach(button=>button.classList.toggle('active',button.dataset.mode===activeMode));
       updateClearButton();form.requestSubmit();
       form.scrollIntoView({block:'start',behavior:'smooth'});
@@ -1988,6 +1999,11 @@ q.addEventListener('blur',()=>{
 sort.onchange=renderResults;
 modeButtons.forEach(button=>button.onclick=()=>setMode(button.dataset.mode,true));
 freshnessSelect.onchange=()=>{if(q.value.trim())form.requestSubmit()};
+engineSelect.onchange=()=>{
+  freshnessSelect.disabled=engineSelect.value==='index';
+  if(freshnessSelect.disabled)freshnessSelect.value='';
+  if(document.body.classList.contains('has-results')&&q.value.trim())form.requestSubmit();
+};
 resetPrefs.onclick=()=>{domainPrefs={};storeValue('novaDomainPrefs','{}');updatePrefReset();renderResults()};
 updatePrefReset();
 updateClearButton();
@@ -2005,10 +2021,11 @@ document.querySelector('#theme').onclick=()=>{
   storeValue(THEME_KEY,document.body.classList.contains('dark')?'dark':'light');
 };
 
-function searchRequestUrl(query,context={mode:activeMode,freshness:freshnessSelect.value}){
+function searchRequestUrl(query,context={mode:activeMode,freshness:freshnessSelect.value,engine:engineSelect.value}){
   const params=new URLSearchParams({q:query,mode:context.mode});
   if(context.freshness)params.set('freshness',context.freshness);
   if(context.autocorrect===false)params.set('autocorrect','false');
+  params.set('engine',context.engine||'auto');
   return '/api/search?'+params.toString();
 }
 
@@ -2021,13 +2038,29 @@ function modeLabel(mode=activeMode){
   return mode==='verified'?'Verified':mode==='discussions'?'Discussions':mode==='exact'?'Exact':'Web';
 }
 function applyResponse(data,query,elapsed,refresh=false,context=resultsContext){
+  context.searchPending=!!data.search_pending;
+  context.verificationPending=typeof data.verification_pending==='boolean'?data.verification_pending:(data.results||[]).some(needsVerification);
+  if(context.correctedQuery!==(data.corrected_query||null)){
+    if(typeof showCorrection==='function')showCorrection(context.requestQuery||query,data.corrected_query);
+    context.correctedQuery=data.corrected_query||null;
+  }
+  context.query=data.searched_query||data.corrected_query||context.requestQuery||query;
   currentResults=data.results||[];
   renderBrief(data.brief||null);
-  if(!refresh)lastElapsed=elapsed;
+  if(!refresh)lastElapsed=currentResults.length||!context.searchPending?elapsed:null;
+  else if(lastElapsed==null&&(currentResults.length||!context.searchPending))lastElapsed=typeof context.started==='number'?performance.now()-context.started:elapsed;
   renderResults();
-  const pending=currentResults.some(needsVerification)&&context.mode!=='verified';
+  const pending=hasPendingSearch(context);
   status.classList.toggle('searching',pending);
-  if(context.mode==='verified'){
+  if(context.searchPending){
+    status.textContent=currentResults.length?'Результаты готовы · дополняем из веба':'Ищем в интернете · индекс NOVA пока не нашёл совпадений';
+  }else if(context.verificationPending){
+    status.textContent=currentResults.length?'Результаты готовы · NOVA завершает проверки':'Проверяем официальность найденных сайтов';
+  }else if(data.errors?.length&&currentResults.length){
+    status.textContent='Показан индекс NOVA · веб временно недоступен';
+  }else if(context.engine==='index'){
+    status.textContent=currentResults.length?'Поиск по индексу NOVA завершён':'В индексе NOVA нет совпадений · попробуйте Авто или Веб';
+  }else if(context.mode==='verified'){
     status.textContent=currentResults.length?'Показаны только результаты с подтверждением официальности':'Подтверждённых результатов пока не найдено';
   }else if(context.mode==='discussions'){
     status.textContent=currentResults.length?'Обсуждения и ответы сообщества':'Подходящих обсуждений пока не найдено';
@@ -2035,20 +2068,30 @@ function applyResponse(data,query,elapsed,refresh=false,context=resultsContext){
     status.textContent=pending?'Результаты готовы · NOVA завершает проверки':'Поиск завершён · слой NOVA обновлён';
   }
   const freshnessLabel=context.freshness?(' · '+({d:'24 часа',w:'Неделя',m:'Месяц',y:'Год'}[context.freshness]||'')):'';
-  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel(context.mode)+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
+  const sourceLabel=data.source==='index'?'Индекс NOVA':data.source==='hybrid'?'Индекс NOVA + Веб':'Веб';
+  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel(context.mode)+' · '+sourceLabel+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
 async function refreshVerification(query,generation=searchGeneration,context=resultsContext){
   try{
     const r=await fetch(searchRequestUrl(query,context));
-    if(!r.ok)return;
     const data=await r.json();
     if(generation!==searchGeneration)return;
+    if(!r.ok){
+      if(!currentResults.length){context.searchPending=false;context.verificationPending=false;showSearchError(typeof data.detail==='string'?data.detail:'Сервис временно недоступен. Повторите поиск через несколько секунд.',context)}
+      return;
+    }
     applyResponse(data,query,lastElapsed,true,context);
   }catch(e){}
 }
 function stopVerificationPolling(){if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}}
+function hasPendingSearch(context=resultsContext){return context.searchPending===true||context.verificationPending===true||(context.verificationPending===undefined&&currentResults.some(needsVerification))}
+function showSearchError(message,context){
+  status.classList.remove('searching');status.textContent='Поиск не завершён';summary.textContent='';companyPanel.hidden=true;briefCard.innerHTML='';
+  results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(message)+'</p><button class="primary-action" type="button" id="retrySearch">Повторить поиск</button></div>';
+  document.querySelector('#retrySearch').onclick=()=>{skipNextCorrection=context.autocorrect===false&&q.value.trim()===(context.requestQuery||context.query);form.requestSubmit()};
+}
 function startVerificationPolling(query,generation,context){
   let attempts=0;
   const tick=async()=>{
@@ -2057,9 +2100,11 @@ function startVerificationPolling(query,generation,context){
     await refreshVerification(query,generation,context);
     if(generation!==searchGeneration)return;
     attempts++;
-    if(attempts<12&&currentResults.some(needsVerification))pollTimer=setTimeout(tick,1200);
-    else if(currentResults.some(needsVerification)){
-      status.classList.remove('searching');status.textContent='Результаты готовы · часть проверок ещё выполняется';
+    if(attempts<24&&hasPendingSearch(context))pollTimer=setTimeout(tick,1200);
+    else if(hasPendingSearch(context)){
+      status.classList.remove('searching');
+      if(!currentResults.length){context.searchPending=false;context.verificationPending=false;showSearchError('Поиск занимает больше времени. Повторите запрос.',context)}
+      else status.textContent='Результаты готовы · часть проверок ещё выполняется';
     }
   };
   stopVerificationPolling();pollTimer=setTimeout(tick,1000);
@@ -2071,9 +2116,11 @@ form.onsubmit=async e=>{
   if(handleBang(originalQuery))return;
   q.blur?.();
   const generation=++searchGeneration;
-  const context={query:originalQuery,mode:activeMode,freshness:freshnessSelect.value,autocorrect:!skipNextCorrection};
+  const context={query:originalQuery,requestQuery:originalQuery,mode:activeMode,freshness:freshnessSelect.value,engine:engineSelect.value,autocorrect:!skipNextCorrection,started:performance.now()};
   skipNextCorrection=false;
   resultsContext=context;
+  lastElapsed=null;
+  showCorrection(originalQuery,null);
   companyPanelRequest++;
   saveHistory(originalQuery);
   clearTimeout(suggestTimer);
@@ -2090,26 +2137,18 @@ form.onsubmit=async e=>{
   showSkeletons();
   stopVerificationPolling();
   try{
-    const started=performance.now();
+    const started=context.started;
     const r=await fetch(searchRequestUrl(originalQuery,context));
     let data;try{data=await r.json()}catch(_){throw Error('Сервис временно недоступен. Повторите поиск через несколько секунд.')}
     if(generation!==searchGeneration)return;
     if(!r.ok)throw Error(typeof data.detail==='string'?data.detail:'Не удалось выполнить поиск. Проверьте запрос и повторите попытку.');
     const elapsed=performance.now()-started;
-    showCorrection(originalQuery,data.corrected_query);
     const activeQuery=data.corrected_query||originalQuery;
-    context.query=activeQuery;
     applyResponse(data,activeQuery,elapsed,false,context);
-    if(context.mode!=='verified'&&currentResults.some(needsVerification))startVerificationPolling(activeQuery,generation,context);
+    if(hasPendingSearch(context))startVerificationPolling(originalQuery,generation,context);
   }catch(err){
     if(generation!==searchGeneration)return;
-    status.classList.remove('searching');
-    status.textContent='Поиск не завершён';
-    summary.textContent='';
-    companyPanel.hidden=true;
-    briefCard.innerHTML='';
-    results.innerHTML='<div class="error-state"><div class="error-icon">!</div><h3>Не удалось выполнить поиск</h3><p>'+escapeHtml(err.message)+'</p><button class="primary-action" type="button" id="retrySearch">Повторить поиск</button></div>';
-    document.querySelector('#retrySearch').onclick=()=>{skipNextCorrection=context.autocorrect===false&&q.value.trim()===originalQuery;form.requestSubmit()};
+    showSearchError(err.message,context);
   }
 };
 document.addEventListener('keydown',e=>{
@@ -2160,6 +2199,21 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
 // UI-only localization. Source values are retained so switching is reversible.
 (function(){
   const messages={
+  "Движок поиска": ["Движок поиска", "Search engine"],
+  "Авто": ["Авто", "Auto"],
+  "Индекс NOVA": ["Индекс NOVA", "NOVA Index"],
+  "Индекс NOVA + Веб": ["Индекс NOVA + Веб", "NOVA Index + Web"],
+  "Веб": ["Веб", "Web"],
+  "Авто: индекс NOVA сразу, веб дополняет выдачу": ["Авто: индекс NOVA сразу, веб дополняет выдачу", "Auto: NOVA Index first, then web results"],
+  "Подсказки NOVA": ["Подсказки NOVA", "NOVA suggestions"],
+  "Совпадение в индексе NOVA": ["Совпадение в индексе NOVA", "Match in NOVA Index"],
+  "Результаты готовы · дополняем из веба": ["Результаты готовы · дополняем из веба", "Results ready · adding web results"],
+  "Ищем в интернете · индекс NOVA пока не нашёл совпадений": ["Ищем в интернете · индекс NOVA пока не нашёл совпадений", "Searching the web · no matches in NOVA Index yet"],
+  "Проверяем официальность найденных сайтов": ["Проверяем официальность найденных сайтов", "Checking official sources"],
+  "Показан индекс NOVA · веб временно недоступен": ["Показан индекс NOVA · веб временно недоступен", "NOVA Index results · web temporarily unavailable"],
+  "Поиск по индексу NOVA завершён": ["Поиск по индексу NOVA завершён", "NOVA Index search complete"],
+  "В индексе NOVA нет совпадений · попробуйте Авто или Веб": ["В индексе NOVA нет совпадений · попробуйте Авто или Веб", "No NOVA Index matches · try Auto or Web"],
+  "Поиск занимает больше времени. Повторите запрос.": ["Поиск занимает больше времени. Повторите запрос.", "Search is taking longer. Retry your query."],
   "История пока пуста": ["История пока пуста", "History is empty"],
   "Результаты готовы · часть проверок ещё выполняется": ["Результаты готовы · часть проверок ещё выполняется", "Results are ready · some checks are still in progress"],
   "Поиск временно недоступен. Попробуйте ещё раз.": ["Поиск временно недоступен. Попробуйте ещё раз.", "Search is temporarily unavailable. Please try again."],
@@ -2985,7 +3039,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
     const key=value.trim();
     const entry=messages[key];
     if(entry)return value.replace(key,entry[language==='en'?1:0]);
-    if(/^\d+ результатов · /.test(key))return value.replace('результатов',language==='en'?'results':'результатов').replace(/ · (Web|Verified|Discussions|Exact|24 часа|Неделя|Месяц|Год)(?= · |$)/g,(_,label)=>' · '+messages[label][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
+    if(/^\d+ результатов · /.test(key))return value.replace('результатов',language==='en'?'results':'результатов').replace(/ · (Web|Verified|Discussions|Exact|Индекс NOVA \+ Веб|Индекс NOVA|Веб|24 часа|Неделя|Месяц|Год)(?= · |$)/g,(_,label)=>' · '+messages[label][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
     if(language==='en'){
       if(/^Сбросить домены \(\d+\)$/.test(key))return value.replace('Сбросить домены','Reset domains');
       if(/^Ещё \d+ с домена /.test(key))return value.replace('Ещё ','More: ').replace(' с домена ',' from ');

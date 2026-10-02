@@ -9,10 +9,10 @@ def base_domain(host):
     return normalize_domain(host)
 
 
-def verify_officiality(url, site_signals=None, external=None):
+def verify_officiality(url, site_signals=None, external=None, *, use_database=True):
     host = base_domain(urlsplit(url).hostname or "")
     try:
-        db_item = get_site(host)
+        db_item = get_site(host) if use_database else None
     except Exception:
         db_item = None
 

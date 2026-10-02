@@ -164,7 +164,7 @@ test('a profile for a different domain is rejected',async()=>{
 test('a slow earlier search cannot overwrite a newer search and its company selection',async()=>{
   const waiting=[],applied=[],retry={};let blurred=0;
   const element=()=>({classList:{add(){},remove(){}},textContent:'',innerHTML:''});
-  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,resultsContext:{},skipNextCorrection:false,freshnessSelect:{value:''},stopVerificationPolling(){},startVerificationPolling(){},
+  const ctx={form:{},q:{value:'avito',blur(){blurred++}},searchGeneration:0,companyPanelRequest:0,resultsContext:{},skipNextCorrection:false,freshnessSelect:{value:''},engineSelect:{value:'auto'},stopVerificationPolling(){},startVerificationPolling(){},hasPendingSearch:()=>false,
     handleBang:()=>false,saveHistory(){},clearTimeout(){},suggestTimer:null,suggestionsArmed:false,hideSuggestions(){},
     document:{body:element(),querySelector:()=>retry},needsVerification:()=>false,status:element(),activeMode:'web',summary:element(),toolbar:element(),companyPanel:element(),
     briefCard:element(),metricCount:element(),metricTime:element(),metricVerified:element(),metricOfficial:element(),
@@ -172,6 +172,7 @@ test('a slow earlier search cannot overwrite a newer search and its company sele
     fetch:()=>new Promise(resolve=>waiting.push(resolve)),showCorrection(){},currentResults:[],
     applyResponse:(data,query)=>applied.push(query),results:element(),escapeHtml:String};
   vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function showSearchError('),html.indexOf('function startVerificationPolling(')),ctx);
   vm.runInContext(html.slice(html.indexOf('form.onsubmit=async'),html.indexOf("document.addEventListener('keydown',e=>")),ctx);
   const old=ctx.form.onsubmit({preventDefault(){}});ctx.q.value='авто ру';
   const recent=ctx.form.onsubmit({preventDefault(){}});
@@ -356,11 +357,11 @@ test('verification refresh uses the original search filters and permits editing 
   vm.runInContext(html.slice(html.indexOf('function searchRequestUrl('),html.indexOf('function renderBrief(')),ctx);
   vm.runInContext(html.slice(html.indexOf('async function refreshVerification('),html.indexOf('function stopVerificationPolling(')),ctx);
   await ctx.refreshVerification('corrected',2,ctx.resultsContext);
-  assert.equal(requested[0],'/api/search?q=corrected&mode=web&freshness=w');
+  assert.equal(requested[0],'/api/search?q=corrected&mode=web&freshness=w&engine=auto');
   assert.equal(applied.length,1);assert.equal(applied[0][1],'corrected');assert.equal(applied[0][3],true);
   await ctx.refreshVerification('old query',1,ctx.resultsContext);assert.equal(applied.length,1);
   ctx.resultsContext.autocorrect=false;await ctx.refreshVerification('original',2,ctx.resultsContext);
-  assert.equal(requested[2],'/api/search?q=original&mode=web&freshness=w&autocorrect=false');
+  assert.equal(requested[2],'/api/search?q=original&mode=web&freshness=w&autocorrect=false&engine=auto');
 });
 
 test('verification polling waits for each response and leaves a newer search timer intact',async()=>{
@@ -446,4 +447,65 @@ test('query correction preserves the next draft and the original-query action di
   boxes[0].onclick({target:{closest:selector=>selector==='[data-use-original]'}});
   assert.equal(q.value,'pumma');assert.equal(ctx.skipNextCorrection,true);assert.equal(submitted,true);
   ctx.skipNextCorrection=false;ctx.showCorrection('pumma','puma');assert.equal(q.value,'puma');
+});
+
+function responseHarness(context){
+  const status={textContent:'',classList:{toggle(){}}};
+  const ctx={resultsContext:context,currentResults:[],lastElapsed:null,status,summary:{},toolbar:{classList:{toggle(){}}},
+    renderBrief(){},renderResults(){},updateMetrics(){},needsVerification:x=>!!x.verification?.pending,
+    modeLabel:mode=>mode,showCorrection(){},performance:{now:()=>1200}};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function hasPendingSearch('),html.indexOf('function showSearchError(')),ctx);
+  vm.runInContext(html.slice(html.indexOf('function applyResponse('),html.indexOf('async function refreshVerification(')),ctx);
+  return ctx;
+}
+test('empty progressive snapshots stay pending and do not report instant first results',()=>{
+  const context={requestQuery:'original',query:'original',mode:'verified',engine:'auto',freshness:'',started:100};
+  const ctx=responseHarness(context);
+  ctx.applyResponse({results:[],search_pending:true,verification_pending:false},'original',12,false,context);
+  assert.equal(ctx.lastElapsed,null);
+  assert.match(ctx.status.textContent,/Ищем в интернете/);
+  assert.equal(ctx.hasPendingSearch(context),true);
+  ctx.applyResponse({results:[{title:'found'}],search_pending:false,verification_pending:false,searched_query:'original'},'original',12,true,context);
+  assert.equal(ctx.lastElapsed,1100);
+  assert.equal(ctx.hasPendingSearch(context),false);
+});
+test('a background correction changes the displayed query but keeps the original request key',()=>{
+  const context={requestQuery:'pumma',query:'pumma',mode:'web',engine:'auto',freshness:'',started:0};
+  const ctx=responseHarness(context);const corrected=[];
+  ctx.showCorrection=(...args)=>corrected.push(args);
+  const data={results:[{title:'PUMA'}],corrected_query:'PUMA',searched_query:'PUMA',search_pending:false,verification_pending:false};
+  ctx.applyResponse(data,'pumma',20,true,context);
+  ctx.applyResponse(data,'pumma',20,true,context);
+  assert.equal(context.query,'PUMA');assert.equal(context.requestQuery,'pumma');
+  assert.deepEqual(corrected,[['pumma','PUMA']]);
+});
+test('pending officiality checks show skeletons instead of a false empty state',()=>{
+  let skeletons=0;
+  const ctx={resultsContext:{searchPending:false,verificationPending:true},currentResults:[],document:{activeElement:null},
+    results:{innerHTML:'old',contains:()=>false,querySelectorAll:()=>[]},companyPanel:{contains:()=>false,scrollTop:0},
+    displayedResults:()=>[],updateCompanyPanel(){},showSkeletons(){skeletons++},updateMetrics(){}};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function renderResults(){'),html.indexOf('function showSkeletons(){')),ctx);
+  ctx.renderResults();assert.equal(skeletons,1);assert.doesNotMatch(ctx.results.innerHTML,/Ничего не найдено/);
+});
+test('verified mode with no initial results continues polling while web expansion runs',async()=>{
+  const timers=[];const context={mode:'verified',searchPending:true,verificationPending:false};
+  const ctx={resultsContext:context,currentResults:[],searchGeneration:1,pollTimer:null,
+    needsVerification:()=>false,setTimeout:fn=>{timers.push(fn);return timers.length},clearTimeout(){},
+    refreshVerification:async()=>{context.searchPending=false}};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('function stopVerificationPolling('),html.indexOf('form.onsubmit=async')),ctx);
+  assert.equal(ctx.hasPendingSearch(context),true);
+  ctx.startVerificationPolling('query',1,context);await timers[0]();
+  assert.equal(ctx.pollTimer,null);assert.equal(timers.length,1);
+});
+test('an upstream error after a pending empty response becomes a retryable error',async()=>{
+  const context={query:'sample',searchPending:true,verificationPending:false}, errors=[];
+  const ctx={resultsContext:context,searchGeneration:1,currentResults:[],searchRequestUrl:()=>'/api/search',
+    fetch:async()=>({ok:false,json:async()=>({detail:'Unavailable'})}),showSearchError:(...args)=>errors.push(args)};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(html.indexOf('async function refreshVerification('),html.indexOf('function stopVerificationPolling(')),ctx);
+  await ctx.refreshVerification('sample',1,context);
+  assert.equal(context.searchPending,false);assert.equal(errors[0][0],'Unavailable');
 });

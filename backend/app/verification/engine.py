@@ -4,6 +4,9 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError
 import hashlib, ipaddress, json, re, socket, time, uuid
 from html import unescape
+from collections import OrderedDict
+from copy import deepcopy
+import threading
 from .officiality import verify_officiality
 from .external import verify_wikidata
 from app.registry_db import save_check
@@ -32,13 +35,26 @@ class VerificationEngine:
     def __init__(self, timeout=5, ttl=600):
         self.timeout = timeout
         self.ttl = ttl
-        self.cache = {}
+        self.cache = OrderedDict()
+        self.cache_lock = threading.Lock()
 
     def peek(self, url):
-        x = self.cache.get(url)
-        if x and time.time() - x["ts"] < self.ttl:
-            return {**x["data"], "cached": True}
+        with self.cache_lock:
+            x = self.cache.get(url)
+            if x and time.time() - x["ts"] < self.ttl:
+                self.cache.move_to_end(url)
+                return {**deepcopy(x["data"]), "cached": True}
         return {}
+
+    def preview(self, url):
+        """Registry identity is instant; it never implies a completed network check."""
+        cached = self.peek(url)
+        if cached:
+            return cached
+        officiality = verify_officiality(url, use_database=False)
+        return {"status": "UNKNOWN", "pending": True, "checked_at": None, "url": url,
+                "message": "Домен сопоставлен с реестром. Сетевая проверка ожидается." if officiality["status"] == "CONFIRMED" else "Сетевая проверка ожидается.",
+                "reasons": [], "officiality": officiality, "technical": {}, "verification_version": "1.5.0"}
 
     def verify(self, url, **_):
         cached = self.peek(url)
@@ -59,12 +75,8 @@ class VerificationEngine:
         body = b""
 
         try:
-            dns_resolved = self._resolve_public_host(original_host)
-        except Exception as e:
-            reasons.append("DNS: " + str(e))
-
-        try:
             self._assert_public_host(url)
+            dns_resolved = True
             recorder = _RedirectRecorder(self._assert_public_host)
             opener = build_opener(recorder)
             req = Request(
@@ -148,7 +160,11 @@ class VerificationEngine:
             save_check(original_host, data)
         except Exception:
             pass
-        self.cache[url] = {"ts": time.time(), "data": data}
+        with self.cache_lock:
+            self.cache[url] = {"ts": time.time(), "data": deepcopy(data)}
+            self.cache.move_to_end(url)
+            while len(self.cache) > 1024:
+                self.cache.popitem(last=False)
         return data
 
     @staticmethod
@@ -173,6 +189,8 @@ class VerificationEngine:
         parsed = urlsplit(url)
         if parsed.scheme.lower() not in ("http", "https"):
             raise ValueError("unsupported URL scheme")
+        if parsed.username or parsed.password:
+            raise ValueError("URL credentials are not supported")
         host = (parsed.hostname or "").lower()
         if not host or host in ("localhost", "127.0.0.1") or host.endswith(".local"):
             raise ValueError("private host")

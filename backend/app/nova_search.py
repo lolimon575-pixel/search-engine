@@ -43,10 +43,6 @@ def search_registry(query: str, limit: int = 10) -> list[dict[str, Any]]:
             score += 35
             reasons.append("profile_match")
 
-        if profile.get("profile_tier") in ("premium", "verified"):
-            score += 5
-            reasons.append("profile_available")
-
         if score:
             results.append({
                 "domain": domain,
