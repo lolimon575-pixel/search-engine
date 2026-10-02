@@ -87,6 +87,7 @@ class WebSearchService:
             entry = self.cache.get(key)
             if entry and time.monotonic() - entry["at"] < 90:
                 self.cache.move_to_end(key)
+                entry["limit"] = max(entry["limit"], limit)
                 self._start_checks(entry, limit)
                 batch = self._snapshot(entry, limit)
                 batch.elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
@@ -99,7 +100,7 @@ class WebSearchService:
                     local = self.index.search(corrected, 60, mode, freshness)
             entry = {"at": time.monotonic(), "query": query, "searched_query": corrected or query,
                      "corrected_query": corrected, "mode": mode, "freshness": freshness,
-                     "engine": engine, "results": self._prepare(corrected or query, local),
+                     "engine": engine, "limit": limit, "results": self._prepare(corrected or query, local),
                      "errors": [], "search_pending": False, "web_done": engine == "index"}
             self.cache[key] = entry
             self.cache.move_to_end(key)
@@ -138,7 +139,8 @@ class WebSearchService:
         if entry["mode"] == "verified":
             items = [item for item in items if item.verification.get("officiality", {}).get("status") in OFFICIAL]
         results = [item.model_copy(deep=True) for item in diversify(items, limit)]
-        pending = any(document_url(item.url) in self.jobs for item in entry["results"])
+        checked_items = entry["results"][:12] if entry["mode"] == "verified" else results
+        pending = any(document_url(item.url) in self.jobs for item in checked_items)
         providers = {item.provider for item in results}
         source = "hybrid" if len(providers) > 1 else ("web" if (providers and "nova-index" not in providers) or (not providers and (entry["engine"] == "web" or entry["web_done"] and entry["engine"] != "index")) else "index")
         for item in results:
@@ -170,7 +172,7 @@ class WebSearchService:
             with self.lock:
                 if self.cache.get(key) is entry:
                     entry.update(results=candidates, searched_query=searched, corrected_query=corrected)
-                    self._start_checks(entry, 30)
+                    self._start_checks(entry, entry["limit"])
             learned = self.index.ingest(raw)
             self._save_later(learned)
         except Exception as exc:

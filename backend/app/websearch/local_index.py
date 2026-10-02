@@ -20,6 +20,12 @@ SECTIONS = {
     "about": "О компании about", "newsroom": "Новости пресса newsroom news",
     "pricing": "Тарифы цены pricing", "research": "Исследования research",
     "learn": "Обучение learn", "download": "Скачать download", "business": "Для бизнеса business",
+    "cars": "Автомобили купить авто cars used", "catalog": "Каталог catalog",
+    "men": "Мужчинам мужская men", "women": "Женщинам женская women", "kids": "Детям детская kids",
+    "news": "Новости news", "blog": "Блог blog", "community": "Сообщество community",
+    "safety": "Безопасность safety", "enterprise": "Для компаний enterprise",
+    "drivers": "Драйверы drivers", "music": "Музыка music", "podcasts": "Подкасты podcasts",
+    "watch": "Смотреть watch", "homes": "Жилье homes", "experiences": "Впечатления experiences",
 }
 ALIASES = {
     "puma.com": "пума", "google.com": "гугл", "youtube.com": "ютуб ютюб",

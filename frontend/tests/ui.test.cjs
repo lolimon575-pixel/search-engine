@@ -115,6 +115,9 @@ test('language changes are reversible and retain dynamic counts',()=>{
   ctx.setLanguage('ru');ctx.update(summaryNode);assert.equal(summaryNode.nodeValue,'10 результатов · Веб · Неделя · 6083 мс');
   ctx.setLanguage('en');
   assert.equal(ctx.translate('Search with an independent verification layer'),'Search with independent verification');
+  assert.equal(ctx.translate('Автопоиск'),'Auto');
+  assert.equal(ctx.translate('Авто'),'Cars');
+  assert.equal(ctx.translate('10 результатов · Web · Индекс NOVA + Веб · 120 мс'),'10 results · Web · NOVA Index + Web · 120 ms');
   ctx.setLanguage('ru');assert.equal(ctx.translate('Verified'),'Проверенные');
 });
 

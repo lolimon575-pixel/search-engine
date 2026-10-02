@@ -860,7 +860,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
   <header class="topbar">
     <a class="brand" href="/" aria-label="NOVA Search">
       <div class="brand-mark">N</div>
-      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.13</span></div>
+      <div class="brand-copy"><span class="wordmark">NOVA</span><span class="version">Search 1.14</span></div>
     </a>
     <div class="top-actions">
       <span class="live-pill"><span class="live-dot"></span>сервис активен</span>
@@ -896,7 +896,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
         </div>
         <div class="search-options">
           <select id="engine" class="freshness-select" aria-label="Движок поиска" title="Авто: индекс NOVA сразу, веб дополняет выдачу">
-            <option value="auto">Авто</option>
+            <option value="auto">Автопоиск</option>
             <option value="index">Индекс NOVA</option>
             <option value="web">Веб</option>
           </select>
@@ -913,7 +913,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
       </div>
 
       <div class="pipeline-strip" aria-hidden="true">
-        <span><b>Web</b> источник</span><span class="pipeline-arrow">→</span>
+        <span><b>NOVA Index</b> + Веб</span><span class="pipeline-arrow">→</span>
         <span><b>NOVA Rank</b> релевантность</span><span class="pipeline-arrow">→</span>
         <span><b>Verify</b> техпроверка</span><span class="pipeline-arrow">→</span>
         <span><b>Officiality</b> подтверждение</span>
@@ -925,7 +925,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
     <section class="results-main">
       <div class="results-head">
         <div class="status-block">
-          <div id="status" class="status">Начните поиск — NOVA покажет веб-выдачу и слой проверки.</div>
+          <div id="status" class="status">Начните поиск — NOVA найдёт совпадения и проверит источники.</div>
           <div id="summary" class="summary"></div>
         </div>
         <div id="toolbar" class="results-toolbar">
@@ -955,7 +955,7 @@ body.keyboard-open:not(.has-results) .footer{visibility:hidden;pointer-events:no
       <section class="insight-card pipeline-card">
         <div class="insight-title">Как строится выдача</div>
         <div class="pipeline-list">
-          <div class="pipeline-step"><div class="step-num">01</div><div><strong>Web discovery</strong><span>Получаем независимый набор веб-результатов.</span></div></div>
+          <div class="pipeline-step"><div class="step-num">01</div><div><strong>Индекс NOVA и веб</strong><span>Сначала ищем в индексе. В режиме Авто веб дополняет выдачу.</span></div></div>
           <div class="pipeline-step"><div class="step-num">02</div><div><strong>NOVA Rank</strong><span>Фраза, домен, покрытие запроса и разнообразие источников.</span></div></div>
           <div class="pipeline-step"><div class="step-num">03</div><div><strong>Verification</strong><span>DNS, HTTPS, HTTP и безопасная цепочка редиректов.</span></div></div>
           <div class="pipeline-step"><div class="step-num">04</div><div><strong>Officiality</strong><span>Реестр NOVA и внешние независимые сигналы.</span></div></div>
@@ -2128,7 +2128,7 @@ form.onsubmit=async e=>{
   hideSuggestions();
   document.body.classList.add('has-results');
   status.classList.add('searching');
-  status.textContent=activeMode==='verified'?'Ищем подтверждённые официальные результаты':activeMode==='discussions'?'Ищем обсуждения и ответы сообщества':activeMode==='exact'?'Ищем точную формулировку':'NOVA собирает и ранжирует выдачу';
+  status.textContent=context.engine==='index'?'NOVA ищет в индексе':activeMode==='verified'?'Ищем подтверждённые официальные результаты':activeMode==='discussions'?'Ищем обсуждения и ответы сообщества':activeMode==='exact'?'Ищем точную формулировку':'NOVA собирает и ранжирует выдачу';
   summary.textContent='';
   toolbar.classList.remove('visible');
   companyPanel.hidden=true;
@@ -2199,8 +2199,13 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
 // UI-only localization. Source values are retained so switching is reversible.
 (function(){
   const messages={
+  "NOVA ищет в индексе": ["NOVA ищет в индексе", "NOVA is searching its index"],
+  "+ Веб": ["+ Веб", "+ Web"],
+  "Индекс NOVA и веб": ["Индекс NOVA и веб", "NOVA Index and web"],
+  "Сначала ищем в индексе. В режиме Авто веб дополняет выдачу.": ["Сначала ищем в индексе. В режиме Авто веб дополняет выдачу.", "Search the index first. Auto mode adds web results."],
+  "Начните поиск — NOVA найдёт совпадения и проверит источники.": ["Начните поиск — NOVA найдёт совпадения и проверит источники.", "Start a search — NOVA will find matches and check the sources."],
   "Движок поиска": ["Движок поиска", "Search engine"],
-  "Авто": ["Авто", "Auto"],
+  "Автопоиск": ["Автопоиск", "Auto"],
   "Индекс NOVA": ["Индекс NOVA", "NOVA Index"],
   "Индекс NOVA + Веб": ["Индекс NOVA + Веб", "NOVA Index + Web"],
   "Веб": ["Веб", "Web"],

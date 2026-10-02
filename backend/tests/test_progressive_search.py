@@ -193,3 +193,21 @@ def test_failed_checks_are_not_restarted_on_every_poll():
         assert batch.results[0].verification['status'] == 'WARNING'
     finally:
         s.close()
+
+
+def test_background_verification_prioritizes_only_the_requested_result_count():
+    release = threading.Event()
+    class BlockingVerifier(VerificationEngine):
+        def verify(self, url, **kwargs):
+            release.wait(3)
+            return {**self.preview(url), 'status': 'VERIFIED', 'pending': False}
+    s = service(index=LocalIndex(registry={}), verifier=BlockingVerifier(),
+                provider=lambda *a, **k: [WebResult(title='sample', url=f'https://example.com/{i}') for i in range(40)])
+    try:
+        s.search('sample', limit=10)
+        wait_for(lambda: s.web_jobs == 0)
+        assert len(s.jobs) == 10
+        assert len(s.search('sample', limit=30).results) == 30
+        assert len(s.jobs) == 30
+    finally:
+        release.set(); s.close()
