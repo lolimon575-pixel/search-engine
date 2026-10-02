@@ -26,7 +26,11 @@ SECTIONS = {
     "safety": "Безопасность safety", "enterprise": "Для компаний enterprise",
     "drivers": "Драйверы drivers", "music": "Музыка music", "podcasts": "Подкасты podcasts",
     "watch": "Смотреть watch", "homes": "Жилье homes", "experiences": "Впечатления experiences",
+    "running": "Бег беговая running", "football": "Футбол football",
+    "investors": "Инвесторам investors", "sustainability": "Устойчивое развитие sustainability",
 }
+SECTION_TITLES = {"about": "О компании", "business": "Для бизнеса", "enterprise": "Для компаний",
+                  "sustainability": "Устойчивое развитие"}
 ALIASES = {
     "puma.com": "пума", "google.com": "гугл", "youtube.com": "ютуб ютюб",
     "github.com": "гитхаб", "openai.com": "опен аи", "apple.com": "эппл",
@@ -86,10 +90,13 @@ class LocalIndex:
                 if len(alias) >= 3:
                     self.brands.setdefault(normalized(alias), name)
             description = " · ".join(filter(None, [item.get("tagline"), item.get("description")]))
+            if re.search(r"profile\s*plus", description, re.I):
+                description = (item.get("tagline", "") + ". " if item.get("tagline") else "") + f"Официальный сайт {name}."
             self.add("https://" + domain + "/", name, description, aliases, curated=True)
             for section, url in (item.get("links") or {}).items():
                 label = SECTIONS.get(section, section)
-                self.add(url, name + " — " + label.split(" ")[0], description + " · " + label,
+                title = SECTION_TITLES.get(section, label.split(" ")[0])
+                self.add(url, name + " — " + title, f"{title}: официальный раздел {name}.",
                          aliases + " " + label, curated=True)
 
     def add(self, url, title, description="", aliases="", curated=False, seen_at=None):

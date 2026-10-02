@@ -81,3 +81,11 @@ def test_local_suggestions_and_conservative_correction(index):
     assert index.correction("pumma") == "PUMA"
     assert index.correction("PUMA") is None
     assert index.correction("случайный длинный запрос") is None
+
+
+def test_section_snippets_are_readable_and_do_not_expose_index_aliases(index):
+    career = index.search('puma вакансии')[0]
+    assert career.title == 'PUMA — Карьера'
+    assert career.description == 'Карьера: официальный раздел PUMA.'
+    assert 'Profile Plus' not in index.search('puma')[0].description
+    assert index.search('github docs')[0].description == 'Документация: официальный раздел GitHub.'

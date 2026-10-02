@@ -2069,7 +2069,9 @@ function applyResponse(data,query,elapsed,refresh=false,context=resultsContext){
   }
   const freshnessLabel=context.freshness?(' · '+({d:'24 часа',w:'Неделя',m:'Месяц',y:'Год'}[context.freshness]||'')):'';
   const sourceLabel=data.source==='index'?'Индекс NOVA':data.source==='hybrid'?'Индекс NOVA + Веб':'Веб';
-  summary.textContent=(data.count||currentResults.length)+' результатов · '+modeLabel(context.mode)+' · '+sourceLabel+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
+  const count=data.count||currentResults.length;
+  const countLabel=count%100>=11&&count%100<=14?'результатов':count%10===1?'результат':count%10>=2&&count%10<=4?'результата':'результатов';
+  summary.textContent=count+' '+countLabel+' · '+(context.mode==='web'?'':modeLabel(context.mode)+' · ')+sourceLabel+freshnessLabel+(lastElapsed!=null?' · '+Math.round(lastElapsed)+' мс':'');
   toolbar.classList.toggle('visible',currentResults.length>0);
   updateMetrics();
 }
@@ -3044,7 +3046,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideS
     const key=value.trim();
     const entry=messages[key];
     if(entry)return value.replace(key,entry[language==='en'?1:0]);
-    if(/^\d+ результатов · /.test(key))return value.replace('результатов',language==='en'?'results':'результатов').replace(/ · (Web|Verified|Discussions|Exact|Индекс NOVA \+ Веб|Индекс NOVA|Веб|24 часа|Неделя|Месяц|Год)(?= · |$)/g,(_,label)=>' · '+messages[label][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
+    if(/^\d+ (результат|результата|результатов) · /.test(key))return value.replace(/результатов|результата|результат/,word=>language==='en'?(Number(key.split(' ')[0])===1?'result':'results'):word).replace(/ · (Web|Verified|Discussions|Exact|Индекс NOVA \+ Веб|Индекс NOVA|Веб|24 часа|Неделя|Месяц|Год)(?= · |$)/g,(_,label)=>' · '+messages[label][language==='en'?1:0]).replace(/ мс$/,language==='en'?' ms':' мс');
     if(language==='en'){
       if(/^Сбросить домены \(\d+\)$/.test(key))return value.replace('Сбросить домены','Reset domains');
       if(/^Ещё \d+ с домена /.test(key))return value.replace('Ещё ','More: ').replace(' с домена ',' from ');
